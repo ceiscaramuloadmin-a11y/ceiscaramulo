@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f4f6ef"/>
+      <stop offset="100%" stop-color="#dfe8d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="910" cy="120" r="54" fill="#d1a64a"/>
+  <path d="M130 470 360 220 560 400 760 180 1040 470Z" fill="#27441d"/>
+  <path d="M100 518h1000" stroke="#35542a" stroke-width="18" stroke-linecap="round"/>
+  <text x="100" y="160" fill="#27441d" font-family="Georgia, serif" font-size="54" font-weight="700">
+    CEISCaramulo
+  </text>
+  <text x="100" y="232" fill="#3f473d" font-family="Arial, sans-serif" font-size="30">
+    Centro de Estudos e Interpretação da Serra do Caramulo
+  </text>
+  <text x="100" y="300" fill="#55604f" font-family="Arial, sans-serif" font-size="24">
+    Notícias, atividades, projetos e publicações sobre o território
+  </text>
+</svg>

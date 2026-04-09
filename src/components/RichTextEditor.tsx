@@ -1,0 +1,262 @@
+import React, { useEffect, useRef } from 'react';
+import {
+  AudioLines,
+  Bold,
+  Heading1,
+  Heading2,
+  Image as ImageIcon,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Quote,
+  Redo2,
+  Underline,
+  Undo2,
+  Unlink,
+  Video,
+} from 'lucide-react';
+
+import { escapeHtml, normalizeHtml, sanitizeRichTextHtml, textToHtml } from '../lib/richText';
+
+type RichTextEditorProps = {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+type MediaKind = 'image' | 'audio' | 'video';
+
+export default function RichTextEditor({ label, value, onChange }: RichTextEditorProps) {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const selectionRef = useRef<Range | null>(null);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const normalizedValue = sanitizeRichTextHtml(value || '', { forEditor: true });
+
+    if (editor.innerHTML !== normalizedValue) {
+      editor.innerHTML = normalizedValue;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    const updateSelection = () => {
+      const selection = window.getSelection();
+
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+
+      if (editorRef.current?.contains(range.commonAncestorContainer)) {
+        selectionRef.current = range.cloneRange();
+      }
+    };
+
+    document.addEventListener('selectionchange', updateSelection);
+    return () => document.removeEventListener('selectionchange', updateSelection);
+  }, []);
+
+  const syncContent = () => {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const normalizedValue = sanitizeRichTextHtml(editor.innerHTML || '', { forEditor: true });
+
+    if (editor.innerHTML !== normalizedValue) {
+      editor.innerHTML = normalizedValue;
+    }
+
+    onChange(normalizeHtml(normalizedValue));
+  };
+
+  const runCommand = (command: string, commandValue?: string) => {
+    editorRef.current?.focus();
+    restoreSelection();
+    document.execCommand(command, false, commandValue);
+    syncContent();
+  };
+
+  const setBlock = (tagName: 'H1' | 'H2' | 'P' | 'BLOCKQUOTE') => {
+    runCommand('formatBlock', tagName);
+  };
+
+  const insertLink = () => {
+    const url = window.prompt('Introduz o URL do link');
+
+    if (!url) {
+      return;
+    }
+
+    runCommand('createLink', url);
+  };
+
+  const insertMedia = async (file: File, kind: MediaKind) => {
+    const dataUrl = await fileToDataUrl(file);
+    const escapedName = escapeHtml(file.name || kind);
+
+    const htmlByKind = {
+      image: `<figure><img src="${dataUrl}" alt="${escapedName}" /><figcaption>${escapedName}</figcaption></figure>`,
+      audio: `<figure><audio controls src="${dataUrl}"></audio><figcaption>${escapedName}</figcaption></figure>`,
+      video: `<figure><video controls src="${dataUrl}"></video><figcaption>${escapedName}</figcaption></figure>`,
+    };
+
+    editorRef.current?.focus();
+    restoreSelection();
+    document.execCommand('insertHTML', false, htmlByKind[kind]);
+    syncContent();
+  };
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    const html = event.clipboardData.getData('text/html');
+    const text = event.clipboardData.getData('text/plain');
+    const sanitized = html
+      ? sanitizeRichTextHtml(html, { forEditor: true })
+      : text
+        ? textToHtml(text)
+        : '';
+
+    if (!sanitized) {
+      return;
+    }
+
+    editorRef.current?.focus();
+    restoreSelection();
+    document.execCommand('insertHTML', false, sanitized);
+    syncContent();
+  };
+
+  return (
+    <div className="space-y-3">
+      {label ? <p className="text-sm text-stone-600">{label}</p> : null}
+
+      <div className="rounded-2xl border border-stone-200 bg-white">
+        <div className="flex flex-wrap gap-2 border-b border-stone-200 p-3">
+          <ToolbarButton label="Negrito" onClick={() => runCommand('bold')}><Bold className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Itálico" onClick={() => runCommand('italic')}><Italic className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Sublinhado" onClick={() => runCommand('underline')}><Underline className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Título 1" onClick={() => setBlock('H1')}><Heading1 className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Título 2" onClick={() => setBlock('H2')}><Heading2 className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Citação" onClick={() => setBlock('BLOCKQUOTE')}><Quote className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Lista" onClick={() => runCommand('insertUnorderedList')}><List className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Lista numerada" onClick={() => runCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Link" onClick={insertLink}><LinkIcon className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Remover link" onClick={() => runCommand('unlink')}><Unlink className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Desfazer" onClick={() => runCommand('undo')}><Undo2 className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Refazer" onClick={() => runCommand('redo')}><Redo2 className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Inserir imagem" onClick={() => imageInputRef.current?.click()}><ImageIcon className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Inserir áudio" onClick={() => audioInputRef.current?.click()}><AudioLines className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Inserir vídeo" onClick={() => videoInputRef.current?.click()}><Video className="h-4 w-4" /></ToolbarButton>
+        </div>
+
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          className="rich-text-editor min-h-[320px] rounded-b-2xl bg-transparent px-4 py-4 text-black outline-none"
+          onInput={syncContent}
+          onBlur={syncContent}
+          onPaste={handlePaste}
+        />
+      </div>
+
+      <p className="text-xs leading-6 text-stone-500">
+        O conteúdo colado preserva links, imagens, áudio e vídeo sempre que existirem no clipboard, mas remove cores, fundos e estilos herdados.
+      </p>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => handleFileChange(event.target.files?.[0], 'image', insertMedia, event.currentTarget)}
+      />
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={(event) => handleFileChange(event.target.files?.[0], 'audio', insertMedia, event.currentTarget)}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={(event) => handleFileChange(event.target.files?.[0], 'video', insertMedia, event.currentTarget)}
+      />
+    </div>
+  );
+
+  function restoreSelection() {
+    const selection = window.getSelection();
+
+    if (!selection || !selectionRef.current) {
+      return;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(selectionRef.current);
+  }
+}
+
+function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      title={label}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-[#3e5c32] hover:text-[#27441d]"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+async function handleFileChange(
+  file: File | undefined,
+  kind: MediaKind,
+  insertMedia: (file: File, kind: MediaKind) => Promise<void>,
+  input: HTMLInputElement
+) {
+  if (!file) {
+    return;
+  }
+
+  await insertMedia(file, kind);
+  input.value = '';
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error('Formato de ficheiro inválido.'));
+    };
+
+    reader.onerror = () => reject(reader.error || new Error('Não foi possível ler o ficheiro.'));
+    reader.readAsDataURL(file);
+  });
+}

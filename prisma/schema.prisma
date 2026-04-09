@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model News {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String   @db.Text
+  category    String
+  image       String?
+  author      String
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([publishedAt])
+  @@map("news")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  title       String
+  description String       @db.Text
+  date        DateTime
+  endDate     DateTime?
+  location    String?
+  image       String?
+  category    ActivityType @default(evento)
+  published   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([date])
+  @@map("activities")
+}
+
+enum ActivityType {
+  caminhada
+  workshop
+  palestra
+  evento
+  formacao
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String        @db.Text
+  status      ProjectStatus @default(planeado)
+  startDate   DateTime
+  endDate     DateTime?
+  image       String?
+  partners    String[]
+  published   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  planeado
+  em_curso
+  concluido
+}
+
+model Publication {
+  id          String          @id @default(cuid())
+  title       String
+  author      String
+  year        Int
+  type        PublicationType
+  description String          @db.Text
+  downloadUrl String?
+  coverImage  String?
+  published   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("publications")
+}
+
+model ContentComment {
+  id          String                @id @default(cuid())
+  contentType ContentCommentSection
+  contentId   String
+  name        String
+  email       String
+  message     String                @db.Text
+  createdAt   DateTime              @default(now())
+
+  @@index([contentType, contentId, createdAt])
+  @@map("content_comments")
+}
+
+enum ContentCommentSection {
+  news
+  activities
+  projects
+  publications
+}
+
+enum PublicationType {
+  livro
+  artigo
+  relatorio
+  tese
+  documento
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  bio       String   @db.Text
+  image     String?
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("team_members")
+}
+
+model SiteSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+
+  @@map("site_settings")
+}
+
+model AdminUser {
+  id        String          @id @default(cuid())
+  email     String          @unique
+  role      AdminRole       @default(editor)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  createdBy String?
+  audits    AdminAuditLog[] @relation("AuditActor")
+
+  @@map("admin_users")
+}
+
+enum AdminRole {
+  owner
+  editor
+}
+
+model AdminAuditLog {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  actorId    String?
+  actorEmail String
+  actorRole  AdminRole
+  action     String
+  targetType String
+  targetId   String?
+  summary    String
+  before     Json?
+  after      Json?
+  actor      AdminUser? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
+}
+
+model SiteLayout {
+  id        String   @id @default(cuid())
+  key       String   @unique @default("global")
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_layouts")
+}
+
+model GalleryMedia {
+  id          String           @id @default(cuid())
+  title       String
+  description String?          @db.Text
+  type        GalleryMediaType
+  source      String           @db.Text
+  thumbnail   String?          @db.Text
+  mimeType    String?
+  published   Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([type, published, createdAt])
+  @@map("gallery_media")
+}
+
+enum GalleryMediaType {
+  photo
+  video
+  audio
+}

@@ -1,0 +1,307 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+  CEISCaramulo Design System
+  Theme: Dark Forest Green + Black & White
+  Prepared for Next.js migration
+*/
+
+@layer base {
+  :root {
+    /* Light forest theme — verde floresta + branco */
+    --background: 60 10% 97%;
+    --foreground: 160 15% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 160 15% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 15% 10%;
+
+    /* Forest green accent */
+    --primary: 100 55% 22%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 100 10% 92%;
+    --secondary-foreground: 160 15% 10%;
+
+    --muted: 100 8% 93%;
+    --muted-foreground: 160 5% 40%;
+
+    --accent: 100 20% 90%;
+    --accent-foreground: 160 15% 10%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 100 8% 85%;
+    --input: 100 8% 85%;
+    --ring: 100 55% 30%;
+
+    --radius: 0.5rem;
+
+    /* Custom tokens */
+    --forest: 100 55% 22%;
+    --forest-light: 100 40% 35%;
+    --forest-dark: 100 60% 12%;
+    --forest-glow: 100 50% 40%;
+    --cream: 40 30% 95%;
+    --gold: 42 80% 45%;
+
+    --gradient-forest: linear-gradient(135deg, hsl(100 55% 22%), hsl(100 40% 35%));
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 100%), hsl(100 8% 96%));
+    --shadow-forest: 0 10px 40px -10px hsl(100 55% 22% / 0.15);
+    --shadow-elevated: 0 20px 60px -15px hsl(0 0% 0% / 0.1);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 160 15% 10%;
+    --sidebar-primary: 100 55% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 100 20% 90%;
+    --sidebar-accent-foreground: 160 15% 10%;
+    --sidebar-border: 100 8% 85%;
+    --sidebar-ring: 100 55% 30%;
+
+    /* Typography */
+    --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Dark mode override */
+  .dark {
+    --background: 160 10% 6%;
+    --foreground: 60 10% 92%;
+    --card: 160 8% 10%;
+    --card-foreground: 60 10% 92%;
+    --popover: 160 8% 10%;
+    --popover-foreground: 60 10% 92%;
+    --primary: 100 55% 22%;
+    --primary-foreground: 60 10% 95%;
+    --secondary: 160 6% 16%;
+    --secondary-foreground: 60 10% 88%;
+    --muted: 160 5% 14%;
+    --muted-foreground: 160 5% 55%;
+    --accent: 100 40% 18%;
+    --accent-foreground: 60 10% 92%;
+    --border: 160 6% 18%;
+    --input: 160 6% 18%;
+    --ring: 100 55% 30%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+
+  /* Focus visible for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+@layer components {
+  /* Skip navigation link for accessibility */
+  .skip-nav {
+    @apply absolute -top-10 left-4 z-[100] rounded-md bg-primary px-4 py-2 text-primary-foreground transition-all;
+  }
+  .skip-nav:focus {
+    @apply top-4;
+  }
+
+  /* Hover scale for cards */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-forest);
+  }
+
+  /* Story link underline animation */
+  .story-link {
+    @apply relative inline-block;
+  }
+  .story-link::after {
+    content: '';
+    @apply absolute bottom-0 left-0 h-0.5 w-full origin-bottom-right scale-x-0 bg-primary transition-transform duration-300;
+  }
+  .story-link:hover::after {
+    @apply origin-bottom-left scale-x-100;
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(12px) saturate(180%);
+    background-color: hsl(0 0% 100% / 0.8);
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--forest-light)), hsl(var(--gold)));
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+/* Keyframe animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes parallax-slow {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-20px); }
+}
+
+.rich-text-editor:empty::before {
+  content: 'Escreve aqui o conteúdo da notícia...';
+  color: #8b8b81;
+}
+
+.rich-text-editor,
+.rich-text-editor * {
+  color: #111111 !important;
+  background: transparent !important;
+}
+
+.rich-text-editor h1,
+.rich-text-content h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  line-height: 1.05;
+  color: #27441d;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.rich-text-editor h2,
+.rich-text-content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+  line-height: 1.1;
+  color: #27441d;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.rich-text-editor p,
+.rich-text-content p,
+.rich-text-content li,
+.rich-text-content figcaption {
+  color: #43483f;
+  line-height: 1.9;
+}
+
+.rich-text-editor ul,
+.rich-text-content ul,
+.rich-text-editor ol,
+.rich-text-content ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.rich-text-editor ul,
+.rich-text-content ul {
+  list-style: disc;
+}
+
+.rich-text-editor ol,
+.rich-text-content ol {
+  list-style: decimal;
+}
+
+.rich-text-editor blockquote,
+.rich-text-content blockquote {
+  border-left: 4px solid #a6bb97;
+  margin: 1.5rem 0;
+  padding-left: 1rem;
+  color: #5f6559;
+  font-style: italic;
+}
+
+.rich-text-editor a,
+.rich-text-content a {
+  color: #2f5224;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.rich-text-editor figure,
+.rich-text-content figure {
+  margin: 1.5rem 0;
+}
+
+.rich-text-editor img,
+.rich-text-content img,
+.rich-text-editor iframe,
+.rich-text-content iframe,
+.rich-text-editor video,
+.rich-text-content video,
+.rich-text-editor audio,
+.rich-text-content audio {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.rich-text-editor img,
+.rich-text-content img,
+.rich-text-editor iframe,
+.rich-text-content iframe,
+.rich-text-editor video,
+.rich-text-content video {
+  border: 1px solid #d8ddd2;
+  background: white;
+}
+
+.rich-text-editor iframe,
+.rich-text-content iframe {
+  min-height: 360px;
+}
+
+.rich-text-editor figcaption,
+.rich-text-content figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: #6b7267;
+}
