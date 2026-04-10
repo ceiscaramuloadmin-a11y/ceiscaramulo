@@ -1,0 +1,244 @@
+'use client';
+
+import { useSyncExternalStore } from 'react';
+import type { AdminPermission, AdminRole } from '@/types';
+import {
+  ADMIN_SESSION_STORAGE_KEY,
+  createSessionExpiryDate,
+  getDefaultAdminPermissions,
+  getPublicAdminAuthMode,
+  isAdminSessionExpired,
+  normalizeAdminSession,
+  parseAdminPermissions,
+  type AdminSession,
+  type AdminAuthMode,
+} from '@/lib/admin-auth-shared';
+
+type SignInResult =
+  | { data: { session: AdminSession }; error: null }
+  | { data: null; error: { message: string } };
+
+type SessionResult = { data: { session: AdminSession } | null };
+
+const listeners = new Set<() => void>();
+
+function notifyListeners() {
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function readStoredSession() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = normalizeAdminSession(JSON.parse(raw));
+
+    if (!parsed || isAdminSessionExpired(parsed)) {
+      window.localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    window.localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    return null;
+  }
+}
+
+function persistSession(session: AdminSession | null) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (session) {
+    window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } else {
+    window.localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+  }
+
+  notifyListeners();
+}
+
+async function sha256(value: string) {
+  const buffer = new TextEncoder().encode(value);
+  const digest = await window.crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(digest))
+    .map((item) => item.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function signInWithRuntimeSession(email: string, password: string): Promise<SignInResult> {
+  const response = await fetch('/api/admin/session', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        message?: string;
+        token?: string;
+        session?: { email: string; role: AdminRole; permissions: AdminPermission[]; expiresAt?: string | null };
+      }
+    | null;
+
+  if (!response.ok || !payload?.session) {
+    return {
+      data: null,
+      error: {
+        message: payload?.message || 'Não foi possível iniciar a sessão administrativa.',
+      },
+    };
+  }
+
+  const session = normalizeAdminSession({
+    token: payload.token ?? null,
+    email: payload.session.email,
+    role: payload.session.role,
+    permissions: payload.session.permissions,
+    expiresAt: payload.session.expiresAt ?? null,
+    mode: 'runtime',
+  });
+
+  if (!session) {
+    return {
+      data: null,
+      error: {
+        message: 'A resposta da autenticação administrativa é inválida.',
+      },
+    };
+  }
+
+  persistSession(session);
+
+  return {
+    data: { session },
+    error: null,
+  };
+}
+
+async function signInWithExportSession(email: string, password: string): Promise<SignInResult> {
+  const configuredEmail = String(process.env.NEXT_PUBLIC_ADMIN_EXPORT_EMAIL || '').trim().toLowerCase();
+  const configuredPasswordHash = String(process.env.NEXT_PUBLIC_ADMIN_EXPORT_PASSWORD_SHA256 || '').trim().toLowerCase();
+  const role = process.env.NEXT_PUBLIC_ADMIN_EXPORT_ROLE === 'owner' ? 'owner' : 'editor';
+  const configuredPermissions = String(process.env.NEXT_PUBLIC_ADMIN_EXPORT_PERMISSIONS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (!configuredEmail || !configuredPasswordHash) {
+    return {
+      data: null,
+      error: {
+        message: 'Defina NEXT_PUBLIC_ADMIN_EXPORT_EMAIL e NEXT_PUBLIC_ADMIN_EXPORT_PASSWORD_SHA256 para usar o modo export.',
+      },
+    };
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const passwordHash = await sha256(password);
+
+  if (normalizedEmail !== configuredEmail || passwordHash !== configuredPasswordHash) {
+    return {
+      data: null,
+      error: {
+        message: 'Credenciais administrativas inválidas.',
+      },
+    };
+  }
+
+  const session = normalizeAdminSession({
+    token: null,
+    email: normalizedEmail,
+    role,
+    permissions: parseAdminPermissions(configuredPermissions, role),
+    expiresAt: createSessionExpiryDate(),
+    mode: 'export',
+  });
+
+  if (!session) {
+    return {
+      data: null,
+      error: {
+        message: 'Não foi possível criar a sessão administrativa local.',
+      },
+    };
+  }
+
+  persistSession(session);
+
+  return {
+    data: { session },
+    error: null,
+  };
+}
+
+export function isExportAdminAuthMode() {
+  return getPublicAdminAuthMode() === 'export';
+}
+
+export function getStoredAdminSession() {
+  return readStoredSession();
+}
+
+export async function getAdminAccessToken() {
+  return readStoredSession()?.token ?? null;
+}
+
+export const adminAuthClient = {
+  adapter: {
+    async getSession(): Promise<SessionResult> {
+      const session = readStoredSession();
+      return { data: session ? { session } : null };
+    },
+    async signOut() {
+      persistSession(null);
+      return { error: null };
+    },
+    signIn: {
+      async email({ email, password }: { email: string; password: string }) {
+        const mode: AdminAuthMode = getPublicAdminAuthMode();
+        return mode === 'export' ? signInWithExportSession(email, password) : signInWithRuntimeSession(email, password);
+      },
+    },
+    useSession() {
+      const session = useSyncExternalStore(subscribe, readStoredSession, () => null);
+      return {
+        data: session ? { session } : null,
+        isPending: false,
+      };
+    },
+  },
+};
+
+export function createLocalAdminSession(input: {
+  email: string;
+  role?: AdminRole;
+  permissions?: AdminPermission[];
+  mode?: AdminAuthMode;
+}) {
+  const role = input.role ?? 'owner';
+
+  return normalizeAdminSession({
+    token: null,
+    email: input.email.trim().toLowerCase(),
+    role,
+    permissions: input.permissions ?? getDefaultAdminPermissions(role),
+    expiresAt: createSessionExpiryDate(),
+    mode: input.mode ?? 'export',
+  });
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">CEISCaramulo</title>
+  <desc id="desc">Ícone do CEISCaramulo com serra estilizada e sol.</desc>
+  <rect width="128" height="128" rx="28" fill="#f3f5ef"/>
+  <circle cx="94" cy="34" r="12" fill="#d1a64a"/>
+  <path d="M20 88 48 52 68 74 86 46 108 88Z" fill="#27441d"/>
+  <path d="M18 96h92" stroke="#3e5c32" stroke-width="8" stroke-linecap="round"/>
+</svg>

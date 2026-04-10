@@ -12,6 +12,6 @@ Website institucional do CEISCaramulo com frontend nextjs e base de dados Postgr
 ## Áreas principais
 
 - Website público com notícias, atividades, projetos e biblioteca
-- Backoffice com autenticação Neon Auth
+- Backoffice com autenticação administrativa compatível com runtime e export estático
 - Conteúdo rich text com media embebida
 - Comentários públicos por conteúdo
