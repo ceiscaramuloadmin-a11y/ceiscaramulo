@@ -53,7 +53,7 @@ export default function BackofficeLoginPage() {
       <p className="mt-3 text-sm text-stone-600">
         {exportAuthMode
           ? 'Use as credenciais configuradas para o modo export estático.'
-          : 'Use as credenciais administrativas configuradas no servidor para aceder à área administrativa.'}
+          : 'Use a conta administrativa criada por um owner no Firebase Authentication para aceder à área administrativa.'}
       </p>
 
       <form className="mt-8 space-y-4 rounded-xl border border-stone-200 bg-white p-6" onSubmit={handleSubmit}>

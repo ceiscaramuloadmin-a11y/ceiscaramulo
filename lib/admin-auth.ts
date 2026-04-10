@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { signInWithEmailAndPassword, signOut as signOutFromFirebase } from 'firebase/auth';
 import type { AdminPermission, AdminRole } from '@/types';
 import {
   ADMIN_SESSION_STORAGE_KEY,
@@ -13,6 +14,7 @@ import {
   type AdminSession,
   type AdminAuthMode,
 } from '@/lib/admin-auth-shared';
+import { getFirebaseClientAuth, getFirebaseCurrentUser } from '@/lib/firebase-client';
 
 type SignInResult =
   | { data: { session: AdminSession }; error: null }
@@ -71,6 +73,38 @@ function persistSession(session: AdminSession | null) {
   notifyListeners();
 }
 
+function getFirebaseAuthErrorMessage(error: unknown) {
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  if (error.message.includes('auth/configuration-not-found')) {
+    return 'O Firebase Authentication ainda não está configurado para este projeto. Ative o método Email/Password no Firebase Console e confirme o domínio autorizado.';
+  }
+
+  if (error.message.includes('auth/invalid-credential')) {
+    return 'Credenciais Firebase inválidas.';
+  }
+
+  if (error.message.includes('auth/email-already-in-use')) {
+    return 'Este email já está registado. Tente entrar em vez de criar conta.';
+  }
+
+  if (error.message.includes('auth/invalid-email')) {
+    return 'O email introduzido não é válido.';
+  }
+
+  if (error.message.includes('auth/weak-password')) {
+    return 'A palavra-passe do Firebase é demasiado fraca.';
+  }
+
+  if (error.message.includes('auth/user-not-found') || error.message.includes('auth/wrong-password') || error.message.includes('auth/invalid-login-credentials')) {
+    return 'Email ou palavra-passe incorretos.';
+  }
+
+  return null;
+}
+
 async function sha256(value: string) {
   const buffer = new TextEncoder().encode(value);
   const digest = await window.crypto.subtle.digest('SHA-256', buffer);
@@ -80,12 +114,15 @@ async function sha256(value: string) {
 }
 
 async function signInWithRuntimeSession(email: string, password: string): Promise<SignInResult> {
+  const credential = await signInWithEmailAndPassword(getFirebaseClientAuth(), email, password).catch((error) => {
+    throw new Error(getFirebaseAuthErrorMessage(error) || (error instanceof Error ? error.message : 'Não foi possível autenticar com Firebase.'));
+  });
+  const idToken = await credential.user.getIdToken();
   const response = await fetch('/api/admin/session', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
     },
-    body: JSON.stringify({ email, password }),
   });
 
   const payload = (await response.json().catch(() => null)) as
@@ -129,6 +166,64 @@ async function signInWithRuntimeSession(email: string, password: string): Promis
     data: { session },
     error: null,
   };
+}
+
+async function refreshRuntimeSession(forceRefresh = false) {
+  const user = await getFirebaseCurrentUser();
+
+  if (!user) {
+    persistSession(null);
+    return null;
+  }
+
+  const idToken = await user.getIdToken(forceRefresh);
+  const storedSession = readStoredSession();
+
+  if (
+    storedSession &&
+    storedSession.mode === 'runtime' &&
+    storedSession.token === idToken &&
+    !isAdminSessionExpired(storedSession)
+  ) {
+    return storedSession;
+  }
+
+  const response = await fetch('/api/admin/session', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        message?: string;
+        token?: string;
+        session?: { email: string; role: AdminRole; permissions: AdminPermission[]; expiresAt?: string | null };
+      }
+    | null;
+
+  if (!response.ok || !payload?.session) {
+    persistSession(null);
+    throw new Error(payload?.message || 'Não foi possível validar a sessão Firebase.');
+  }
+
+  const session = normalizeAdminSession({
+    token: payload.token ?? idToken,
+    email: payload.session.email,
+    role: payload.session.role,
+    permissions: payload.session.permissions,
+    expiresAt: payload.session.expiresAt ?? null,
+    mode: 'runtime',
+  });
+
+  if (!session) {
+    persistSession(null);
+    throw new Error('A resposta da autenticação Firebase é inválida.');
+  }
+
+  persistSession(session);
+  return session;
 }
 
 async function signInWithExportSession(email: string, password: string): Promise<SignInResult> {
@@ -196,16 +291,27 @@ export function getStoredAdminSession() {
 }
 
 export async function getAdminAccessToken() {
-  return readStoredSession()?.token ?? null;
+  const mode = getPublicAdminAuthMode();
+
+  if (mode === 'export') {
+    return readStoredSession()?.token ?? null;
+  }
+
+  const session = await refreshRuntimeSession();
+  return session?.token ?? null;
 }
 
 export const adminAuthClient = {
   adapter: {
     async getSession(): Promise<SessionResult> {
-      const session = readStoredSession();
+      const mode: AdminAuthMode = getPublicAdminAuthMode();
+      const session = mode === 'export' ? readStoredSession() : await refreshRuntimeSession();
       return { data: session ? { session } : null };
     },
     async signOut() {
+      if (getPublicAdminAuthMode() === 'runtime') {
+        await signOutFromFirebase(getFirebaseClientAuth()).catch(() => undefined);
+      }
       persistSession(null);
       return { error: null };
     },

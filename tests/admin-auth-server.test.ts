@@ -2,40 +2,44 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const originalEnv = { ...process.env };
+const verifyIdToken = vi.fn();
+
+vi.mock('@/lib/firebase-admin', () => ({
+  getFirebaseAdminAuth: () => ({
+    verifyIdToken,
+  }),
+}));
 
 afterEach(() => {
-  process.env = { ...originalEnv };
+  vi.clearAllMocks();
   vi.resetModules();
 });
 
 describe('admin-auth-server', () => {
-  it('rejects invalid credentials', async () => {
-    process.env.ADMIN_AUTH_PASSWORD = 'super-secret';
+  it('rejects an empty Firebase token', async () => {
+    const { verifyAdminSessionToken } = await import('@/lib/admin-auth-server');
 
-    const { validateAdminCredentials } = await import('@/lib/admin-auth-server');
-
-    expect(() => validateAdminCredentials({ email: 'admin@ceis.pt', password: 'wrong' })).toThrow(
-      'Credenciais administrativas inválidas.'
-    );
+    await expect(verifyAdminSessionToken('')).rejects.toThrow('Sessão Firebase inválida ou em falta.');
   });
 
-  it('creates and verifies signed admin tokens', async () => {
-    process.env.ADMIN_AUTH_PASSWORD = 'super-secret';
-    process.env.ADMIN_AUTH_SECRET = 'test-secret';
-
-    const { createAdminSessionToken, verifyAdminSessionToken } = await import('@/lib/admin-auth-server');
-
-    const { token } = await createAdminSessionToken({
-      email: 'admin@ceis.pt',
-      role: 'editor',
-      permissions: ['news', 'gallery'],
+  it('verifies Firebase ID tokens and normalizes the admin session payload', async () => {
+    verifyIdToken.mockResolvedValue({
+      uid: 'firebase-uid',
+      email: 'Admin@Ceis.pt',
+      exp: 4102444800,
+      email_verified: true,
+      ceiscaramuloRole: 'editor',
+      ceiscaramuloPermissions: ['news', 'gallery'],
     });
 
-    await expect(verifyAdminSessionToken(token)).resolves.toMatchObject({
+    const { verifyAdminSessionToken } = await import('@/lib/admin-auth-server');
+
+    await expect(verifyAdminSessionToken('firebase-token')).resolves.toMatchObject({
+      uid: 'firebase-uid',
       email: 'admin@ceis.pt',
       role: 'editor',
       permissions: ['news', 'gallery'],
+      emailVerified: true,
     });
   });
 });

@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSessionToken, validateAdminCredentials } from '@/lib/admin-auth-server';
+import { verifyAdminSessionToken } from '@/lib/admin-auth-server';
 import { getAdminByEmail, jsonError, listAdminUsers, saveAdminUsers } from '@/app/api/_lib/cms';
-import type { AdminPermission, AdminUser } from '@/types';
+import type { AdminUserRecord } from '@/app/api/_lib/cms';
+import type { AdminPermission } from '@/types';
 
 export const runtime = 'nodejs';
 
 const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
 
+async function extractFirebaseIdToken(request: NextRequest) {
+  const authorization = request.headers.get('authorization') || '';
+
+  if (authorization.startsWith('Bearer ')) {
+    const bearerToken = authorization.slice('Bearer '.length).trim();
+    if (bearerToken) {
+      return bearerToken;
+    }
+  }
+
+  const payload = (await request.json().catch(() => null)) as { idToken?: string } | null;
+  return String(payload?.idToken || '').trim();
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const payload = (await request.json().catch(() => null)) as { email?: string; password?: string } | null;
-    const email = String(payload?.email || '').trim().toLowerCase();
-    const password = String(payload?.password || '');
+    const firebaseIdToken = await extractFirebaseIdToken(request);
 
-    const validated = validateAdminCredentials({ email, password });
+    if (!firebaseIdToken) {
+      return jsonError('Sessão Firebase inválida ou em falta.', 401);
+    }
+
+    const validated = await verifyAdminSessionToken(firebaseIdToken);
     let admin = await getAdminByEmail(validated.email);
 
     if (!admin) {
@@ -30,8 +47,8 @@ export async function POST(request: NextRequest) {
             active: true,
             createdAt: now,
             updatedAt: now,
-            createdBy: 'bootstrap',
-          } satisfies AdminUser,
+            createdBy: 'firebase-bootstrap',
+          } satisfies AdminUserRecord,
         ]);
 
         admin = await getAdminByEmail(validated.email);
@@ -42,19 +59,13 @@ export async function POST(request: NextRequest) {
       return jsonError('A conta autenticada não tem acesso ao backoffice.', 403);
     }
 
-    const { token, expiresAt } = await createAdminSessionToken({
-      email: admin.email,
-      role: admin.role,
-      permissions: admin.permissions,
-    });
-
     return NextResponse.json({
-      token,
+      token: firebaseIdToken,
       session: {
         email: admin.email,
         role: admin.role,
         permissions: admin.permissions,
-        expiresAt,
+        expiresAt: validated.expiresAt,
       },
     });
   } catch (error) {

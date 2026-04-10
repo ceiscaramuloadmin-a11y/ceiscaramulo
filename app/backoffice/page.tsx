@@ -62,6 +62,9 @@ export default function BackofficePage() {
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<AdminRole>('editor');
+  const [newAdminPasswordMode, setNewAdminPasswordMode] = useState<'manual' | 'generated'>('generated');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [createdAdminPassword, setCreatedAdminPassword] = useState<string | null>(null);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [selectedAdminPermissions, setSelectedAdminPermissions] = useState<AdminPermission[]>([]);
@@ -538,19 +541,25 @@ export default function BackofficePage() {
   async function createAdminUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
+    setCreatedAdminPassword(null);
 
     try {
-      await fetchAdminEndpoint<AdminUser>('/api/admin/users', {
+      const created = await fetchAdminEndpoint<AdminUser & { generatedPassword?: string | null }>('/api/admin/users', {
         method: 'POST',
         body: JSON.stringify({
           email: newAdminEmail,
           role: newAdminRole,
+          password: newAdminPasswordMode === 'manual' ? newAdminPassword : undefined,
+          generatePassword: newAdminPasswordMode === 'generated',
         }),
       });
 
       toast.success('Utilizador admin criado com sucesso.');
       setNewAdminEmail('');
       setNewAdminRole('editor');
+      setNewAdminPassword('');
+      setNewAdminPasswordMode('generated');
+      setCreatedAdminPassword(created.generatedPassword ?? null);
       await refreshGovernance();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao criar utilizador admin.');
@@ -603,6 +612,19 @@ export default function BackofficePage() {
     setSelectedAdmin(admin);
     setSelectedAdminPermissions(admin.permissions);
     setIsAdminDialogOpen(true);
+  }
+
+  async function copyCreatedAdminPassword() {
+    if (!createdAdminPassword) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(createdAdminPassword);
+      toast.success('Palavra-passe copiada para a área de transferência.');
+    } catch {
+      toast.error('Não foi possível copiar a palavra-passe.');
+    }
   }
 
   function toggleSelectedAdminPermission(permission: AdminPermission) {
@@ -996,23 +1018,79 @@ export default function BackofficePage() {
             <h2 className="text-xl font-semibold text-[#27441d]">Gestão de utilizadores admin</h2>
             <p className="mt-1 text-sm text-stone-600">Controla quem pode aceder ao backoffice e com que papel.</p>
 
-            <form className="mt-5 grid gap-3" onSubmit={(event) => void createAdminUser(event)}>
-              <Input
-                label="Email"
-                type="email"
-                value={newAdminEmail}
-                onChange={setNewAdminEmail}
-                required
-              />
-              <SelectRole
-                label="Papel"
-                value={newAdminRole}
-                onChange={setNewAdminRole}
-              />
-              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-                Adicionar admin
-              </button>
-            </form>
+            {currentAdmin?.role === 'owner' ? (
+              <>
+                <form className="mt-5 grid gap-3" onSubmit={(event) => void createAdminUser(event)}>
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={newAdminEmail}
+                    onChange={setNewAdminEmail}
+                    required
+                  />
+                  <SelectRole
+                    label="Papel"
+                    value={newAdminRole}
+                    onChange={setNewAdminRole}
+                  />
+                  <label className="grid gap-2 text-sm text-stone-700">
+                    Palavra-passe
+                    <div className="flex rounded-lg border border-stone-300 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setNewAdminPasswordMode('generated')}
+                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'generated' ? 'bg-[#27441d] text-white' : 'text-stone-700'}`}
+                      >
+                        Gerar automaticamente
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewAdminPasswordMode('manual')}
+                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'manual' ? 'bg-[#27441d] text-white' : 'text-stone-700'}`}
+                      >
+                        Definir manualmente
+                      </button>
+                    </div>
+                  </label>
+                  {newAdminPasswordMode === 'manual' ? (
+                    <Input
+                      label="Palavra-passe inicial"
+                      type="text"
+                      value={newAdminPassword}
+                      onChange={setNewAdminPassword}
+                      required
+                    />
+                  ) : (
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                      O sistema vai gerar uma palavra-passe segura aleatória e mostrá-la após a criação da conta.
+                    </p>
+                  )}
+                  <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                    Adicionar admin
+                  </button>
+                </form>
+
+                {createdAdminPassword ? (
+                  <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm font-medium text-emerald-900">Palavra-passe gerada</p>
+                    <p className="mt-2 break-all rounded-md bg-white px-3 py-2 font-mono text-sm text-emerald-950">
+                      {createdAdminPassword}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void copyCreatedAdminPassword()}
+                      className="mt-3 rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-900"
+                    >
+                      Copiar palavra-passe
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700">
+                Apenas utilizadores com papel owner podem criar novas contas administrativas.
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white p-5">

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getFirebaseAdminAuth } from '@/lib/firebase-admin';
 import {
   appendAuditLog,
   canManageAdmins,
@@ -16,6 +17,14 @@ import type { AdminPermission, AdminRole } from '@/types';
 export const runtime = 'nodejs';
 
 const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
+const DEFAULT_EDITOR_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'audit'];
+
+function generateSecurePassword(length = 18) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*-_';
+  const values = crypto.getRandomValues(new Uint32Array(length));
+
+  return Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+}
 
 function normalizeRole(value: unknown): AdminRole {
   return value === 'owner' ? 'owner' : 'editor';
@@ -60,15 +69,26 @@ export async function POST(request: NextRequest) {
     return jsonError('Sem permissão para gerir utilizadores admin.', 403);
   }
 
+  if (context.role !== 'owner') {
+    return jsonError('Só utilizadores owner podem criar novas contas administrativas.', 403);
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const email = String(body?.email || '')
       .trim()
       .toLowerCase();
     const role = normalizeRole(body?.role);
+    const password = String(body?.password || '').trim();
+    const generatePassword = body?.generatePassword === true || !password;
+    const accountPassword = generatePassword ? generateSecurePassword() : password;
 
     if (!email) {
       return jsonError('Email é obrigatório.', 400);
+    }
+
+    if (accountPassword.length < 6) {
+      return jsonError('A palavra-passe deve ter pelo menos 6 caracteres.', 400);
     }
 
     const existing = await getAdminByEmail(email);
@@ -79,19 +99,28 @@ export async function POST(request: NextRequest) {
 
     const admins = await listAdminUsers();
     const now = new Date().toISOString();
+    const firebaseUser = await getFirebaseAdminAuth().createUser({
+      email,
+      password: accountPassword,
+    });
     const created: AdminUserRecord = {
-      id: crypto.randomUUID(),
+      id: firebaseUser.uid,
       email,
       role,
-      permissions: role === 'owner' ? [...ALL_ADMIN_PERMISSIONS] : [],
+      permissions: role === 'owner' ? [...ALL_ADMIN_PERMISSIONS] : [...DEFAULT_EDITOR_PERMISSIONS],
       active: true,
       createdAt: now,
       updatedAt: now,
       createdBy: context.email,
     };
 
-    const updatedList = [...admins, created];
-    await saveAdminUsers(updatedList);
+    try {
+      const updatedList = [...admins, created];
+      await saveAdminUsers(updatedList);
+    } catch (saveError) {
+      await getFirebaseAdminAuth().deleteUser(firebaseUser.uid).catch(() => undefined);
+      throw saveError;
+    }
 
     await appendAuditLog({
       actor: context,
@@ -102,9 +131,18 @@ export async function POST(request: NextRequest) {
       after: created,
     });
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json(
+      {
+        ...created,
+        generatedPassword: generatePassword ? accountPassword : null,
+      },
+      { status: 201 }
+    );
   } catch (caughtError) {
     console.error(caughtError);
+    if (caughtError instanceof Error && caughtError.message.includes('email address is already in use')) {
+      return jsonError('Já existe uma conta Firebase com este email.', 409);
+    }
     return jsonError('Ocorreu um erro inesperado.', 500);
   }
 }

@@ -59,6 +59,13 @@ describe('BackofficeLoginPage', () => {
     });
   });
 
+  it('does not expose public account creation controls', () => {
+    render(<BackofficeLoginPage />);
+
+    expect(screen.queryByRole('button', { name: 'Criar conta' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Confirmar palavra-passe')).not.toBeInTheDocument();
+  });
+
   it('shows the authentication error message', async () => {
     signInEmail.mockResolvedValue({ data: null, error: { message: 'Credenciais inválidas.' } });
     const user = userEvent.setup();
