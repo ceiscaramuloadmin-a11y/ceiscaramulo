@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
