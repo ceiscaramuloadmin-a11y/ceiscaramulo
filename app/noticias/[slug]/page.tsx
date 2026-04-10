@@ -16,6 +16,14 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+function toIsoString(value: string | Date | null | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
 async function getNewsArticle(slug: string) {
   if (shouldSkipPublicDb()) {
     return fallbackNewsArticles.find((article) => article.slug === slug) ?? null;
@@ -79,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           ],
       locale: 'pt_PT',
       type: 'article',
-      publishedTime: article.publishedAt ? article.publishedAt.toISOString() : undefined,
+      publishedTime: toIsoString(article.publishedAt),
       authors: [article.author],
       tags: [article.category],
     },
@@ -136,8 +144,8 @@ export default async function NoticiaDetalhePage({ params }: Props) {
     headline: article.title,
     description: article.excerpt,
     image: article.image || '/og-image.svg',
-    datePublished: article.publishedAt ? article.publishedAt.toISOString() : undefined,
-    dateModified: article.updatedAt ? article.updatedAt.toISOString() : undefined,
+    datePublished: toIsoString(article.publishedAt),
+    dateModified: toIsoString(article.updatedAt),
     author: {
       '@type': 'Person',
       name: article.author,

@@ -932,18 +932,22 @@ async function saveGalleryToStorage(items: GalleryMediaRecord[]) {
 }
 
 function getStaticGalleryFallback(): GalleryMediaRecord[] {
-  return staticGalleryItems.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: item.category || null,
-    type: item.type === 'foto' ? 'photo' : item.type === 'video' ? 'video' : 'audio',
-    source: item.url,
-    thumbnail: item.type === 'foto' ? item.url : null,
-    mimeType: null,
-    published: true,
-    createdAt: new Date(item.date).toISOString(),
-    updatedAt: new Date(item.date).toISOString(),
-  }));
+  return staticGalleryItems.map((item) => {
+    const fallbackDate = item.date ? new Date(item.date) : new Date();
+
+    return {
+      id: item.id,
+      title: item.title,
+      description: item.category || null,
+      type: item.type === 'foto' ? 'photo' : item.type === 'video' ? 'video' : 'audio',
+      source: item.url,
+      thumbnail: item.type === 'foto' ? item.url : null,
+      mimeType: null,
+      published: true,
+      createdAt: fallbackDate.toISOString(),
+      updatedAt: fallbackDate.toISOString(),
+    };
+  });
 }
 
 function isRetryableGalleryConnectionError(error: unknown) {

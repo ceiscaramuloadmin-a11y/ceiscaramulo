@@ -8,12 +8,14 @@ import {
   listAdminUsers,
   saveAdminPermissions,
   saveAdminUsers,
-  type AdminPermission,
-  type AdminRole,
   requireAdminContextFromRequest,
 } from '@/app/api/_lib/cms';
+import type { AdminUserRecord } from '@/app/api/_lib/cms';
+import type { AdminPermission, AdminRole } from '@/types';
 
 export const runtime = 'nodejs';
+
+const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
 
 function normalizeRole(value: unknown): AdminRole {
   return value === 'owner' ? 'owner' : 'editor';
@@ -77,11 +79,11 @@ export async function POST(request: NextRequest) {
 
     const admins = await listAdminUsers();
     const now = new Date().toISOString();
-    const created = {
+    const created: AdminUserRecord = {
       id: crypto.randomUUID(),
       email,
       role,
-      permissions: role === 'owner' ? ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'] : [],
+      permissions: role === 'owner' ? [...ALL_ADMIN_PERMISSIONS] : [],
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -139,10 +141,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const before = admins[index];
-    const after = {
+    const after: AdminUserRecord = {
       ...before,
       role: role ?? before.role,
-      permissions: role === 'owner' ? ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'] : permissions ?? before.permissions,
+      permissions: role === 'owner' ? [...ALL_ADMIN_PERMISSIONS] : permissions ?? before.permissions,
       active: active ?? before.active,
       updatedAt: new Date().toISOString(),
     };

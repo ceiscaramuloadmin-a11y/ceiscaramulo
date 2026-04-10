@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminSessionToken, validateAdminCredentials } from '@/lib/admin-auth-server';
 import { getAdminByEmail, jsonError, listAdminUsers, saveAdminUsers } from '@/app/api/_lib/cms';
+import type { AdminPermission, AdminUser } from '@/types';
 
 export const runtime = 'nodejs';
+
+const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,12 +26,12 @@ export async function POST(request: NextRequest) {
             id: `bootstrap:${validated.email}`,
             email: validated.email,
             role: 'owner',
-            permissions: ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'],
+            permissions: [...ALL_ADMIN_PERMISSIONS],
             active: true,
             createdAt: now,
             updatedAt: now,
             createdBy: 'bootstrap',
-          },
+          } satisfies AdminUser,
         ]);
 
         admin = await getAdminByEmail(validated.email);
