@@ -30,7 +30,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       primaryCtaHref: '/sobre-nos',
       secondaryCtaLabel: 'Ver Atividades',
       secondaryCtaHref: '/atividades',
-      imageUrl: '/hero-serra.jpg',
+      imageUrl: '',
       imageAlt: 'Vista panorâmica da Serra do Caramulo',
     },
     explore: {

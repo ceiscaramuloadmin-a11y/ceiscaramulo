@@ -62,6 +62,17 @@ export function normalizeHtml(value: string) {
   return value === '<br>' ? '' : value.trim();
 }
 
+export function prepareRichTextForRender(value: string | null | undefined) {
+  const normalized = String(value ?? '').trim();
+
+  if (!normalized) {
+    return '';
+  }
+
+  const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(normalized);
+  return hasHtmlTags ? normalized : textToHtml(normalized);
+}
+
 function walk(root: ParentNode, options: SanitizeOptions) {
   Array.from(root.childNodes).forEach((node) => {
     if (node.nodeType !== Node.ELEMENT_NODE) {
@@ -206,4 +217,3 @@ function unwrapElement(element: Element) {
 
   parent.removeChild(element);
 }
-

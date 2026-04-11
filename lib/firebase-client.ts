@@ -16,6 +16,7 @@ const firebaseConfig = {
 
 let authSingleton: Auth | null = null;
 let analyticsPromise: Promise<Analytics | null> | null = null;
+export const FIREBASE_AUTH_STATE_TIMEOUT_MS = 2500;
 
 export function getFirebaseClientApp(): FirebaseApp {
   return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -39,17 +40,36 @@ export async function getFirebaseCurrentUser(): Promise<User | null> {
   }
 
   return new Promise((resolve) => {
+    let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const finish = (user: User | null) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      unsubscribe();
+      resolve(user);
+    };
+
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        unsubscribe();
-        resolve(user);
+        finish(user);
       },
       () => {
-        unsubscribe();
-        resolve(null);
+        finish(null);
       }
     );
+
+    // Prevent the backoffice from waiting forever if Firebase never resolves auth state.
+    timeoutId = setTimeout(() => finish(null), FIREBASE_AUTH_STATE_TIMEOUT_MS);
   });
 }
 

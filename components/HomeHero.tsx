@@ -18,18 +18,11 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
 
   const heroImages = useMemo(() => {
     const raw = (hero.imageUrl || '').trim();
+    if (!raw.startsWith('data:')) {
+      return ['/placeholder.svg'];
+    }
 
-    // IMPORTANT: data URLs contain commas, so we must never split by comma.
-    // Multi-image slider supports one URL per line (or `|` as optional separator).
-    const parsed = raw.includes('\n')
-      ? raw.split(/\n+/).map((item) => item.trim()).filter(Boolean)
-      : raw.includes('|')
-        ? raw.split('|').map((item) => item.trim()).filter(Boolean)
-        : raw
-          ? [raw]
-          : [];
-
-    return parsed.length ? Array.from(new Set(parsed)) : ['/placeholder.svg'];
+    return [raw];
   }, [hero.imageUrl]);
 
   useEffect(() => {

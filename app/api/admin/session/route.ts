@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSessionToken } from '@/lib/admin-auth-server';
 import { getAdminByEmail, jsonError, listAdminUsers, saveAdminUsers } from '@/app/api/_lib/cms';
-import type { AdminUserRecord } from '@/app/api/_lib/cms';
-import type { AdminPermission } from '@/types';
 
 export const runtime = 'nodejs';
 
-const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
+const OWNER_PERMISSIONS = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'] as const;
 
-async function extractFirebaseIdToken(request: NextRequest) {
-  const authorization = request.headers.get('authorization') || '';
+function extractFirebaseIdToken(request: NextRequest) {
+  const authorization = request.headers.get('authorization') || request.headers.get('Authorization') || '';
 
-  if (authorization.startsWith('Bearer ')) {
-    const bearerToken = authorization.slice('Bearer '.length).trim();
-    if (bearerToken) {
-      return bearerToken;
-    }
+  if (!authorization.toLowerCase().startsWith('bearer ')) {
+    return '';
   }
 
-  const payload = (await request.json().catch(() => null)) as { idToken?: string } | null;
-  return String(payload?.idToken || '').trim();
+  return authorization.slice(7).trim();
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const firebaseIdToken = await extractFirebaseIdToken(request);
+    const firebaseIdToken = extractFirebaseIdToken(request);
 
     if (!firebaseIdToken) {
       return jsonError('Sessão Firebase inválida ou em falta.', 401);
@@ -40,15 +34,15 @@ export async function POST(request: NextRequest) {
         const now = new Date().toISOString();
         await saveAdminUsers([
           {
-            id: `bootstrap:${validated.email}`,
+            id: validated.uid,
             email: validated.email,
             role: 'owner',
-            permissions: [...ALL_ADMIN_PERMISSIONS],
+            permissions: [...OWNER_PERMISSIONS],
             active: true,
             createdAt: now,
             updatedAt: now,
             createdBy: 'firebase-bootstrap',
-          } satisfies AdminUserRecord,
+          },
         ]);
 
         admin = await getAdminByEmail(validated.email);
@@ -69,7 +63,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : 'Não foi possível iniciar a sessão administrativa.', 401);
+    return jsonError(
+      error instanceof Error ? error.message : 'Não foi possível iniciar a sessão administrativa.',
+      401
+    );
   }
 }
 

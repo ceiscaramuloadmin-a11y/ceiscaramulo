@@ -96,10 +96,19 @@ export default function BackofficePage() {
     description: string;
     published: boolean;
   }>>([]);
+  const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
 
   const stats = useMemo(
     () => ({ news: news.length, activities: activities.length, projects: projects.length, publications: publications.length, gallery: galleryItems.length }),
     [news.length, activities.length, projects.length, publications.length, galleryItems.length]
+  );
+  const groupedGalleryItems = useMemo(
+    () => ({
+      photo: galleryItems.filter((item) => item.type === 'photo'),
+      video: galleryItems.filter((item) => item.type === 'video'),
+      audio: galleryItems.filter((item) => item.type === 'audio'),
+    }),
+    [galleryItems]
   );
   const availableSections = useMemo(() => {
     if (!currentAdmin) {
@@ -221,6 +230,7 @@ export default function BackofficePage() {
   const refreshGallery = useCallback(async () => {
     const data = await fetchAdminEndpoint<GalleryMediaItem[]>('/api/gallery?scope=admin').catch(() => []);
     setGalleryItems(data);
+    setSelectedGalleryIds([]);
   }, [fetchAdminEndpoint]);
 
   useEffect(() => {
@@ -501,6 +511,54 @@ export default function BackofficePage() {
       await refreshGallery();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao eliminar media da galeria.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function toggleGallerySelection(id: string, checked: boolean) {
+    setSelectedGalleryIds((current) =>
+      checked ? Array.from(new Set([...current, id])) : current.filter((itemId) => itemId !== id)
+    );
+  }
+
+  function toggleGalleryTypeSelection(type: GalleryMediaType, checked: boolean) {
+    const ids = groupedGalleryItems[type].map((item) => item.id);
+    setSelectedGalleryIds((current) =>
+      checked ? Array.from(new Set([...current, ...ids])) : current.filter((itemId) => !ids.includes(itemId))
+    );
+  }
+
+  async function deleteSelectedGalleryItems(type?: GalleryMediaType) {
+    const ids = (type ? groupedGalleryItems[type].map((item) => item.id) : selectedGalleryIds).filter((id) =>
+      selectedGalleryIds.includes(id)
+    );
+
+    if (ids.length === 0) {
+      toast.error('Seleciona pelo menos um item da galeria para eliminar.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      ids.length === 1
+        ? 'Deseja eliminar o item selecionado da galeria?'
+        : `Deseja eliminar os ${ids.length} itens selecionados da galeria?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      for (const id of ids) {
+        await fetchAdminEndpoint<null>(`/api/gallery/${id}`, { method: 'DELETE' });
+      }
+
+      toast.success(ids.length === 1 ? 'Item eliminado com sucesso.' : `${ids.length} itens eliminados com sucesso.`);
+      await refreshGallery();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao eliminar itens da galeria.');
     } finally {
       setBusy(false);
     }
@@ -849,15 +907,68 @@ export default function BackofficePage() {
       ) : null}
 
       {activeSection === 'gallery' ? (
-        <SectionLayout
-          title="Galeria multimédia"
-          list={galleryItems}
-          busy={busy}
-          onNew={resetGalleryForm}
-          onEdit={(item) => startEditGallery(item as GalleryMediaItem)}
-          onDelete={(id) => void deleteGalleryItem(id)}
-          form={
-            <div className="space-y-6">
+        <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-[#27441d]">Galeria multimédia</h2>
+                <p className="mt-1 text-sm text-stone-600">Fotos, vídeos e áudios separados por tipo com preview e seleção múltipla.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={resetGalleryForm} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
+                <button
+                  type="button"
+                  onClick={() => void deleteSelectedGalleryItems()}
+                  className="rounded-lg border border-rose-300 px-3 py-2 text-sm text-rose-700"
+                  disabled={busy || selectedGalleryIds.length === 0}
+                >
+                  Eliminar selecionados
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <GalleryGroup
+                title="Fotos"
+                type="photo"
+                items={groupedGalleryItems.photo}
+                selectedIds={selectedGalleryIds}
+                busy={busy}
+                onToggleTypeSelection={toggleGalleryTypeSelection}
+                onToggleSelection={toggleGallerySelection}
+                onEdit={startEditGallery}
+                onDelete={(id) => void deleteGalleryItem(id)}
+                onDeleteSelected={() => void deleteSelectedGalleryItems('photo')}
+              />
+              <GalleryGroup
+                title="Vídeos"
+                type="video"
+                items={groupedGalleryItems.video}
+                selectedIds={selectedGalleryIds}
+                busy={busy}
+                onToggleTypeSelection={toggleGalleryTypeSelection}
+                onToggleSelection={toggleGallerySelection}
+                onEdit={startEditGallery}
+                onDelete={(id) => void deleteGalleryItem(id)}
+                onDeleteSelected={() => void deleteSelectedGalleryItems('video')}
+              />
+              <GalleryGroup
+                title="Áudios"
+                type="audio"
+                items={groupedGalleryItems.audio}
+                selectedIds={selectedGalleryIds}
+                busy={busy}
+                onToggleTypeSelection={toggleGalleryTypeSelection}
+                onToggleSelection={toggleGallerySelection}
+                onEdit={startEditGallery}
+                onDelete={(id) => void deleteGalleryItem(id)}
+                onDeleteSelected={() => void deleteSelectedGalleryItems('audio')}
+              />
+            </div>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
+            <div className={busy ? 'pointer-events-none opacity-70' : ''}>
+              <div className="space-y-6">
               <form className="space-y-4 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryBatch(event)}>
                 <div>
                   <h3 className="text-base font-semibold text-[#27441d]">Carregamento em massa</h3>
@@ -1016,8 +1127,9 @@ export default function BackofficePage() {
                 </button>
               </form>
             </div>
-          }
-        />
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {activeSection === 'admins' ? (
@@ -1274,7 +1386,6 @@ export default function BackofficePage() {
               <Input label="Hero · Linha 2" value={layoutSettings.home.hero.titleLine2} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine2: v } } }))} />
               <Input label="Hero · Linha 3" value={layoutSettings.home.hero.titleLine3} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine3: v } } }))} />
               <Input label="Hero · Linha 4" value={layoutSettings.home.hero.titleLine4} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine4: v } } }))} />
-              <Input label="Hero · Imagem URL" value={layoutSettings.home.hero.imageUrl} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, imageUrl: v } } }))} />
               <FileInput label="Hero · Upload de imagem" onFile={setHeroImageFile} />
               <Input label="Hero · Alt da imagem" value={layoutSettings.home.hero.imageAlt} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, imageAlt: v } } }))} />
               <Input label="CTA principal · Label" value={layoutSettings.home.hero.primaryCtaLabel} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, primaryCtaLabel: v } } }))} />
@@ -1468,6 +1579,123 @@ function SectionLayout({
         <div className={busy ? 'pointer-events-none opacity-70' : ''}>{form}</div>
       </div>
     </section>
+  );
+}
+
+function GalleryGroup({
+  title,
+  type,
+  items,
+  selectedIds,
+  busy,
+  onToggleTypeSelection,
+  onToggleSelection,
+  onEdit,
+  onDelete,
+  onDeleteSelected,
+}: {
+  title: string;
+  type: GalleryMediaType;
+  items: GalleryMediaItem[];
+  selectedIds: string[];
+  busy: boolean;
+  onToggleTypeSelection: (type: GalleryMediaType, checked: boolean) => void;
+  onToggleSelection: (id: string, checked: boolean) => void;
+  onEdit: (item: GalleryMediaItem) => void;
+  onDelete: (id: string) => void;
+  onDeleteSelected: () => void;
+}) {
+  const allSelected = items.length > 0 && items.every((item) => selectedIds.includes(item.id));
+  const selectedCount = items.filter((item) => selectedIds.includes(item.id)).length;
+
+  return (
+    <section className="rounded-xl border border-stone-200 p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-[#27441d]">{title}</h3>
+          <p className="text-sm text-stone-500">{items.length} item(ns)</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Check
+            label="Selecionar todos"
+            checked={allSelected}
+            onChange={(checked) => onToggleTypeSelection(type, checked)}
+          />
+          <button
+            type="button"
+            onClick={onDeleteSelected}
+            className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700"
+            disabled={busy || selectedCount === 0}
+          >
+            Eliminar selecionados
+          </button>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-stone-300 px-3 py-4 text-sm text-stone-500">
+          Sem {title.toLowerCase()} na galeria.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item) => (
+            <article key={item.id} className="rounded-lg border border-stone-200 p-3">
+              <div className="flex items-start gap-3">
+                <Check
+                  label=""
+                  checked={selectedIds.includes(item.id)}
+                  onChange={(checked) => onToggleSelection(item.id, checked)}
+                />
+                <GalleryItemPreview item={item} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
+                      <p className="mt-1 text-xs text-stone-500">
+                        {item.published ? 'Publicado' : 'Rascunho'} · {new Date(item.updatedAt).toLocaleDateString('pt-PT')}
+                      </p>
+                      {item.description ? (
+                        <p className="mt-2 text-sm leading-relaxed text-stone-600">{item.description}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => onEdit(item)} className="rounded border px-2 py-1 text-xs">Editar</button>
+                      <button type="button" onClick={() => onDelete(item.id)} className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700">Apagar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
+  if (item.type === 'photo') {
+    return <img src={item.thumbnail || item.source} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />;
+  }
+
+  if (item.type === 'video') {
+    return (
+      <video
+        src={item.source}
+        poster={item.thumbnail || undefined}
+        className="h-24 w-24 rounded-lg bg-black object-cover"
+        muted
+        playsInline
+        controls
+      />
+    );
+  }
+
+  return (
+    <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
+      <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Preview áudio</div>
+      <audio controls preload="metadata" className="w-full" src={item.source} />
+    </div>
   );
 }
 

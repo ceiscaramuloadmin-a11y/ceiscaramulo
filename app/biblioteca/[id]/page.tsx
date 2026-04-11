@@ -10,6 +10,7 @@ import { publications as fallbackPublications } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { getPublicationSlug } from '@/lib/public-content-slugs';
 import prisma from '@/lib/prisma';
+import { prepareRichTextForRender } from '@/lib/richText';
 import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
@@ -195,9 +196,10 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
           </div>
 
           <div className="mt-8 prose prose-lg max-w-none">
-            <p className="text-lg leading-relaxed text-muted-foreground">
-              {publication.description}
-            </p>
+            <div
+              className="rich-text-content text-lg leading-relaxed text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(publication.description) }}
+            />
           </div>
 
           <div className="mt-12 rounded-lg bg-muted p-6">

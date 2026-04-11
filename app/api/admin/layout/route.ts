@@ -13,6 +13,11 @@ import type { SiteLayoutSettings } from '@/types';
 
 export const runtime = 'nodejs';
 
+function normalizeHeroImageValue(value: unknown) {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized.startsWith('data:') ? normalized : '';
+}
+
 // Endpoint administrativo para leitura das definições completas do layout.
 export async function GET(request: NextRequest) {
   const { context, error } = await requireAdminContextFromRequest(request);
@@ -67,6 +72,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const merged = deepMergeSettings(defaultSiteLayoutSettings, payload) as SiteLayoutSettings;
+    merged.home.hero.imageUrl = normalizeHeroImageValue(merged.home.hero.imageUrl);
 
     if (heroImageFile) {
       merged.home.hero.imageUrl = await fileToDataUrl(heroImageFile);

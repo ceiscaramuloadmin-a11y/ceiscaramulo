@@ -1,0 +1,65 @@
+/* @vitest-environment node */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const siteLayoutFindUnique = vi.fn();
+const siteSettingFindUnique = vi.fn();
+
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    siteLayout: {
+      findUnique: siteLayoutFindUnique,
+    },
+    siteSetting: {
+      findUnique: siteSettingFindUnique,
+    },
+  },
+}));
+
+describe('public site layout settings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it('uses siteLayout JSON value when available', async () => {
+    siteLayoutFindUnique.mockResolvedValue({
+      value: {
+        home: {
+          hero: {
+            imageUrl: 'data:image/png;base64,hero-image',
+            titleLine1: 'Hero from DB',
+          },
+        },
+      },
+    });
+
+    const { getPublicSiteLayoutSettings } = await import('@/lib/site-layout-settings');
+    const settings = await getPublicSiteLayoutSettings();
+
+    expect(settings.home.hero.imageUrl).toBe('data:image/png;base64,hero-image');
+    expect(settings.home.hero.titleLine1).toBe('Hero from DB');
+    expect(siteSettingFindUnique).not.toHaveBeenCalled();
+  });
+
+  it('falls back to siteSetting string JSON when siteLayout is empty', async () => {
+    siteLayoutFindUnique.mockResolvedValue(null);
+    siteSettingFindUnique.mockResolvedValue({
+      value: JSON.stringify({
+        home: {
+          hero: {
+            imageUrl: 'data:image/jpeg;base64,legacy-hero',
+          },
+        },
+      }),
+    });
+
+    const { getPublicSiteLayoutSettings } = await import('@/lib/site-layout-settings');
+    const settings = await getPublicSiteLayoutSettings();
+
+    expect(settings.home.hero.imageUrl).toBe('data:image/jpeg;base64,legacy-hero');
+  });
+});

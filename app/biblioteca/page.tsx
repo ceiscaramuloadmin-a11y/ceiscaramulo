@@ -8,6 +8,7 @@ import { publications as fallbackPublications } from '@/data/content';
 import { getPublicationSlug } from '@/lib/public-content-slugs';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
+import { prepareRichTextForRender } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 
@@ -129,9 +130,10 @@ export default async function BibliotecaPage() {
                   <h2 className="mt-4 font-display text-xl font-bold leading-tight text-foreground group-hover:text-primary">
                     {publication.title}
                   </h2>
-                  <p className="mt-2 overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
-                    {publication.description}
-                  </p>
+                  <div
+                    className="mt-2 rich-text-content overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
+                    dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(publication.description) }}
+                  />
                   {publication.downloadUrl && (
                     <div className="mt-4">
                       <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">

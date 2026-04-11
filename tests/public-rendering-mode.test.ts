@@ -8,6 +8,11 @@ function readAppFile(path: string) {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 
+const nextConfigSource = readAppFile('next.config.js');
+const packageJson = JSON.parse(readAppFile('package.json')) as {
+  scripts?: Record<string, string>;
+};
+
 describe('public rendering mode', () => {
   it('keeps public database-backed listing pages dynamic', () => {
     for (const path of [
@@ -36,5 +41,12 @@ describe('public rendering mode', () => {
       expect(source).toContain('export const dynamicParams = true;');
       expect(source).not.toContain('export async function generateStaticParams()');
     }
+  });
+
+  it('keeps export mode out of development and clears stale chunks before next dev', () => {
+    expect(nextConfigSource).toContain("process.env.NODE_ENV === 'production'");
+    expect(nextConfigSource).toContain("process.env.NEXT_OUTPUT_MODE === 'export'");
+    expect(packageJson.scripts?.predev).toBe('rm -rf .next');
+    expect(packageJson.scripts?.dev).toBe('next dev');
   });
 });

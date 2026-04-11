@@ -21,20 +21,35 @@ export async function getPublicSiteLayoutSettings(): Promise<SiteLayoutSettings>
   }
 
   try {
-    const setting = await prisma.siteSetting.findUnique({
-      where: { key: SITE_LAYOUT_SETTINGS_KEY },
-    });
+    const prismaAny = prisma as unknown as {
+      siteLayout?: {
+        findUnique: (args: { where: { key: string } }) => Promise<{ value: unknown } | null>;
+      };
+      siteSetting: {
+        findUnique: (args: { where: { key: string } }) => Promise<{ value: string } | null>;
+      };
+    };
 
-    if (!setting?.value) {
-      return defaultSiteLayoutSettings;
+    const layoutFromJsonColumn = prismaAny.siteLayout
+      ? await prismaAny.siteLayout.findUnique({ where: { key: 'global' } })
+      : null;
+
+    if (layoutFromJsonColumn?.value) {
+      return deepMergeSettings(defaultSiteLayoutSettings, layoutFromJsonColumn.value);
     }
 
-    try {
-      const parsed = JSON.parse(setting.value) as unknown;
-      return deepMergeSettings(defaultSiteLayoutSettings, parsed);
-    } catch {
-      return defaultSiteLayoutSettings;
+    const setting = await prismaAny.siteSetting.findUnique({ where: { key: SITE_LAYOUT_SETTINGS_KEY } });
+
+    if (setting?.value) {
+      try {
+        const parsed = JSON.parse(setting.value) as unknown;
+        return deepMergeSettings(defaultSiteLayoutSettings, parsed);
+      } catch {
+        return defaultSiteLayoutSettings;
+      }
     }
+
+    return defaultSiteLayoutSettings;
   } catch (error) {
     if (isQuotaExceededError(error)) {
       siteLayoutRetryAfter = Date.now() + SITE_LAYOUT_RETRY_DELAY_MS;
