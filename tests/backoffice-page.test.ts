@@ -10,6 +10,14 @@ const backofficePageSource = readFileSync(
 );
 
 describe('backoffice news and gallery guards', () => {
+  it('exposes a dedicated contacts section in the backoffice with read-state actions', () => {
+    expect(backofficePageSource).toContain("availableSections.includes('contacts')");
+    expect(backofficePageSource).toContain("setActiveSection('contacts')");
+    expect(backofficePageSource).toContain('Mensagens de contacto');
+    expect(backofficePageSource).toContain('Marcar como lida');
+    expect(backofficePageSource).toContain('Marcar como não lida');
+  });
+
   it('keeps the news slug field hidden from the backoffice form flow', () => {
     expect(backofficePageSource).not.toContain('label="Slug"');
     expect(backofficePageSource).not.toContain('newsForm.slug');

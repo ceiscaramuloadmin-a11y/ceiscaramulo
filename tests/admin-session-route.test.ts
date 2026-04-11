@@ -70,7 +70,7 @@ describe('admin session route', () => {
     getAdminByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce({
       email: 'first@ceis.pt',
       role: 'owner',
-      permissions: ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'],
+      permissions: ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'],
       active: true,
     });
     listAdminUsers.mockResolvedValue([]);

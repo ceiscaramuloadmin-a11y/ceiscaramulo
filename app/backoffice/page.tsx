@@ -22,6 +22,7 @@ import type {
   AdminRole,
   AdminUser,
   AuditLogEntry,
+  ContactMessage,
   ContentSection,
   GalleryMediaItem,
   GalleryMediaType,
@@ -32,12 +33,13 @@ import type {
   SiteLayoutSettings,
 } from '@/types';
 
-type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'gallery' | ContentSection;
+type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'gallery' | 'contacts' | ContentSection;
 const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = [
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
   { id: 'publications', label: 'Biblioteca' },
+  { id: 'contacts', label: 'Contactos' },
   { id: 'gallery', label: 'Galeria' },
   { id: 'layout', label: 'Layout' },
   { id: 'admins', label: 'Admins' },
@@ -55,6 +57,7 @@ export default function BackofficePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryMediaItem[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
@@ -99,8 +102,15 @@ export default function BackofficePage() {
   const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
 
   const stats = useMemo(
-    () => ({ news: news.length, activities: activities.length, projects: projects.length, publications: publications.length, gallery: galleryItems.length }),
-    [news.length, activities.length, projects.length, publications.length, galleryItems.length]
+    () => ({
+      news: news.length,
+      activities: activities.length,
+      projects: projects.length,
+      publications: publications.length,
+      contacts: contactMessages.length,
+      gallery: galleryItems.length,
+    }),
+    [news.length, activities.length, projects.length, publications.length, contactMessages.length, galleryItems.length]
   );
   const groupedGalleryItems = useMemo(
     () => ({
@@ -128,6 +138,7 @@ export default function BackofficePage() {
       }
     }
 
+    if (currentAdmin.role === 'owner' || permissionSet.has('contacts')) sections.push('contacts');
     if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) sections.push('gallery');
     if (currentAdmin.role === 'owner' || permissionSet.has('admins')) sections.push('admins');
     if (currentAdmin.role === 'owner' || permissionSet.has('audit')) sections.push('audit');
@@ -222,6 +233,11 @@ export default function BackofficePage() {
     setAuditLogs(auditData);
   }, [fetchAdminEndpoint]);
 
+  const refreshContactMessages = useCallback(async () => {
+    const data = await fetchAdminEndpoint<ContactMessage[]>('/api/admin/contact-messages').catch(() => []);
+    setContactMessages(data);
+  }, [fetchAdminEndpoint]);
+
   const refreshLayout = useCallback(async () => {
     const data = await fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout').catch(() => defaultSiteLayoutSettings);
     setLayoutSettings(data);
@@ -266,7 +282,7 @@ export default function BackofficePage() {
         const me = await fetchAdminEndpoint<{ email: string; role: AdminRole; permissions: AdminPermission[] }>('/api/admin/me');
         setCurrentAdmin(me);
 
-        await Promise.allSettled([refreshAll(), refreshGovernance(), refreshLayout(), refreshGallery()]);
+        await Promise.allSettled([refreshAll(), refreshGovernance(), refreshLayout(), refreshGallery(), refreshContactMessages()]);
       } catch (error) {
         if (error instanceof Error && (error.message.includes('Sessão administrativa expirada') || error.message.includes('401'))) {
           await adminAuthClient.adapter.signOut().catch(() => undefined);
@@ -280,7 +296,24 @@ export default function BackofficePage() {
     };
 
     void bootstrap();
-  }, [exportAuthMode, fetchAdminEndpoint, refreshAll, refreshGovernance, refreshLayout, refreshGallery, router]);
+  }, [exportAuthMode, fetchAdminEndpoint, refreshAll, refreshGovernance, refreshLayout, refreshGallery, refreshContactMessages, router]);
+
+  async function updateContactMessage(id: string, read: boolean) {
+    setBusy(true);
+
+    try {
+      await fetchAdminEndpoint<ContactMessage>('/api/admin/contact-messages', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, read }),
+      });
+      toast.success(read ? 'Mensagem marcada como lida.' : 'Mensagem marcada como não lida.');
+      await refreshContactMessages();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao atualizar a mensagem.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!availableSections.includes(activeSection)) {
@@ -830,6 +863,7 @@ export default function BackofficePage() {
         {availableSections.includes('activities') ? <button type="button" onClick={() => setActiveSection('activities')} className={tabClass(activeSection === 'activities')}>Atividades</button> : null}
         {availableSections.includes('projects') ? <button type="button" onClick={() => setActiveSection('projects')} className={tabClass(activeSection === 'projects')}>Projetos</button> : null}
         {availableSections.includes('publications') ? <button type="button" onClick={() => setActiveSection('publications')} className={tabClass(activeSection === 'publications')}>Biblioteca</button> : null}
+        {availableSections.includes('contacts') ? <button type="button" onClick={() => setActiveSection('contacts')} className={tabClass(activeSection === 'contacts')}>Contactos</button> : null}
         {availableSections.includes('gallery') ? <button type="button" onClick={() => setActiveSection('gallery')} className={tabClass(activeSection === 'gallery')}>Galeria</button> : null}
         {availableSections.includes('admins') ? <button type="button" onClick={() => setActiveSection('admins')} className={tabClass(activeSection === 'admins')}>Admins</button> : null}
         {availableSections.includes('audit') ? <button type="button" onClick={() => setActiveSection('audit')} className={tabClass(activeSection === 'audit')}>Auditoria</button> : null}
@@ -842,6 +876,7 @@ export default function BackofficePage() {
           <Card title="Atividades" value={stats.activities} />
           <Card title="Projetos" value={stats.projects} />
           <Card title="Biblioteca" value={stats.publications} />
+          <Card title="Contactos" value={stats.contacts} />
           <Card title="Galeria" value={stats.gallery} />
         </section>
       ) : null}
@@ -904,6 +939,83 @@ export default function BackofficePage() {
           onDelete={(id) => void deleteSectionItem('publications', id)}
           form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{editingId ? 'Guardar alterações' : 'Criar publicação'}</button></form>}
         />
+      ) : null}
+
+      {activeSection === 'contacts' ? (
+        <section className="mt-8 grid gap-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-[#27441d]">Mensagens de contacto</h2>
+                <p className="mt-1 text-sm text-stone-600">
+                  Mensagens enviadas pelo formulário público de contactos.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void refreshContactMessages()}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700"
+                disabled={busy}
+              >
+                Atualizar
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {contactMessages.map((message) => (
+                <article key={message.id} className="rounded-2xl border border-stone-200 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-semibold text-[#27441d]">{message.subject}</p>
+                      <p className="mt-1 text-sm text-stone-600">
+                        {message.name} · {message.email}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-stone-400">
+                        {new Date(message.createdAt).toLocaleString('pt-PT')}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        message.read
+                          ? 'rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900'
+                          : 'rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900'
+                      }
+                    >
+                      {message.read ? 'Lida' : 'Não lida'}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm leading-7 text-stone-700">
+                    {message.message}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <a
+                      href={`mailto:${message.email}?subject=${encodeURIComponent(`RE: ${message.subject}`)}`}
+                      className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700"
+                    >
+                      Responder por email
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void updateContactMessage(message.id, !message.read)}
+                      className="rounded-lg bg-[#27441d] px-3 py-2 text-sm text-white"
+                      disabled={busy}
+                    >
+                      {message.read ? 'Marcar como não lida' : 'Marcar como lida'}
+                    </button>
+                  </div>
+                </article>
+              ))}
+
+              {contactMessages.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-stone-300 px-4 py-6 text-sm text-stone-500">
+                  Ainda não há mensagens enviadas pela página de contactos.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {activeSection === 'gallery' ? (

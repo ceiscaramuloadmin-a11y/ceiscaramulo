@@ -13,6 +13,7 @@ describe('admin-auth-shared', () => {
       'activities',
       'projects',
       'publications',
+      'contacts',
       'gallery',
       'layout',
       'admins',
@@ -22,7 +23,7 @@ describe('admin-auth-shared', () => {
 
   it('filters invalid editor permissions and falls back when empty', () => {
     expect(parseAdminPermissions(['news', 'invalid', 'gallery'], 'editor')).toEqual(['news', 'gallery']);
-    expect(parseAdminPermissions([], 'editor')).toEqual(['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'audit']);
+    expect(parseAdminPermissions([], 'editor')).toEqual(['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'audit']);
   });
 
   it('normalizes a persisted admin session', () => {
@@ -39,7 +40,7 @@ describe('admin-auth-shared', () => {
       token: 'abc',
       email: 'admin@ceis.pt',
       role: 'owner',
-      permissions: ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'],
+      permissions: ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'],
       expiresAt: '2099-01-01T00:00:00.000Z',
       mode: 'runtime',
     });

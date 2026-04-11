@@ -15,17 +15,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [news, activities, projects, publications] = await Promise.all([
+    const [news, activities, projects, publications, contacts] = await Promise.all([
       prisma.news.count(),
       prisma.activity.count(),
       prisma.project.count(),
       prisma.publication.count(),
+      prisma.contactMessage.count(),
     ]);
 
-    return NextResponse.json({ news, activities, projects, publications });
+    return NextResponse.json({ news, activities, projects, publications, contacts });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: 'Ocorreu um erro inesperado.' }, { status: 500 });
   }
 }
-

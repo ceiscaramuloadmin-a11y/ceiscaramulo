@@ -126,6 +126,16 @@ export interface ContactInfo {
   };
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
 export interface SEOData {
   title: string;
   description: string;
@@ -149,6 +159,7 @@ export interface AdminStats {
   activities: number;
   projects: number;
   publications: number;
+  contacts: number;
 }
 
 export type AdminRole = 'owner' | 'editor';
@@ -157,6 +168,7 @@ export type AdminPermission =
   | 'activities'
   | 'projects'
   | 'publications'
+  | 'contacts'
   | 'gallery'
   | 'layout'
   | 'admins'

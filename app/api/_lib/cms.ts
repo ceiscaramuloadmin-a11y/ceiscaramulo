@@ -12,9 +12,9 @@ export type ContentSection = 'news' | 'activities' | 'projects' | 'publications'
 
 // Perfis de administração suportados no backoffice.
 export type AdminRole = 'owner' | 'editor';
-export const ADMIN_PERMISSION_KEYS = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'] as const;
+export const ADMIN_PERMISSION_KEYS = ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'] as const;
 const ADMIN_PERMISSIONS_STORAGE_KEY = 'admin_permissions';
-const DEFAULT_EDITOR_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'audit'];
+const DEFAULT_EDITOR_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'audit'];
 
 export type AdminUserRecord = {
   id: string;

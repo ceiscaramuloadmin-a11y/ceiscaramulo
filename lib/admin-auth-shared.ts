@@ -14,7 +14,7 @@ export type AdminSession = {
   mode: AdminAuthMode;
 };
 
-const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
+const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'];
 
 export function getPublicAdminAuthMode(): AdminAuthMode {
   return process.env.NEXT_PUBLIC_ADMIN_AUTH_MODE === 'export' ? 'export' : 'runtime';
@@ -25,7 +25,7 @@ export function getDefaultAdminPermissions(role: AdminRole) {
     return [...ALL_ADMIN_PERMISSIONS];
   }
 
-  return ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'audit'] as AdminPermission[];
+  return ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'audit'] as AdminPermission[];
 }
 
 export function normalizeAdminRole(value: unknown): AdminRole {

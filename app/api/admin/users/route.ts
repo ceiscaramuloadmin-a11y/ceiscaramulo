@@ -16,8 +16,8 @@ import type { AdminPermission, AdminRole } from '@/types';
 
 export const runtime = 'nodejs';
 
-const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'];
-const DEFAULT_EDITOR_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'audit'];
+const ALL_ADMIN_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'];
+const DEFAULT_EDITOR_PERMISSIONS: AdminPermission[] = ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'audit'];
 
 function generateSecurePassword(length = 18) {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*-_';
@@ -39,7 +39,7 @@ function normalizePermissions(value: unknown): AdminPermission[] {
     .map((item) => String(item))
     .filter(
       (item): item is AdminPermission =>
-        ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'].includes(item)
+        ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'].includes(item)
     );
 }
 

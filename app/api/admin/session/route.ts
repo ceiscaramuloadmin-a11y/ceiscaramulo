@@ -4,7 +4,7 @@ import { getAdminByEmail, jsonError, listAdminUsers, saveAdminUsers } from '@/ap
 
 export const runtime = 'nodejs';
 
-const OWNER_PERMISSIONS = ['news', 'activities', 'projects', 'publications', 'gallery', 'layout', 'admins', 'audit'] as const;
+const OWNER_PERMISSIONS = ['news', 'activities', 'projects', 'publications', 'contacts', 'gallery', 'layout', 'admins', 'audit'] as const;
 
 function extractFirebaseIdToken(request: NextRequest) {
   const authorization = request.headers.get('authorization') || request.headers.get('Authorization') || '';
