@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { layoutIconMap } from '@/lib/layout-icons';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
+import { MAX_INLINE_AUDIO_UPLOAD_BYTES, getInlineAudioUploadErrorMessage } from '@/lib/gallery-upload';
 import type {
   Activity,
   AdminPermission,
@@ -70,7 +71,7 @@ export default function BackofficePage() {
   const [selectedAdminPermissions, setSelectedAdminPermissions] = useState<AdminPermission[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newsForm, setNewsForm] = useState({ title: '', slug: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
+  const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null as File | null, removeImage: false });
   const [projectForm, setProjectForm] = useState({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null as File | null, removeImage: false });
   const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null as File | null, removeImage: false });
@@ -309,7 +310,7 @@ export default function BackofficePage() {
 
   function resetCurrentForm() {
     setEditingId(null);
-    if (activeSection === 'news') setNewsForm({ title: '', slug: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
+    if (activeSection === 'news') setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
     if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false });
     if (activeSection === 'projects') setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false });
     if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false });
@@ -383,6 +384,15 @@ export default function BackofficePage() {
 
     const acceptedPrefix =
       galleryBatchType === 'photo' ? 'image/' : galleryBatchType === 'video' ? 'video/' : 'audio/';
+
+    const rejectedLargeAudio = Array.from(files).some(
+      (file) => galleryBatchType === 'audio' && file.type.startsWith('audio/') && file.size > MAX_INLINE_AUDIO_UPLOAD_BYTES
+    );
+
+    if (rejectedLargeAudio) {
+      toast.error(getInlineAudioUploadErrorMessage());
+      return;
+    }
 
     const nextItems = Array.from(files)
       .filter((file) => file.type.startsWith(acceptedPrefix))
@@ -647,7 +657,6 @@ export default function BackofficePage() {
     event.preventDefault();
     const fd = new FormData();
     fd.append('title', newsForm.title);
-    fd.append('slug', newsForm.slug);
     fd.append('excerpt', newsForm.excerpt);
     fd.append('content', newsForm.content);
     fd.append('author', newsForm.author);
@@ -708,7 +717,7 @@ export default function BackofficePage() {
 
     if (section === 'news') {
       const v = item as NewsArticle;
-      setNewsForm({ title: v.title || '', slug: v.slug || '', excerpt: v.excerpt || '', content: v.content || '', author: v.author || '', published: v.published, publishedAt: v.publishedAt ? new Date(v.publishedAt).toISOString().slice(0, 10) : '', imageFile: null, removeImage: false });
+      setNewsForm({ title: v.title || '', excerpt: v.excerpt || '', content: v.content || '', author: v.author || '', published: v.published, publishedAt: v.publishedAt ? new Date(v.publishedAt).toISOString().slice(0, 10) : '', imageFile: null, removeImage: false });
     }
     if (section === 'activities') {
       const v = item as Activity;
@@ -784,13 +793,12 @@ export default function BackofficePage() {
           title="Notícias"
           list={news}
           busy={busy}
-          onNew={() => { setEditingId(null); setNewsForm({ title: '', slug: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false }); }}
+          onNew={() => { setEditingId(null); setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('news', item as NewsArticle)}
           onDelete={(id) => void deleteSectionItem('news', id)}
           form={
             <form className="space-y-3" onSubmit={(event) => void handleNewsSubmit(event)}>
               <Input label="Título" value={newsForm.title} onChange={(v) => setNewsForm((c) => ({ ...c, title: v }))} required />
-              <Input label="Slug" value={newsForm.slug} onChange={(v) => setNewsForm((c) => ({ ...c, slug: v }))} />
               <Input label="Resumo" value={newsForm.excerpt} onChange={(v) => setNewsForm((c) => ({ ...c, excerpt: v }))} required />
               <RichTextEditor label="Conteúdo" value={newsForm.content} onChange={(v) => setNewsForm((c) => ({ ...c, content: v }))} />
               <Input label="Autor" value={newsForm.author} onChange={(v) => setNewsForm((c) => ({ ...c, author: v }))} required />

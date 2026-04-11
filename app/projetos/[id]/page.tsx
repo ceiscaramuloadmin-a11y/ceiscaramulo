@@ -13,6 +13,9 @@ import prisma from '@/lib/prisma';
 import { formatDate, formatShortDate, capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -102,33 +105,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  if (shouldSkipPublicDb()) {
-    return fallbackProjects.map((project) => ({
-      id: getProjectSlug(project),
-    }));
-  }
-
-  try {
-    const projects = await prisma.project.findMany({
-      where: { published: true },
-      select: { id: true, title: true },
-    });
-    return projects.map((project) => ({
-      id: getProjectSlug(project),
-    }));
-  } catch (error) {
-    if (isPublicDbQuotaExceededError(error)) {
-      markPublicDbQuotaExceeded('project static params');
-    } else {
-      console.warn('Error generating project static params; using fallback data.');
-    }
-    return fallbackProjects.map((project) => ({
-      id: getProjectSlug(project),
-    }));
-  }
-}
-
 export default async function ProjetoDetalhePage({ params }: Props) {
   const { id } = await params;
   const project = await getProject(id);
@@ -193,15 +169,13 @@ export default async function ProjetoDetalhePage({ params }: Props) {
             {project.title}
           </h1>
 
-          {project.image && (
-            <div className="mt-8 overflow-hidden rounded-lg">
-              <img
-                src={getAssetUrl(project.image)}
-                alt={project.title}
-                className="h-auto w-full object-cover"
-              />
-            </div>
-          )}
+          <div className="mt-8 overflow-hidden rounded-lg">
+            <img
+              src={getAssetUrl(project.image)}
+              alt={project.title}
+              className="h-auto w-full object-cover"
+            />
+          </div>
 
           <div className="mt-8 prose prose-lg max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">

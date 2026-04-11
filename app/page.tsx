@@ -9,6 +9,8 @@ import { contactInfo, siteConfig } from '@/data/site';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'CEISCaramulo — Centro de Estudos e Interpretação da Serra do Caramulo',
   description:

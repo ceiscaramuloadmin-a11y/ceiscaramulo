@@ -5,6 +5,8 @@ import Footer from '@/components/Footer';
 import { layoutIconMap } from '@/lib/layout-icons';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'A Serra do Caramulo | CEISCaramulo',
   description: 'Descubra a geografia, flora, fauna e geologia da Serra do Caramulo - um território único no centro de Portugal.',

@@ -12,6 +12,9 @@ import prisma from '@/lib/prisma';
 import { formatDate, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -103,33 +106,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  if (shouldSkipPublicDb()) {
-    return fallbackNewsArticles.map((article) => ({
-      slug: article.slug,
-    }));
-  }
-
-  try {
-    const articles = await prisma.news.findMany({
-      where: { published: true },
-      select: { slug: true },
-    });
-    return articles.map((article) => ({
-      slug: article.slug,
-    }));
-  } catch (error) {
-    if (isPublicDbQuotaExceededError(error)) {
-      markPublicDbQuotaExceeded('news static params');
-    } else {
-      console.warn('Error generating news static params; using fallback data.');
-    }
-    return fallbackNewsArticles.map((article) => ({
-      slug: article.slug,
-    }));
-  }
-}
-
 export default async function NoticiaDetalhePage({ params }: Props) {
   const { slug } = await params;
   const article = await getNewsArticle(slug);
@@ -201,15 +177,13 @@ export default async function NoticiaDetalhePage({ params }: Props) {
             {article.title}
           </h1>
 
-          {article.image && (
-            <div className="mt-8 overflow-hidden rounded-lg">
-              <img
-                src={getAssetUrl(article.image)}
-                alt={article.title}
-                className="h-auto w-full object-cover"
-              />
-            </div>
-          )}
+          <div className="mt-8 overflow-hidden rounded-lg">
+            <img
+              src={getAssetUrl(article.image)}
+              alt={article.title}
+              className="h-auto w-full object-cover"
+            />
+          </div>
 
           <div className="mt-8 prose prose-lg max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">

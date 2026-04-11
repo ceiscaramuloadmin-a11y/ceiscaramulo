@@ -11,6 +11,8 @@ import prisma from '@/lib/prisma';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatShortDate, getAssetUrl } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Projetos | CEISCaramulo',
   description: 'Projetos de investigação, conservação e educação ambiental do CEISCaramulo na Serra do Caramulo.',
@@ -101,15 +103,13 @@ export default async function ProjetosPage() {
                   href={`/projetos/${getProjectSlug(project)}`}
                   className="group rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  {project.image && (
-                    <div className="mb-4 overflow-hidden rounded-lg">
-                      <img
-                        src={getAssetUrl(project.image)}
-                        alt={project.title}
-                        className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                  )}
+                  <div className="mb-4 overflow-hidden rounded-lg">
+                    <img
+                      src={getAssetUrl(project.image)}
+                      alt={project.title}
+                      className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />

@@ -8,6 +8,8 @@ import { teamMembers } from '@/data/content';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { contactInfo, siteConfig } from '@/data/site';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Sobre Nós | CEISCaramulo',
   description: 'Conheça a missão, história e equipa do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',

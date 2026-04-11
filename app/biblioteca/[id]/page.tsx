@@ -13,6 +13,9 @@ import prisma from '@/lib/prisma';
 import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -111,33 +114,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  if (shouldSkipPublicDb()) {
-    return fallbackPublications.map((publication) => ({
-      id: getPublicationSlug(publication),
-    }));
-  }
-
-  try {
-    const publications = await prisma.publication.findMany({
-      where: { published: true },
-      select: { id: true, title: true },
-    });
-    return publications.map((publication) => ({
-      id: getPublicationSlug(publication),
-    }));
-  } catch (error) {
-    if (isPublicDbQuotaExceededError(error)) {
-      markPublicDbQuotaExceeded('publication static params');
-    } else {
-      console.warn('Error generating publication static params; using fallback data.');
-    }
-    return fallbackPublications.map((publication) => ({
-      id: getPublicationSlug(publication),
-    }));
-  }
-}
-
 export default async function PublicacaoDetalhePage({ params }: Props) {
   const { id } = await params;
   const publication = await getPublication(id);
@@ -210,15 +186,13 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
             {publication.title}
           </h1>
 
-          {publication.coverImage && (
-            <div className="mt-8 overflow-hidden rounded-lg">
-              <img
-                src={getAssetUrl(publication.coverImage)}
-                alt={publication.title}
-                className="h-auto w-full object-cover"
-              />
-            </div>
-          )}
+          <div className="mt-8 overflow-hidden rounded-lg">
+            <img
+              src={getAssetUrl(publication.coverImage)}
+              alt={publication.title}
+              className="h-auto w-full object-cover"
+            />
+          </div>
 
           <div className="mt-8 prose prose-lg max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">

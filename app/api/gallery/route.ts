@@ -8,6 +8,7 @@ import {
   requireAdminContextFromRequest,
   requireAdminFromRequest,
 } from '@/app/api/_lib/cms';
+import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@/lib/gallery-upload';
 import type { GalleryMediaType } from '@/types';
 
 export const runtime = 'nodejs';
@@ -62,6 +63,10 @@ export async function POST(request: NextRequest) {
     const thumbFileRaw = formData.get('thumbnailFile');
     const thumbnailFile = thumbFileRaw instanceof File && thumbFileRaw.size > 0 ? thumbFileRaw : null;
 
+    if (isInlineAudioUploadTooLarge(sourceFile, type)) {
+      return jsonError(getInlineAudioUploadErrorMessage(), 413);
+    }
+
     const source = sourceFile ? await fileToDataUrl(sourceFile) : sourceUrl;
     const thumbnail = thumbnailFile ? await fileToDataUrl(thumbnailFile) : thumbUrl || null;
 
@@ -100,4 +105,3 @@ export async function POST(request: NextRequest) {
     return jsonError(caughtError instanceof Error ? caughtError.message : 'Ocorreu um erro inesperado.', 500);
   }
 }
-

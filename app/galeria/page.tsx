@@ -4,6 +4,8 @@ import Footer from '@/components/Footer';
 import GalleryTabs from '@/components/GalleryTabs';
 import { listGalleryMedia } from '@/app/api/_lib/cms';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Galeria Multimédia | CEISCaramulo',
   description: 'Galeria multimédia do CEISCaramulo com fotografias, vídeos e áudios sobre a Serra do Caramulo.',
@@ -59,4 +61,3 @@ export default async function GaleriaPage() {
     </>
   );
 }
-
