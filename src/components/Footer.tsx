@@ -30,9 +30,9 @@ const footerColumns = [
 ];
 
 const socialLinks = [
-  { label: 'Instagram', href: contactInfo.socialMedia.instagram },
+  // { label: 'Instagram', href: contactInfo.socialMedia.instagram },
   { label: 'Facebook', href: contactInfo.socialMedia.facebook },
-  { label: 'YouTube', href: contactInfo.socialMedia.youtube },
+  // { label: 'YouTube', href: contactInfo.socialMedia.youtube },
 ].filter((item): item is { label: string; href: string } => Boolean(item.href));
 
 const Footer: React.FC = () => {

@@ -9,12 +9,12 @@ export const siteConfig = {
   url: 'https://ceiscaramulo.pt',
   locale: 'pt_PT',
   founded: 2010,
-  email: 'geral@ceiscaramulo.pt',
+  email: 'ceiscaramulo@gmail.com',
   ogImage: '/og-image.svg',
   socialProfiles: [
-    'https://facebook.com/ceiscaramulo',
-    'https://instagram.com/ceiscaramulo',
-    'https://youtube.com/@ceiscaramulo',
+    'https://facebook.com/CEISCaramulo',
+    // 'https://instagram.com/ceiscaramulo',
+    // 'https://youtube.com/@ceiscaramulo',
   ],
 };
 
@@ -32,12 +32,12 @@ export const contactInfo: ContactInfo = {
   address: 'Rua Principal, n.º 10',
   postalCode: '3460-050',
   city: 'Caramulo',
-  phone: '+351 232 861 000',
+  phone: '+351 966 717 360',
   email: siteConfig.email,
   coordinates: { lat: 40.5731, lng: -8.1683 },
   socialMedia: {
-    facebook: 'https://facebook.com/ceiscaramulo',
-    instagram: 'https://instagram.com/ceiscaramulo',
-    youtube: 'https://youtube.com/@ceiscaramulo',
+    facebook: 'https://facebook.com/CEISCaramulo',
+    // instagram: 'https://instagram.com/ceiscaramulo',
+    // youtube: 'https://youtube.com/@ceiscaramulo',
   },
 };
