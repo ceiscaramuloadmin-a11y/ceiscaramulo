@@ -1,10 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Mail, MapPin, Phone, TreePine, Users } from 'lucide-react';
+import { Award, Landmark, Mail, MapPin, Phone, Users2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { teamMembers } from '@/data/content';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { contactInfo, siteConfig } from '@/data/site';
 
@@ -12,11 +11,11 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Sobre Nós | CEISCaramulo',
-  description: 'Conheça a missão, história e equipa do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',
-  keywords: ['sobre nós', 'CEISCaramulo', 'Serra do Caramulo', 'missão', 'equipa', 'história'],
+  description: 'Conheça a missão, a origem e os corpos sociais do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',
+  keywords: ['sobre nós', 'CEISCaramulo', 'Serra do Caramulo', 'missão', 'história', 'corpos sociais'],
   openGraph: {
     title: 'Sobre Nós | CEISCaramulo',
-    description: 'Conheça a missão, história e equipa do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',
+    description: 'Conheça a missão, a origem e os corpos sociais do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',
     url: 'https://ceiscaramulo.pt/sobre-nos',
     siteName: 'CEISCaramulo',
     images: [
@@ -33,13 +32,42 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Sobre Nós | CEISCaramulo',
-    description: 'Conheça a missão, história e equipa do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',
+    description: 'Conheça a missão, a origem e os corpos sociais do CEISCaramulo - Centro de Estudos e Interpretação da Serra do Caramulo.',
     images: ['/og-image.svg'],
   },
   alternates: {
     canonical: '/sobre-nos',
   },
 };
+
+const socialBodies = [
+  {
+    title: 'Mesa da Assembleia Geral',
+    members: [
+      'Presidente: Maria Nazaré Gonçalves Gouveia',
+      '1.º Secretário: Rosa Maria Pereira Loureiro Soares',
+      '2.º Secretário: Maria Dolores da Veiga Gonçalves',
+    ],
+  },
+  {
+    title: 'Direção',
+    members: [
+      'Presidente: Luís Filipe Rodrigues da Costa',
+      'Vice-Presidente: Fernanda Marques Ferreira Martins',
+      '1.º Vogal: Maria Celeste Bastos Monteiro',
+      '2.º Vogal: Rosa Maria Marques Coimbra Fernandes',
+      '3.º Vogal: Pedro Luís Silva Pereira',
+    ],
+  },
+  {
+    title: 'Conselho Fiscal',
+    members: [
+      'Presidente: António Augusto Ferreira',
+      '1.º Vogal: António Dias',
+      '2.º Vogal: Fernanda Maria Amaral Rodrigues Pereira',
+    ],
+  },
+];
 
 export default async function SobreNosPage() {
   const layout = await getPublicSiteLayoutSettings();
@@ -58,49 +86,80 @@ export default async function SobreNosPage() {
             </p>
           </div>
 
-          <div className="grid gap-12 lg:grid-cols-2">
-            <div>
-              <h2 className="font-display text-3xl font-bold text-foreground">A Nossa Missão</h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                O CEISCaramulo é uma associação sem fins lucrativos dedicada ao estudo, preservação e divulgação do património natural, cultural e histórico da Serra do Caramulo.
-              </p>
-              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Fundada em {siteConfig.founded}, a nossa organização trabalha incansavelmente para proteger este território único, promovendo a investigação científica, a educação ambiental e o desenvolvimento sustentável da região.
-              </p>
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-8">
+              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                    <Landmark className="h-6 w-6 text-primary" />
+                  </div>
+                  <h2 className="font-display text-3xl font-bold text-foreground">Quem Somos</h2>
+                </div>
+                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+                  O CEISCaramulo é uma associação legalmente constituída, sem fins lucrativos, sediada na vila do Caramulo, no edifício do Turismo. A sua missão passa por promover o estudo e a investigação nos vários domínios ligados à Serra do Caramulo, desde o ambiente à geografia, da biologia à geologia, da história à etnografia e à gastronomia.
+                </p>
+                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                  Este trabalho é pensado com um olhar simultaneamente científico, cultural e económico, valorizando o património material e imaterial da região e promovendo o empreendedorismo local como parte de uma estratégia de desenvolvimento sustentável.
+                </p>
+                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                  Conhecer aquilo que distingue a Serra do Caramulo é, para o CEISCaramulo, a base para projetar o futuro e valorizar o que já existe.
+                </p>
+              </section>
 
-              <div className="mt-8 rounded-lg bg-muted p-6">
-                <h3 className="font-display text-xl font-bold text-foreground">Os Nossos Valores</h3>
-                <ul className="mt-4 space-y-3">
-                  <li className="flex items-start gap-3">
-                    <TreePine className="mt-1 h-5 w-5 shrink-0 text-primary" />
-                    <span className="text-muted-foreground">Preservação do património natural e cultural</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Users className="mt-1 h-5 w-5 shrink-0 text-primary" />
-                    <span className="text-muted-foreground">Educação ambiental e sensibilização comunitária</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-primary" />
-                    <span className="text-muted-foreground">Investigação científica e divulgação de conhecimento</span>
-                  </li>
-                </ul>
-              </div>
+              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                    <Award className="h-6 w-6 text-primary" />
+                  </div>
+                  <h2 className="font-display text-3xl font-bold text-foreground">Como Nasceu</h2>
+                </div>
+                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+                  A ideia de criar o Centro de Estudos e Interpretação da Serra do Caramulo nasceu no âmbito do projeto “Conhecer o que é nosso, para preservar e valorizar”, apresentado pelo então Agrupamento de Escolas do Caramulo ao concurso promovido pela Fundação Montepio.
+                </p>
+                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                  Esse projeto recebeu o Prémio Escolar Montepio 2011, no valor de 25 mil euros, e foi esse impulso que ajudou a transformar a visão inicial numa associação ativa e enraizada no território.
+                </p>
+              </section>
+
+              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                    <Users2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <h2 className="font-display text-3xl font-bold text-foreground">Fundadores</h2>
+                </div>
+                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+                  O grupo fundador que concretizou a Associação CEISCaramulo reuniu pessoal docente e não docente, encarregados de educação da Escola EB 2,3 do Caramulo e do Agrupamento de Escolas de Tondela Tomaz Ribeiro, as freguesias do território da Serra do Caramulo representadas pelas respetivas juntas e ainda o vereador do pelouro da Cultura e Educação da Câmara Municipal de Tondela.
+                </p>
+              </section>
             </div>
 
-            <div>
-              <h2 className="font-display text-3xl font-bold text-foreground">A Nossa Equipa</h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Uma equipa multidisciplinar dedicada à preservação e estudo da Serra do Caramulo.
-              </p>
+            <div className="space-y-8">
+              <section className="rounded-[28px] border border-border bg-muted p-8">
+                <h2 className="font-display text-3xl font-bold text-foreground">Corpos Sociais</h2>
+                <div className="mt-6 space-y-5">
+                  {socialBodies.map((group) => (
+                    <article key={group.title} className="rounded-2xl border border-border bg-white p-5">
+                      <h3 className="font-display text-xl font-bold text-foreground">{group.title}</h3>
+                      <ul className="mt-4 space-y-2">
+                        {group.members.map((member) => (
+                          <li key={member} className="text-sm leading-6 text-muted-foreground">
+                            {member}
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  ))}
+                </div>
+              </section>
 
-              <div className="mt-8 grid gap-6">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="rounded-lg border border-border bg-card p-6">
-                    <h3 className="font-display text-xl font-bold text-foreground">{member.name}</h3>
-                    <p className="mt-1 text-sm font-medium text-primary">{member.role}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{member.bio}</p>
-                  </div>
-                ))}
+              <div className="rounded-[28px] bg-primary px-8 py-7 text-primary-foreground shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground/75">
+                  Desde {siteConfig.founded}
+                </p>
+                <p className="mt-3 font-display text-2xl font-bold">
+                  Um projeto dedicado a estudar, interpretar e valorizar a Serra do Caramulo.
+                </p>
               </div>
             </div>
           </div>

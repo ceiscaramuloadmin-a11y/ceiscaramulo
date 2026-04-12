@@ -132,6 +132,27 @@ export async function deleteAuth0User(userId: string) {
   }).catch(() => undefined);
 }
 
+export async function updateAuth0UserPassword(userId: string, password: string) {
+  if (!userId) {
+    throw new Error('O utilizador Auth0 é inválido.');
+  }
+
+  if (!password || password.trim().length < 6) {
+    throw new Error('A nova palavra-passe deve ter pelo menos 6 caracteres.');
+  }
+
+  await fetchAuth0Management<null>(`/api/v2/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      connection: getAuth0ManagementConnection(),
+      password: password.trim(),
+    }),
+  });
+}
+
 async function listAuth0Roles() {
   return fetchAuth0Management<Array<{ id: string; name: string }>>('/api/v2/roles');
 }

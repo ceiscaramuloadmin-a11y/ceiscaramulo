@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
-import { Mountain } from 'lucide-react';
+import Link from 'next/link';
+import { FileText } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { layoutIconMap } from '@/lib/layout-icons';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +40,7 @@ export const metadata: Metadata = {
 
 export default async function SerraDoCaramuloPage() {
   const layout = await getPublicSiteLayoutSettings();
+  const pdfUrl = '/api/docs/geologia-caramulo';
 
   return (
     <>
@@ -51,48 +52,39 @@ export default async function SerraDoCaramuloPage() {
               {layout.pages.serra.title}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              {layout.pages.serra.description}
+              Consulte o documento geológico da Serra do Caramulo diretamente nesta página, com leitura integrada dentro da área de conteúdo.
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2">
-            {layout.serra.sections.map((section) => {
-              const Icon = layoutIconMap[section.icon] || Mountain;
-
-              return (
-                <div key={section.id} className="rounded-xl border border-border bg-card p-8">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h2 className="font-display text-2xl font-bold text-foreground">{section.title}</h2>
-                  </div>
-                  <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                    {section.description}
-                  </p>
-                  {section.items && section.items.length > 0 && (
-                    <ul className="mt-6 space-y-2">
-                      {section.items.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                          <span className="text-sm text-muted-foreground">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+          <div className="rounded-[28px] border border-border bg-card p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                  <FileText className="h-6 w-6 text-primary" />
                 </div>
-              );
-            })}
-          </div>
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Geologia do Caramulo</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Preview do ficheiro `docs/GeologiaCaramulo.pdf` integrado no conteúdo da página.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={pdfUrl}
+                target="_blank"
+                className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+              >
+                Abrir PDF em separado
+              </Link>
+            </div>
 
-          <div className="mt-16 rounded-lg bg-muted p-8">
-            <h2 className="font-display text-3xl font-bold text-foreground">{layout.serra.aboutTitle}</h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              {layout.serra.aboutParagraph1}
-            </p>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              {layout.serra.aboutParagraph2}
-            </p>
+            <div className="mt-6 overflow-hidden rounded-[24px] border border-border bg-muted/30">
+              <iframe
+                title="Preview do documento GeologiaCaramulo"
+                src={pdfUrl}
+                className="h-[75vh] min-h-[640px] w-full bg-white"
+              />
+            </div>
           </div>
         </div>
       </main>

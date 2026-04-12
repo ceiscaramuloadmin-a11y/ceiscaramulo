@@ -75,6 +75,8 @@ export default function BackofficePage() {
   const [newAdminPasswordMode, setNewAdminPasswordMode] = useState<'manual' | 'generated'>('generated');
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [createdAdminPassword, setCreatedAdminPassword] = useState<string | null>(null);
+  const [accountPassword, setAccountPassword] = useState('');
+  const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('');
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
   const [selectedAdminPermissions, setSelectedAdminPermissions] = useState<AdminPermission[]>([]);
@@ -750,6 +752,29 @@ export default function BackofficePage() {
     }
   }
 
+  async function updateOwnPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+
+    try {
+      await fetchAdminEndpoint<{ success: boolean }>('/api/admin/password', {
+        method: 'POST',
+        body: JSON.stringify({
+          password: accountPassword,
+          confirmPassword: accountPasswordConfirm,
+        }),
+      });
+
+      toast.success('Palavra-passe atualizada com sucesso.');
+      setAccountPassword('');
+      setAccountPasswordConfirm('');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao atualizar a palavra-passe.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function toggleSelectedAdminPermission(permission: AdminPermission) {
     setSelectedAdminPermissions((current) =>
       current.includes(permission) ? current.filter((item) => item !== permission) : [...current, permission]
@@ -898,13 +923,47 @@ export default function BackofficePage() {
       </div>
 
       {activeSection === 'overview' ? (
-        <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card title="Notícias" value={stats.news} loading={isLoadingContent} />
-          <Card title="Atividades" value={stats.activities} loading={isLoadingContent} />
-          <Card title="Projetos" value={stats.projects} loading={isLoadingContent} />
-          <Card title="Biblioteca" value={stats.publications} loading={isLoadingContent} />
-          <Card title="Contactos" value={stats.contacts} loading={isLoadingContacts} />
-          <Card title="Galeria" value={stats.gallery} loading={isLoadingGallery} />
+        <section className="mt-8 space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card title="Notícias" value={stats.news} loading={isLoadingContent} />
+            <Card title="Atividades" value={stats.activities} loading={isLoadingContent} />
+            <Card title="Projetos" value={stats.projects} loading={isLoadingContent} />
+            <Card title="Biblioteca" value={stats.publications} loading={isLoadingContent} />
+            <Card title="Contactos" value={stats.contacts} loading={isLoadingContacts} />
+            <Card title="Galeria" value={stats.gallery} loading={isLoadingGallery} />
+          </div>
+
+          {!exportAuthMode ? (
+            <div className="max-w-2xl rounded-xl border border-stone-200 bg-white p-5">
+              <h2 className="text-xl font-semibold text-[#27441d]">Segurança da conta</h2>
+              <p className="mt-1 text-sm text-stone-600">
+                Altere a sua palavra-passe sempre que precisar.
+              </p>
+
+              <form className="mt-5 grid gap-3" onSubmit={(event) => void updateOwnPassword(event)}>
+                <Input
+                  label="Nova palavra-passe"
+                  type="password"
+                  value={accountPassword}
+                  onChange={setAccountPassword}
+                  required
+                />
+                <Input
+                  label="Confirmar nova palavra-passe"
+                  type="password"
+                  value={accountPasswordConfirm}
+                  onChange={setAccountPasswordConfirm}
+                  required
+                />
+                <button
+                  className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+                  disabled={busy}
+                >
+                  Atualizar palavra-passe
+                </button>
+              </form>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
