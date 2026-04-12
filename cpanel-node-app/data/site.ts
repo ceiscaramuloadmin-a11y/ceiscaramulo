@@ -12,9 +12,9 @@ export const siteConfig = {
   email: 'ceiscaramulo@gmail.com',
   ogImage: '/og-image.svg',
   socialProfiles: [
-    'https://facebook.com/coiscaramulo',
-    'https://instagram.com/coiscaramulo',
-    'https://youtube.com/@coiscaramulo',
+    'https://facebook.com/CEISCaramulo',
+    // 'https://instagram.com/coiscaramulo',
+    // 'https://youtube.com/@coiscaramulo',
   ],
 };
 
@@ -36,8 +36,8 @@ export const contactInfo: ContactInfo = {
   email: siteConfig.email,
   coordinates: { lat: 40.5731, lng: -8.1683 },
   socialMedia: {
-    facebook: 'https://facebook.com/coiscaramulo',
-    instagram: 'https://instagram.com/coiscaramulo',
-    youtube: 'https://youtube.com/@coiscaramulo',
+    facebook: 'https://facebook.com/CEISCaramulo',
+    // instagram: 'https://instagram.com/CEISCaramulo',
+    // youtube: 'https://youtube.com/@CEISCaramulo',
   },
 };
