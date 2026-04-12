@@ -4,22 +4,43 @@ import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 import { browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, type Auth, type User } from 'firebase/auth';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDVgLJbzVx5wg1xSlYYORK0_nRGSiWMKNI',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'ceiscaramulo-db2a2.firebaseapp.com',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ceiscaramulo-db2a2',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ceiscaramulo-db2a2.firebasestorage.app',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '436329467350',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:436329467350:web:0b192f867458e5916b2877',
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-F2PN1PJ3WR',
-};
-
 let authSingleton: Auth | null = null;
 let analyticsPromise: Promise<Analytics | null> | null = null;
 export const FIREBASE_AUTH_STATE_TIMEOUT_MS = 2500;
 
+function getFirebaseClientConfig() {
+  return {
+    apiKey: process.env.FIREBASE_API_KEY?.trim() || '',
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN?.trim() || '',
+    projectId: process.env.FIREBASE_PROJECT_ID?.trim() || '',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET?.trim() || '',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID?.trim() || '',
+    appId: process.env.FIREBASE_APP_ID?.trim() || '',
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID?.trim() || '',
+  };
+}
+
+export function getFirebaseClientConfigError() {
+  const config = getFirebaseClientConfig();
+  const missing = Object.entries(config)
+    .filter(([key, value]) => key !== 'measurementId' && !value)
+    .map(([key]) => key);
+
+  if (missing.length === 0) {
+    return null;
+  }
+
+  return `Firebase client config incompleta. Defina: ${missing.join(', ')}.`;
+}
+
 export function getFirebaseClientApp(): FirebaseApp {
-  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  const configError = getFirebaseClientConfigError();
+
+  if (configError) {
+    throw new Error(configError);
+  }
+
+  return getApps().length > 0 ? getApp() : initializeApp(getFirebaseClientConfig());
 }
 
 export function getFirebaseClientAuth() {
@@ -75,6 +96,10 @@ export async function getFirebaseCurrentUser(): Promise<User | null> {
 
 export async function initializeFirebaseAnalytics() {
   if (typeof window === 'undefined') {
+    return null;
+  }
+
+  if (getFirebaseClientConfigError()) {
     return null;
   }
 

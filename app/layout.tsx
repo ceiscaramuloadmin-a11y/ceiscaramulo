@@ -3,7 +3,6 @@ import { Inter, Playfair_Display } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import './globals.css';
 
 const inter = Inter({
@@ -99,7 +98,6 @@ export default function RootLayout({
     <html lang="pt" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
         <TooltipProvider>
-          <FirebaseAnalytics />
           <Toaster />
           <Sonner />
           {children}

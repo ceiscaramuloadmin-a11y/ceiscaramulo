@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
 import { defaultSiteLayoutSettings, deepMergeSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
-import { verifyAdminSessionToken } from '@/lib/admin-auth-server';
+import { getAdminAuthSession } from '@/lib/admin-auth-server';
 import type { AdminPermission, GalleryMediaItem, GalleryMediaType, SiteLayoutSettings } from '@/types';
 
 // Tipos suportados pelas secções públicas/administráveis do CMS.
@@ -529,25 +529,7 @@ export async function getAdminByEmail(email: string) {
 // Resolve contexto de admin com email e papel, validando a sessão administrativa.
 export async function requireAdminContextFromRequest(request: NextRequest) {
   try {
-    const authorization = request.headers.get('authorization') || '';
-
-    if (!authorization.startsWith('Bearer ')) {
-      return {
-        context: null,
-        error: jsonError('Sessão inválida ou em falta.', 401),
-      };
-    }
-
-    const token = authorization.slice('Bearer '.length).trim();
-
-    if (!token) {
-      return {
-        context: null,
-        error: jsonError('Sessão inválida ou em falta.', 401),
-      };
-    }
-
-    const session = await verifyAdminSessionToken(token);
+    const session = await getAdminAuthSession(request);
     const email = session.email;
 
     if (!email) {

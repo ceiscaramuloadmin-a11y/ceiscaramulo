@@ -32,7 +32,7 @@ function getFirebaseServiceAccount(): FirebaseServiceAccount {
     };
   }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID?.trim() || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim() || '';
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim() || '';
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim() || '';
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim() || '';
 

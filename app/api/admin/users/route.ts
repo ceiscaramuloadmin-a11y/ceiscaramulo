@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdminAuth } from '@/lib/firebase-admin';
+import { createAuth0PasswordUser, deleteAuth0User, syncAuth0AdminRole } from '@/lib/auth0-management';
 import {
   appendAuditLog,
   canManageAdmins,
@@ -99,12 +99,13 @@ export async function POST(request: NextRequest) {
 
     const admins = await listAdminUsers();
     const now = new Date().toISOString();
-    const firebaseUser = await getFirebaseAdminAuth().createUser({
+    const auth0User = await createAuth0PasswordUser({
       email,
       password: accountPassword,
     });
+    await syncAuth0AdminRole(auth0User.id, role);
     const created: AdminUserRecord = {
-      id: firebaseUser.uid,
+      id: auth0User.id,
       email,
       role,
       permissions: role === 'owner' ? [...ALL_ADMIN_PERMISSIONS] : [...DEFAULT_EDITOR_PERMISSIONS],
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
       const updatedList = [...admins, created];
       await saveAdminUsers(updatedList);
     } catch (saveError) {
-      await getFirebaseAdminAuth().deleteUser(firebaseUser.uid).catch(() => undefined);
+      await deleteAuth0User(auth0User.id);
       throw saveError;
     }
 
@@ -140,10 +141,10 @@ export async function POST(request: NextRequest) {
     );
   } catch (caughtError) {
     console.error(caughtError);
-    if (caughtError instanceof Error && caughtError.message.includes('email address is already in use')) {
-      return jsonError('Já existe uma conta Firebase com este email.', 409);
+    if (caughtError instanceof Error && caughtError.message.includes('Já existe uma conta Auth0 com este email.')) {
+      return jsonError('Já existe uma conta Auth0 com este email.', 409);
     }
-    return jsonError('Ocorreu um erro inesperado.', 500);
+    return jsonError(caughtError instanceof Error ? caughtError.message : 'Ocorreu um erro inesperado.', 500);
   }
 }
 
@@ -196,6 +197,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     admins[index] = after;
+    if (role !== undefined && before.id) {
+      await syncAuth0AdminRole(before.id, after.role);
+    }
     await saveAdminUsers(admins);
     await saveAdminPermissions(after.email, after.permissions);
 
@@ -248,6 +252,7 @@ export async function DELETE(request: NextRequest) {
     const [removed] = admins.splice(index, 1);
     await saveAdminUsers(admins);
     await deleteAdminPermissions(email);
+    await deleteAuth0User(removed.id);
 
     await appendAuditLog({
       actor: context,

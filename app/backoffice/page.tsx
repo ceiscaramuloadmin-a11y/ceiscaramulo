@@ -3,8 +3,9 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
+import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
 import RichTextEditor from '@/components/RichTextEditor';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,11 @@ export default function BackofficePage() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const [busy, setBusy] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [isLoadingGovernance, setIsLoadingGovernance] = useState(true);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(true);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(true);
+  const [isLoadingLayout, setIsLoadingLayout] = useState(true);
 
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -148,10 +154,14 @@ export default function BackofficePage() {
   }, [currentAdmin, exportAuthMode]);
 
   const authHeaders = useCallback(async () => {
+    if (!exportAuthMode) {
+      return {} as Record<string, string>;
+    }
+
     const token = await getAdminAccessToken();
     if (!token) throw new Error('Sessão administrativa expirada.');
-    return { Authorization: `Bearer ${token}` };
-  }, []);
+    return { Authorization: `Bearer ${token}` } as Record<string, string>;
+  }, [exportAuthMode]);
 
   const fetchAdminCollection = useCallback(async <T,>(section: ContentSection) => {
     const headers = await authHeaders();
@@ -202,6 +212,7 @@ export default function BackofficePage() {
   );
 
   const refreshAll = useCallback(async () => {
+    setIsLoadingContent(true);
     const safeFetchSection = async <T,>(section: ContentSection) => {
       try {
         return await fetchAdminCollection<T>(section);
@@ -221,9 +232,11 @@ export default function BackofficePage() {
     setActivities(activitiesData);
     setProjects(projectsData);
     setPublications(publicationsData);
+    setIsLoadingContent(false);
   }, [fetchAdminCollection]);
 
   const refreshGovernance = useCallback(async () => {
+    setIsLoadingGovernance(true);
     const [adminsData, auditData] = await Promise.all([
       fetchAdminEndpoint<AdminUser[]>('/api/admin/users').catch(() => []),
       fetchAdminEndpoint<AuditLogEntry[]>('/api/admin/audit').catch(() => []),
@@ -231,22 +244,29 @@ export default function BackofficePage() {
 
     setAdmins(adminsData);
     setAuditLogs(auditData);
+    setIsLoadingGovernance(false);
   }, [fetchAdminEndpoint]);
 
   const refreshContactMessages = useCallback(async () => {
+    setIsLoadingContacts(true);
     const data = await fetchAdminEndpoint<ContactMessage[]>('/api/admin/contact-messages').catch(() => []);
     setContactMessages(data);
+    setIsLoadingContacts(false);
   }, [fetchAdminEndpoint]);
 
   const refreshLayout = useCallback(async () => {
+    setIsLoadingLayout(true);
     const data = await fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout').catch(() => defaultSiteLayoutSettings);
     setLayoutSettings(data);
+    setIsLoadingLayout(false);
   }, [fetchAdminEndpoint]);
 
   const refreshGallery = useCallback(async () => {
+    setIsLoadingGallery(true);
     const data = await fetchAdminEndpoint<GalleryMediaItem[]>('/api/gallery?scope=admin').catch(() => []);
     setGalleryItems(data);
     setSelectedGalleryIds([]);
+    setIsLoadingGallery(false);
   }, [fetchAdminEndpoint]);
 
   useEffect(() => {
@@ -260,22 +280,19 @@ export default function BackofficePage() {
           return;
         }
 
+        setCurrentAdmin({
+          email: localSession.email,
+          role: localSession.role,
+          permissions: localSession.permissions,
+        });
         setIsCheckingSession(false);
 
         if (exportAuthMode) {
-          setCurrentAdmin({
-            email: localSession.email,
-            role: localSession.role,
-            permissions: localSession.permissions,
-          });
-          return;
-        }
-
-        const token = await getAdminAccessToken();
-
-        if (!token) {
-          await adminAuthClient.adapter.signOut();
-          router.replace('/backoffice/login');
+          setIsLoadingContent(false);
+          setIsLoadingGovernance(false);
+          setIsLoadingContacts(false);
+          setIsLoadingGallery(false);
+          setIsLoadingLayout(false);
           return;
         }
 
@@ -292,6 +309,11 @@ export default function BackofficePage() {
 
         toast.error(error instanceof Error ? error.message : 'Falha ao carregar o backoffice.');
         setIsCheckingSession(false);
+        setIsLoadingContent(false);
+        setIsLoadingGovernance(false);
+        setIsLoadingContacts(false);
+        setIsLoadingGallery(false);
+        setIsLoadingLayout(false);
       }
     };
 
@@ -843,7 +865,12 @@ export default function BackofficePage() {
           type="button"
           onClick={async () => {
             await adminAuthClient.adapter.signOut();
-            router.replace('/backoffice/login');
+            if (exportAuthMode || typeof window === 'undefined') {
+              router.replace('/backoffice/login');
+              return;
+            }
+
+            window.location.assign(AUTH0_ADMIN_LOGOUT_PATH);
           }}
           className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
         >
@@ -872,12 +899,12 @@ export default function BackofficePage() {
 
       {activeSection === 'overview' ? (
         <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card title="Notícias" value={stats.news} />
-          <Card title="Atividades" value={stats.activities} />
-          <Card title="Projetos" value={stats.projects} />
-          <Card title="Biblioteca" value={stats.publications} />
-          <Card title="Contactos" value={stats.contacts} />
-          <Card title="Galeria" value={stats.gallery} />
+          <Card title="Notícias" value={stats.news} loading={isLoadingContent} />
+          <Card title="Atividades" value={stats.activities} loading={isLoadingContent} />
+          <Card title="Projetos" value={stats.projects} loading={isLoadingContent} />
+          <Card title="Biblioteca" value={stats.publications} loading={isLoadingContent} />
+          <Card title="Contactos" value={stats.contacts} loading={isLoadingContacts} />
+          <Card title="Galeria" value={stats.gallery} loading={isLoadingGallery} />
         </section>
       ) : null}
 
@@ -885,6 +912,7 @@ export default function BackofficePage() {
         <SectionLayout
           title="Notícias"
           list={news}
+          loading={isLoadingContent}
           busy={busy}
           onNew={() => { setEditingId(null); setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('news', item as NewsArticle)}
@@ -909,6 +937,7 @@ export default function BackofficePage() {
         <SectionLayout
           title="Atividades"
           list={activities}
+          loading={isLoadingContent}
           busy={busy}
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
@@ -921,6 +950,7 @@ export default function BackofficePage() {
         <SectionLayout
           title="Projetos"
           list={projects}
+          loading={isLoadingContent}
           busy={busy}
           onNew={() => { setEditingId(null); setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('projects', item as Project)}
@@ -933,6 +963,7 @@ export default function BackofficePage() {
         <SectionLayout
           title="Biblioteca"
           list={publications}
+          loading={isLoadingContent}
           busy={busy}
           onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('publications', item as Publication)}
@@ -962,6 +993,7 @@ export default function BackofficePage() {
             </div>
 
             <div className="mt-5 space-y-4">
+              {isLoadingContacts ? <MessageListSkeleton /> : null}
               {contactMessages.map((message) => (
                 <article key={message.id} className="rounded-2xl border border-stone-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1008,7 +1040,7 @@ export default function BackofficePage() {
                 </article>
               ))}
 
-              {contactMessages.length === 0 ? (
+              {!isLoadingContacts && contactMessages.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-stone-300 px-4 py-6 text-sm text-stone-500">
                   Ainda não há mensagens enviadas pela página de contactos.
                 </p>
@@ -1040,6 +1072,14 @@ export default function BackofficePage() {
             </div>
 
             <div className="space-y-5">
+              {isLoadingGallery ? (
+                <>
+                  <GalleryGroupSkeleton title="Fotos" />
+                  <GalleryGroupSkeleton title="Vídeos" />
+                  <GalleryGroupSkeleton title="Áudios" />
+                </>
+              ) : (
+                <>
               <GalleryGroup
                 title="Fotos"
                 type="photo"
@@ -1076,6 +1116,8 @@ export default function BackofficePage() {
                 onDelete={(id) => void deleteGalleryItem(id)}
                 onDeleteSelected={() => void deleteSelectedGalleryItems('audio')}
               />
+                </>
+              )}
             </div>
           </div>
           <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
@@ -1329,6 +1371,7 @@ export default function BackofficePage() {
             <h2 className="text-xl font-semibold text-[#27441d]">Admins existentes</h2>
 
             <div className="mt-4 space-y-3">
+              {isLoadingGovernance ? <AdminListSkeleton /> : null}
               {admins.map((admin) => (
                 <article key={admin.id} className="rounded-lg border border-stone-200 p-3">
                   <p className="font-medium text-[#27441d]">{admin.email}</p>
@@ -1372,7 +1415,7 @@ export default function BackofficePage() {
                 </article>
               ))}
 
-              {admins.length === 0 ? <p className="text-sm text-stone-500">Sem admins configurados.</p> : null}
+              {!isLoadingGovernance && admins.length === 0 ? <p className="text-sm text-stone-500">Sem admins configurados.</p> : null}
             </div>
           </div>
         </section>
@@ -1468,6 +1511,7 @@ export default function BackofficePage() {
           <p className="mt-1 text-sm text-stone-600">Histórico de alterações administrativas com ator, ação e timestamp.</p>
 
           <div className="mt-4 space-y-3">
+            {isLoadingGovernance ? <AuditListSkeleton /> : null}
             {auditLogs.map((entry) => (
               <article key={entry.id} className="rounded-lg border border-stone-200 p-3">
                 <p className="text-sm font-medium text-[#27441d]">{entry.summary}</p>
@@ -1481,7 +1525,7 @@ export default function BackofficePage() {
               </article>
             ))}
 
-            {auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos de auditoria.</p> : null}
+            {!isLoadingGovernance && auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos de auditoria.</p> : null}
           </div>
         </section>
       ) : null}
@@ -1491,6 +1535,11 @@ export default function BackofficePage() {
           <h2 className="text-xl font-semibold text-[#27441d]">Layout do site</h2>
           <p className="mt-1 text-sm text-stone-600">Edita hero, footer, textos de páginas e ícones visuais.</p>
 
+          {isLoadingLayout ? (
+            <div className="mt-5">
+              <LayoutFormSkeleton />
+            </div>
+          ) : (
           <form className="mt-5 grid gap-6" onSubmit={(event) => void saveLayoutSettings(event)}>
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="Hero · Eyebrow" value={layoutSettings.home.hero.eyebrow} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, eyebrow: v } } }))} />
@@ -1564,6 +1613,7 @@ export default function BackofficePage() {
               Guardar layout
             </button>
           </form>
+          )}
         </section>
       ) : null}
     </main>
@@ -1641,11 +1691,11 @@ function tabClass(active: boolean) {
     : 'rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700';
 }
 
-function Card({ title, value }: { title: string; value: number | undefined }) {
+function Card({ title, value, loading = false }: { title: string; value: number | undefined; loading?: boolean }) {
   return (
     <article className="rounded-xl border border-stone-200 bg-white p-5">
       <p className="text-sm text-stone-500">{title}</p>
-      <p className="mt-2 text-3xl font-semibold text-[#27441d]">{value ?? '—'}</p>
+      {loading ? <Skeleton className="mt-3 h-9 w-20" /> : <p className="mt-2 text-3xl font-semibold text-[#27441d]">{value ?? '—'}</p>}
     </article>
   );
 }
@@ -1658,6 +1708,7 @@ function SectionLayout({
   onDelete,
   onNew,
   busy,
+  loading = false,
 }: {
   title: string;
   list: Array<{ id: string; title?: string }>;
@@ -1666,6 +1717,7 @@ function SectionLayout({
   onDelete: (id: string) => void;
   onNew: () => void;
   busy: boolean;
+  loading?: boolean;
 }) {
   return (
     <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -1675,6 +1727,7 @@ function SectionLayout({
           <button type="button" onClick={onNew} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
         </div>
         <div className="space-y-3">
+          {loading ? <SectionListSkeleton /> : null}
           {list.map((item) => (
             <article key={item.id} className="rounded-lg border border-stone-200 p-3">
               <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
@@ -1684,7 +1737,7 @@ function SectionLayout({
               </div>
             </article>
           ))}
-          {list.length === 0 ? <p className="text-sm text-stone-500">Sem registos.</p> : null}
+          {!loading && list.length === 0 ? <p className="text-sm text-stone-500">Sem registos.</p> : null}
         </div>
       </div>
       <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
@@ -1835,5 +1888,140 @@ function Check({ label, checked, onChange }: { label: string; checked: boolean; 
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       {label}
     </label>
+  );
+}
+
+function SectionListSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="rounded-lg border border-stone-200 p-3">
+          <Skeleton className="h-5 w-2/3" />
+          <div className="mt-3 flex gap-2">
+            <Skeleton className="h-7 w-16" />
+            <Skeleton className="h-7 w-16" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function MessageListSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <article key={index} className="rounded-2xl border border-stone-200 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-[220px] flex-1 space-y-2">
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/3" />
+            </div>
+            <Skeleton className="h-7 w-20 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-24 w-full" />
+          <div className="mt-4 flex gap-2">
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-36" />
+          </div>
+        </article>
+      ))}
+    </>
+  );
+}
+
+function GalleryGroupSkeleton({ title }: { title: string }) {
+  return (
+    <section className="rounded-xl border border-stone-200 p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold text-[#27441d]">{title}</h3>
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-28" />
+          <Skeleton className="h-8 w-36" />
+        </div>
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <article key={index} className="rounded-lg border border-stone-200 p-3">
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-5 w-5 rounded-md" />
+              <Skeleton className="h-24 w-24 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-5 w-1/2" />
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-7 w-16" />
+                  <Skeleton className="h-7 w-16" />
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AdminListSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <article key={index} className="rounded-lg border border-stone-200 p-3">
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="mt-2 h-4 w-1/3" />
+          <Skeleton className="mt-2 h-4 w-3/4" />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Skeleton className="h-7 w-24" />
+            <Skeleton className="h-7 w-24" />
+            <Skeleton className="h-7 w-24" />
+          </div>
+        </article>
+      ))}
+    </>
+  );
+}
+
+function AuditListSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <article key={index} className="rounded-lg border border-stone-200 p-3">
+          <Skeleton className="h-5 w-2/3" />
+          <Skeleton className="mt-2 h-4 w-1/2" />
+          <Skeleton className="mt-2 h-4 w-1/3" />
+        </article>
+      ))}
+    </>
+  );
+}
+
+function LayoutFormSkeleton() {
+  return (
+    <div className="grid gap-6">
+      <div className="grid gap-3 md:grid-cols-2">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-28 w-full" />
+      <div className="grid gap-4 md:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="rounded-lg border border-stone-200 p-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="mt-3 h-10 w-full" />
+            <Skeleton className="mt-3 h-10 w-full" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-11 w-full" />
+    </div>
   );
 }

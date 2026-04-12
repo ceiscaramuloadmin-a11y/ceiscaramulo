@@ -1,11 +1,12 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BackofficeLoginPage from '@/app/backoffice/login/page';
 
-const replace = vi.fn();
-const getSession = vi.fn();
-const signInEmail = vi.fn();
+const { replace, getSession, isExportAdminAuthMode } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  getSession: vi.fn(),
+  isExportAdminAuthMode: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -14,13 +15,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/admin-auth', () => ({
-  isExportAdminAuthMode: () => false,
+  AUTH0_ADMIN_LOGIN_PATH: '/auth/login?returnTo=%2Fbackoffice',
+  isExportAdminAuthMode,
   adminAuthClient: {
     adapter: {
       getSession,
-      signIn: {
-        email: signInEmail,
-      },
     },
   },
 }));
@@ -29,6 +28,11 @@ describe('BackofficeLoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getSession.mockResolvedValue({ data: null });
+    isExportAdminAuthMode.mockReturnValue(false);
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('redirects immediately when a session already exists', async () => {
@@ -40,23 +44,12 @@ describe('BackofficeLoginPage', () => {
     });
   });
 
-  it('submits credentials and redirects on success', async () => {
-    signInEmail.mockResolvedValue({ data: { session: { email: 'admin@ceis.pt' } }, error: null });
-    const user = userEvent.setup();
-
+  it('shows an Auth0 login call to action in runtime mode', async () => {
     render(<BackofficeLoginPage />);
 
-    await user.type(screen.getByLabelText('Email'), 'admin@ceis.pt');
-    await user.type(screen.getByLabelText('Palavra-passe'), 'segredo');
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-
-    await waitFor(() => {
-      expect(signInEmail).toHaveBeenCalledWith({
-        email: 'admin@ceis.pt',
-        password: 'segredo',
-      });
-      expect(replace).toHaveBeenCalledWith('/backoffice');
-    });
+    expect(screen.getByRole('link', { name: 'Entrar com Auth0' })).toHaveAttribute('href', '/auth/login?returnTo=%2Fbackoffice');
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Palavra-passe')).not.toBeInTheDocument();
   });
 
   it('does not expose public account creation controls', () => {
@@ -66,16 +59,12 @@ describe('BackofficeLoginPage', () => {
     expect(screen.queryByLabelText('Confirmar palavra-passe')).not.toBeInTheDocument();
   });
 
-  it('shows the authentication error message', async () => {
-    signInEmail.mockResolvedValue({ data: null, error: { message: 'Credenciais inválidas.' } });
-    const user = userEvent.setup();
-
+  it('renders the legacy email and password form in export mode', async () => {
+    isExportAdminAuthMode.mockReturnValue(true);
     render(<BackofficeLoginPage />);
 
-    await user.type(screen.getByLabelText('Email'), 'admin@ceis.pt');
-    await user.type(screen.getByLabelText('Palavra-passe'), 'errada');
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-
-    expect(await screen.findByText('Credenciais inválidas.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Palavra-passe')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Entrar com Auth0' })).not.toBeInTheDocument();
   });
 });

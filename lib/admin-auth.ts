@@ -1,7 +1,6 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { signInWithEmailAndPassword, signOut as signOutFromFirebase } from 'firebase/auth';
 import type { AdminPermission, AdminRole } from '@/types';
 import {
   ADMIN_SESSION_STORAGE_KEY,
@@ -14,7 +13,9 @@ import {
   type AdminSession,
   type AdminAuthMode,
 } from '@/lib/admin-auth-shared';
-import { getFirebaseClientAuth, getFirebaseCurrentUser } from '@/lib/firebase-client';
+
+export const AUTH0_ADMIN_LOGIN_PATH = '/auth/login?returnTo=%2Fbackoffice';
+export const AUTH0_ADMIN_LOGOUT_PATH = '/auth/logout?returnTo=%2Fbackoffice%2Flogin';
 
 type SignInResult =
   | { data: { session: AdminSession }; error: null }
@@ -73,9 +74,13 @@ function persistSession(session: AdminSession | null) {
   notifyListeners();
 }
 
-function getFirebaseAuthErrorMessage(error: unknown) {
+export function getFirebaseAuthErrorMessage(error: unknown) {
   if (!(error instanceof Error)) {
     return null;
+  }
+
+  if (error.message.includes('auth/permission-denied') || error.message.includes('has-been-suspended')) {
+    return 'O acesso Firebase deste projeto foi suspenso. Atualize a chave pública do Firebase nas variáveis FIREBASE_* ou reative o projeto/API key no Google Cloud Firebase antes de tentar iniciar sessão.';
   }
 
   if (error.message.includes('auth/configuration-not-found')) {
@@ -114,113 +119,48 @@ async function sha256(value: string) {
 }
 
 async function signInWithRuntimeSession(email: string, password: string): Promise<SignInResult> {
-  const credential = await signInWithEmailAndPassword(getFirebaseClientAuth(), email, password).catch((error) => {
-    throw new Error(getFirebaseAuthErrorMessage(error) || (error instanceof Error ? error.message : 'Não foi possível autenticar com Firebase.'));
-  });
-  const idToken = await credential.user.getIdToken();
-  const response = await fetch('/api/admin/session', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
-
-  const payload = (await response.json().catch(() => null)) as
-    | {
-        message?: string;
-        token?: string;
-        session?: { email: string; role: AdminRole; permissions: AdminPermission[]; expiresAt?: string | null };
-      }
-    | null;
-
-  if (!response.ok || !payload?.session) {
-    return {
-      data: null,
-      error: {
-        message: payload?.message || 'Não foi possível iniciar a sessão administrativa.',
-      },
-    };
-  }
-
-  const session = normalizeAdminSession({
-    token: payload.token ?? null,
-    email: payload.session.email,
-    role: payload.session.role,
-    permissions: payload.session.permissions,
-    expiresAt: payload.session.expiresAt ?? null,
-    mode: 'runtime',
-  });
-
-  if (!session) {
-    return {
-      data: null,
-      error: {
-        message: 'A resposta da autenticação administrativa é inválida.',
-      },
-    };
-  }
-
-  persistSession(session);
-
   return {
-    data: { session },
-    error: null,
+    data: null,
+    error: {
+      message:
+        email || password
+          ? 'O login administrativo runtime passou a usar Auth0. Use o botão "Entrar com Auth0".'
+          : 'Use o botão "Entrar com Auth0" para iniciar a sessão administrativa.',
+    },
   };
 }
 
-async function refreshRuntimeSession(forceRefresh = false) {
-  const user = await getFirebaseCurrentUser();
+async function refreshRuntimeSession() {
+  const response = await fetch('/api/admin/session', {
+    method: 'GET',
+    credentials: 'include',
+  }).catch(() => null);
 
-  if (!user) {
+  if (!response || response.status === 401) {
     persistSession(null);
     return null;
   }
 
-  const idToken = await user.getIdToken(forceRefresh);
-  const storedSession = readStoredSession();
-
-  if (
-    storedSession &&
-    storedSession.mode === 'runtime' &&
-    storedSession.token === idToken &&
-    !isAdminSessionExpired(storedSession)
-  ) {
-    return storedSession;
-  }
-
-  const response = await fetch('/api/admin/session', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
-
   const payload = (await response.json().catch(() => null)) as
     | {
-        message?: string;
-        token?: string;
+        token?: string | null;
         session?: { email: string; role: AdminRole; permissions: AdminPermission[]; expiresAt?: string | null };
       }
     | null;
 
   if (!response.ok || !payload?.session) {
     persistSession(null);
-    throw new Error(payload?.message || 'Não foi possível validar a sessão Firebase.');
+    return null;
   }
 
   const session = normalizeAdminSession({
-    token: payload.token ?? idToken,
+    token: null,
     email: payload.session.email,
     role: payload.session.role,
     permissions: payload.session.permissions,
     expiresAt: payload.session.expiresAt ?? null,
     mode: 'runtime',
   });
-
-  if (!session) {
-    persistSession(null);
-    throw new Error('A resposta da autenticação Firebase é inválida.');
-  }
 
   persistSession(session);
   return session;
@@ -297,8 +237,7 @@ export async function getAdminAccessToken() {
     return readStoredSession()?.token ?? null;
   }
 
-  const session = await refreshRuntimeSession();
-  return session?.token ?? null;
+  return null;
 }
 
 export const adminAuthClient = {
@@ -310,7 +249,7 @@ export const adminAuthClient = {
     },
     async signOut() {
       if (getPublicAdminAuthMode() === 'runtime') {
-        await signOutFromFirebase(getFirebaseClientAuth()).catch(() => undefined);
+        await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
       }
       persistSession(null);
       return { error: null };

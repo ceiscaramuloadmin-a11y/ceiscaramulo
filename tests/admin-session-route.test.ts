@@ -2,14 +2,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const verifyAdminSessionToken = vi.fn();
+const getAdminAuthSession = vi.fn();
 const getAdminByEmail = vi.fn();
 const listAdminUsers = vi.fn();
 const saveAdminUsers = vi.fn();
 const jsonError = vi.fn((message: string, status = 400) => Response.json({ message }, { status }));
 
 vi.mock('@/lib/admin-auth-server', () => ({
-  verifyAdminSessionToken,
+  getAdminAuthSession,
 }));
 
 vi.mock('@/app/api/_lib/cms', () => ({
@@ -28,8 +28,9 @@ describe('admin session route', () => {
     vi.resetModules();
   });
 
-  it('returns a Firebase-backed session for an active admin', async () => {
-    verifyAdminSessionToken.mockResolvedValue({
+  it('returns an Auth0-backed session for an active admin', async () => {
+    getAdminAuthSession.mockResolvedValue({
+      uid: 'auth0|123',
       email: 'admin@ceis.pt',
       expiresAt: '2099-01-01T00:00:00.000Z',
     });
@@ -44,15 +45,12 @@ describe('admin session route', () => {
     const response = await POST(
       new Request('http://localhost/api/admin/session', {
         method: 'POST',
-        headers: {
-          Authorization: 'Bearer firebase-token',
-        },
       }) as never
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      token: 'firebase-token',
+      token: null,
       session: {
         email: 'admin@ceis.pt',
         role: 'owner',
@@ -63,7 +61,8 @@ describe('admin session route', () => {
   });
 
   it('bootstraps the first admin when the admin list is empty', async () => {
-    verifyAdminSessionToken.mockResolvedValue({
+    getAdminAuthSession.mockResolvedValue({
+      uid: 'auth0|first',
       email: 'first@ceis.pt',
       expiresAt: '2099-01-01T00:00:00.000Z',
     });
@@ -80,30 +79,58 @@ describe('admin session route', () => {
     const response = await POST(
       new Request('http://localhost/api/admin/session', {
         method: 'POST',
-        headers: {
-          Authorization: 'Bearer first-token',
-        },
       }) as never
     );
 
     expect(response.status).toBe(200);
     expect(saveAdminUsers).toHaveBeenCalledTimes(1);
+    expect(saveAdminUsers).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: 'auth0|first',
+        email: 'first@ceis.pt',
+        createdBy: 'auth0-bootstrap',
+      }),
+    ]);
   });
 
-  it('returns a 401 payload when Firebase validation fails', async () => {
-    verifyAdminSessionToken.mockRejectedValue(new Error('Sessão Firebase inválida ou em falta.'));
+  it('returns a 401 payload when Auth0 validation fails', async () => {
+    getAdminAuthSession.mockRejectedValue(new Error('Sessão Auth0 inválida ou em falta.'));
 
     const { POST } = await import('@/app/api/admin/session/route');
     const response = await POST(
       new Request('http://localhost/api/admin/session', {
         method: 'POST',
-        headers: {
-          Authorization: 'Bearer broken-token',
-        },
       }) as never
     );
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ message: 'Sessão Firebase inválida ou em falta.' });
+    await expect(response.json()).resolves.toEqual({ message: 'Sessão Auth0 inválida ou em falta.' });
+  });
+
+  it('supports GET for runtime session introspection', async () => {
+    getAdminAuthSession.mockResolvedValue({
+      uid: 'auth0|123',
+      email: 'admin@ceis.pt',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+    });
+    getAdminByEmail.mockResolvedValue({
+      email: 'admin@ceis.pt',
+      role: 'owner',
+      permissions: ['news', 'contacts', 'admins'],
+      active: true,
+    });
+
+    const { GET } = await import('@/app/api/admin/session/route');
+    const response = await GET(new Request('http://localhost/api/admin/session', { method: 'GET' }) as never);
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      token: null,
+      session: {
+        email: 'admin@ceis.pt',
+        role: 'owner',
+        permissions: ['news', 'contacts', 'admins'],
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      },
+    });
   });
 });
