@@ -4,14 +4,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
-@font-face {
-  font-family: 'Coolvetica';
-  src: local('Coolvetica'), local('Coolvetica Rg');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -82,8 +74,8 @@
 }
 
 .font-hero {
-  font-family: 'Coolvetica', var(--font-playfair), Georgia, serif;
-  letter-spacing: -0.04em;
+  font-family: var(--font-coolvetica), var(--font-playfair), Georgia, serif;
+  letter-spacing: -0.02em;
 }
 
 /* Custom scrollbar styles */

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -13,6 +14,12 @@ const inter = Inter({
 const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
+});
+
+const coolvetica = localFont({
+  src: '../src/assets/coolvetica/Coolvetica Rg.otf',
+  variable: '--font-coolvetica',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -96,7 +103,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt" suppressHydrationWarning>
-      <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} ${coolvetica.variable} font-body antialiased`}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
