@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Facebook, Instagram, Mail, MapPin, Phone, TreePine, Youtube } from 'lucide-react';
+import { ArrowRight, Facebook, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
+import SiteLogo from '@/components/SiteLogo';
 import { Button } from '@/components/ui/button';
 import HomeHero from '@/components/HomeHero';
 import { activities as fallbackActivities, newsArticles as fallbackNewsArticles, projects as fallbackProjects } from '@/data/content';
@@ -335,10 +336,7 @@ export default async function HomePage() {
           <div className="grid gap-12 pb-16 md:grid-cols-2 xl:grid-cols-4">
             <div className="space-y-6">
               <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <TreePine className="h-4 w-4" />
-                </span>
-                <span className="text-lg font-bold tracking-[-0.02em]">CEISCaramulo</span>
+                <SiteLogo imageClassName="h-12 w-auto" />
               </Link>
               <p className="max-w-[17rem] text-sm leading-[1.65] text-[#666]">{siteConfig.description}</p>
             </div>

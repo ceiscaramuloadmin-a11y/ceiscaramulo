@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Relatório Técnico-Científico — CEISCaramulo</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 3cm 2cm 2cm 3cm;
+      }
+
+      :root {
+        --ink: #111827;
+        --muted: #475569;
+        --line: #cbd5e1;
+        --soft: #e2e8f0;
+        --brand: #27441d;
+        --accent: #7ba53e;
+        --paper: #ffffff;
+        --wash: #f8fafc;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: #eef2f7;
+      }
+
+      body {
+        width: 210mm;
+        margin: 0 auto;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        line-height: 1.5;
+      }
+
+      main {
+        padding: 0;
+      }
+
+      .page {
+        page-break-after: always;
+      }
+
+      .cover,
+      .title-page {
+        min-height: 270mm;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .cover-top {
+        text-align: center;
+        margin-top: 28mm;
+      }
+
+      .cover-top h1,
+      .cover-top h2,
+      .cover-top p,
+      .title-page p,
+      .title-page h1,
+      .title-page h2 {
+        margin: 0;
+      }
+
+      .cover-top h1 {
+        font-size: 16pt;
+        text-transform: uppercase;
+      }
+
+      .cover-top h2 {
+        margin-top: 10mm;
+        font-size: 15pt;
+        text-transform: uppercase;
+      }
+
+      .cover-middle {
+        margin-top: 55mm;
+        text-align: center;
+      }
+
+      .cover-middle h3 {
+        margin: 0 auto;
+        max-width: 125mm;
+        font-size: 18pt;
+        text-transform: uppercase;
+        line-height: 1.35;
+      }
+
+      .cover-bottom {
+        margin-top: auto;
+        margin-bottom: 20mm;
+        text-align: center;
+      }
+
+      .title-page .title-block {
+        margin-top: 35mm;
+        text-align: center;
+      }
+
+      .title-page .title-block h1 {
+        font-size: 17pt;
+        text-transform: uppercase;
+      }
+
+      .title-page .purpose {
+        width: 92mm;
+        margin-left: auto;
+        margin-top: 42mm;
+        text-align: justify;
+      }
+
+      .title-page .footer {
+        margin-top: auto;
+        margin-bottom: 20mm;
+        text-align: center;
+      }
+
+      .section {
+        margin-bottom: 11mm;
+      }
+
+      h1.section-title {
+        margin: 0 0 7mm;
+        font-size: 14pt;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 7mm 0 3mm;
+        font-size: 12pt;
+      }
+
+      h3 {
+        margin: 5mm 0 2mm;
+        font-size: 12pt;
+      }
+
+      p {
+        margin: 0 0 4mm;
+        text-align: justify;
+        text-indent: 1.25cm;
+      }
+
+      p.no-indent,
+      li p,
+      td p,
+      .caption,
+      .small,
+      .toc li {
+        text-indent: 0;
+      }
+
+      ul,
+      ol {
+        margin: 0 0 4mm 1cm;
+      }
+
+      li {
+        margin-bottom: 2mm;
+      }
+
+      .toc {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .toc li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        border-bottom: 1px dotted var(--line);
+        padding: 3px 0;
+      }
+
+      .highlight-box,
+      .table-wrap,
+      .code-wrap,
+      .diagram-wrap {
+        border: 1px solid var(--soft);
+        background: var(--wash);
+        padding: 12px 14px;
+        margin: 4mm 0 6mm;
+      }
+
+      .table-wrap table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10.5pt;
+      }
+
+      .table-wrap th,
+      .table-wrap td {
+        border: 1px solid var(--line);
+        padding: 7px 8px;
+        vertical-align: top;
+      }
+
+      .table-wrap th {
+        background: #edf3e7;
+        text-align: left;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 9.4pt;
+        line-height: 1.45;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      .caption {
+        margin-top: 2mm;
+        font-size: 10pt;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .small {
+        font-size: 10.5pt;
+        color: var(--muted);
+      }
+
+      .badge-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 3mm 0 5mm;
+      }
+
+      .badge {
+        border: 1px solid var(--line);
+        padding: 4px 8px;
+        font-size: 10pt;
+        background: white;
+      }
+
+      .diagram-wrap svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .ref-list {
+        margin-left: 0;
+        padding-left: 0;
+        list-style: none;
+      }
+
+      .ref-list li {
+        margin-bottom: 3mm;
+        text-align: justify;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="page cover">
+        <div class="cover-top">
+          <h1>Centro de Estudos e Interpretação da Serra do Caramulo</h1>
+          <p>Projeto Web Institucional e Sistema de Gestão de Conteúdo</p>
+          <h2>Relatório Técnico-Científico</h2>
+        </div>
+
+        <div class="cover-middle">
+          <h3>
+            Desenvolvimento de uma plataforma web institucional com backoffice autenticado, CMS dinâmico, galeria multimédia e persistência em PostgreSQL
+          </h3>
+        </div>
+
+        <div class="cover-bottom">
+          <p class="no-indent">Caramulo / Tondela</p>
+          <p class="no-indent">2026</p>
+        </div>
+      </section>
+
+      <section class="page title-page">
+        <div class="title-block">
+          <h1>
+            Desenvolvimento de uma plataforma web institucional com backoffice autenticado, CMS dinâmico, galeria multimédia e persistência em PostgreSQL
+          </h1>
+        </div>
+
+        <div class="purpose">
+          <p class="no-indent">
+            Relatório técnico-científico apresentado em contexto de estágio curricular, com a finalidade de documentar a conceção, a modelação, a implementação, os fluxos de autenticação, a persistência de dados, os mecanismos de renderização pública e os procedimentos de teste do projeto CEISCaramulo.
+          </p>
+        </div>
+
+        <div class="footer">
+          <p class="no-indent">Caramulo / Tondela</p>
+          <p class="no-indent">2026</p>
+        </div>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">Resumo</h1>
+        <p>
+          Este relatório apresenta, em perspetiva técnico-científica, o desenvolvimento do projeto CEISCaramulo, uma aplicação web institucional construída com Next.js, React, TypeScript, Prisma ORM e PostgreSQL, complementada por um backoffice autenticado com Auth0 para administração de conteúdos. O sistema foi concebido para suportar a divulgação pública de notícias, atividades, projetos, publicações, contactos, conteúdos multimédia e informação institucional da associação, preservando simultaneamente a autonomia editorial da equipa gestora através de um painel administrativo centralizado.
+        </p>
+        <p>
+          A solução adota arquitetura baseada em App Router, rotas server-side em ambiente Node.js, mapeamento consistente entre secções de conteúdo e modelos de dados, persistência híbrida de layout e media em base64, e mecanismos de fallback para cenários de indisponibilidade da base de dados. O relatório detalha os requisitos funcionais, a arquitetura lógica, a modelação relacional, os fluxos de autenticação e autorização, a gestão de media, os trechos de código considerados nucleares, os testes automatizados implementados e a relevância do projeto enquanto artefacto de engenharia de software aplicado a contexto institucional e cultural.
+        </p>
+        <p class="no-indent"><strong>Palavras-chave:</strong> Next.js; Prisma; PostgreSQL; Auth0; CMS; Engenharia de Software; Aplicação Web.</p>
+
+        <h1 class="section-title" style="margin-top: 12mm">Abstract</h1>
+        <p>
+          This report documents the technical and scientific aspects of the CEISCaramulo project, a web platform developed with Next.js, React, TypeScript, Prisma ORM and PostgreSQL, complemented by an Auth0-based administrative backoffice. The system supports the public dissemination of institutional and editorial content while preserving secure and role-based management for administrators.
+        </p>
+        <p>
+          The solution combines App Router architecture, server-side API routes, relational persistence, base64 media storage, rich-text rendering, and resilience mechanisms for database quota or connectivity issues. This document covers the project requirements, system architecture, data modeling, authentication and authorization flows, relevant code excerpts, automated testing strategy and the project’s contribution as a curricular internship deliverable in software engineering.
+        </p>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">Sumário</h1>
+        <ol class="toc">
+          <li><span>1 Introdução</span><span>1</span></li>
+          <li><span>2 Enquadramento do projeto</span><span>2</span></li>
+          <li><span>3 Metodologia e stack tecnológica</span><span>3</span></li>
+          <li><span>4 Arquitetura do sistema</span><span>5</span></li>
+          <li><span>5 Modelação de dados</span><span>8</span></li>
+          <li><span>6 Fluxos operacionais e diagramas</span><span>10</span></li>
+          <li><span>7 Trechos de código comentados</span><span>13</span></li>
+          <li><span>8 Qualidade, testes e validação</span><span>17</span></li>
+          <li><span>9 Considerações finais</span><span>19</span></li>
+          <li><span>Referências</span><span>20</span></li>
+        </ol>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">1 Introdução</h1>
+        <p>
+          O projeto CEISCaramulo foi desenvolvido para responder à necessidade de uma presença digital institucional robusta, administrável e alinhada com a missão cultural, científica e patrimonial do Centro de Estudos e Interpretação da Serra do Caramulo. Em termos de engenharia de software, o problema central consistiu em conceber uma aplicação moderna capaz de servir conteúdo público e, ao mesmo tempo, disponibilizar um backoffice seguro para a gestão editorial de múltiplas entidades informacionais.
+        </p>
+        <p>
+          A relevância deste trabalho em contexto de estágio curricular reside na integração de conhecimentos de desenvolvimento frontend, backend, persistência, autenticação, qualidade de software e documentação técnica. O resultado não é apenas um website institucional, mas um sistema de gestão de conteúdo orientado à manutenção contínua, com regras de autorização, auditoria, testes automatizados e estratégias de resiliência perante falhas da infraestrutura.
+        </p>
+
+        <h2>1.1 Objetivo geral</h2>
+        <p>
+          Desenvolver uma plataforma web institucional para o CEISCaramulo, capaz de publicar conteúdo dinâmico, gerir media e permitir administração segura, com documentação e estrutura adequadas a um projeto de estágio curricular.
+        </p>
+
+        <h2>1.2 Objetivos específicos</h2>
+        <ul>
+          <li>Implementar um frontend institucional com páginas públicas para notícias, atividades, projetos, biblioteca, galeria, contactos e páginas institucionais.</li>
+          <li>Construir um backoffice autenticado com controlo por papéis e permissões.</li>
+          <li>Modelar persistência relacional para conteúdos, auditoria, utilizadores administrativos e configurações do site.</li>
+          <li>Garantir mecanismos de carregamento, fallback e sanitização adequados ao uso real.</li>
+          <li>Estabelecer uma base de testes automatizados para regressão e validação técnica.</li>
+        </ul>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">2 Enquadramento do projeto</h1>
+        <p>
+          Sob o ponto de vista funcional, o sistema serve dois grandes grupos de utilizadores. O primeiro corresponde ao público geral, que navega pelas páginas institucionais, consulta conteúdo editorial, visualiza media e envia mensagens através do formulário de contacto. O segundo grupo corresponde aos administradores, que autenticam-se no backoffice e executam operações CRUD sobre os conteúdos, definem layout, gerem utilizadores e consultam registos de auditoria.
+        </p>
+        <p>
+          A plataforma possui um forte caráter multidisciplinar: embora o domínio de negócio esteja ligado à divulgação patrimonial e cultural, a solução técnica exige articulação entre usabilidade, segurança, modelação de dados, tratamento de media, interoperabilidade com serviços de autenticação e processos contínuos de manutenção.
+        </p>
+
+        <div class="highlight-box">
+          <p class="no-indent"><strong>Escopo funcional principal.</strong></p>
+          <ul>
+            <li>Homepage com hero configurável, secções de atividades, notícias e projetos.</li>
+            <li>Páginas públicas dinâmicas para conteúdos editoriais.</li>
+            <li>Backoffice com gestão de notícias, atividades, projetos, publicações, contactos, galeria, layout, administradores e auditoria.</li>
+            <li>Autenticação administrativa com Auth0 e sincronização de roles.</li>
+            <li>Armazenamento de imagens e media em base64/data URL para consumo direto no site.</li>
+          </ul>
+        </div>
+
+        <h2>2.1 Requisitos não funcionais</h2>
+        <ul>
+          <li>Segurança de acesso ao painel administrativo.</li>
+          <li>Consistência entre frontend público e backend editorial.</li>
+          <li>Capacidade de adaptação a falhas de quota ou indisponibilidade da base de dados.</li>
+          <li>Compatibilidade com publicação estática em partes do projeto e renderização server-side quando necessário.</li>
+          <li>Manutenibilidade do código através de modularização e testes.</li>
+        </ul>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">3 Metodologia e stack tecnológica</h1>
+        <p>
+          O projeto foi implementado com enfoque incremental, partindo da construção da camada pública e evoluindo para o CMS administrativo, autenticação e mecanismos de governança. A solução adota uma stack contemporânea de desenvolvimento full stack para aplicações React com renderização híbrida.
+        </p>
+
+        <div class="badge-line">
+          <span class="badge">Next.js 15.5.x</span>
+          <span class="badge">React 18.3.x</span>
+          <span class="badge">TypeScript 5.x</span>
+          <span class="badge">Prisma 7.x</span>
+          <span class="badge">PostgreSQL</span>
+          <span class="badge">Auth0</span>
+          <span class="badge">Vitest</span>
+          <span class="badge">Tailwind CSS</span>
+        </div>
+
+        <h2>3.1 Componentes tecnológicos</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Camada</th>
+                <th>Tecnologia</th>
+                <th>Justificação técnica</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Frontend / SSR</td>
+                <td>Next.js App Router</td>
+                <td>Permite combinar páginas públicas, renderização no servidor, rotas API e organização por segmentos.</td>
+              </tr>
+              <tr>
+                <td>UI</td>
+                <td>React + Tailwind CSS + componentes utilitários</td>
+                <td>Facilita composição modular, estados reativos e consistência visual.</td>
+              </tr>
+              <tr>
+                <td>Persistência</td>
+                <td>Prisma ORM + PostgreSQL</td>
+                <td>Fornece tipagem forte, migração do esquema e produtividade no acesso aos dados.</td>
+              </tr>
+              <tr>
+                <td>Autenticação</td>
+                <td>Auth0 Next.js SDK</td>
+                <td>Centraliza sessão, login, logout e integração com gestão de utilizadores administrativos.</td>
+              </tr>
+              <tr>
+                <td>Testes</td>
+                <td>Vitest + Testing Library</td>
+                <td>Suporta testes unitários, de rota e de regressão em fonte.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>3.2 Organização do código</h2>
+        <p>
+          O diretório <code>app/</code> concentra as páginas públicas, o backoffice e as rotas API. A pasta <code>lib/</code> encapsula integrações e utilitários, enquanto <code>prisma/</code> define a modelação da base de dados. Os testes automatizados residem em <code>tests/</code> e asseguram comportamentos críticos. Esta separação favorece legibilidade e responsabilidade única por módulo.
+        </p>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">4 Arquitetura do sistema</h1>
+        <p>
+          A arquitetura pode ser descrita como uma aplicação monolítica modular baseada em Next.js, com frontend React, rotas API no mesmo runtime e uma camada de persistência mediada pelo Prisma. A autenticação administrativa é externa à aplicação, sendo delegada ao Auth0, enquanto a autorização de acesso ao CMS é materializada internamente através de permissões persistidas e contexto administrativo derivado da sessão.
+        </p>
+
+        <div class="diagram-wrap">
+          <svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de arquitetura do sistema">
+            <rect x="30" y="40" width="230" height="120" rx="18" fill="#edf3e7" stroke="#27441d" stroke-width="2"/>
+            <text x="145" y="82" text-anchor="middle" font-size="24" font-family="Times New Roman">Utilizadores</text>
+            <text x="145" y="112" text-anchor="middle" font-size="19" font-family="Times New Roman">Público e Administradores</text>
+
+            <rect x="335" y="30" width="420" height="180" rx="18" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+            <text x="545" y="70" text-anchor="middle" font-size="25" font-family="Times New Roman">Aplicação Next.js</text>
+            <rect x="365" y="92" width="165" height="86" rx="12" fill="#ffffff" stroke="#64748b"/>
+            <text x="447" y="125" text-anchor="middle" font-size="18" font-family="Times New Roman">Páginas Públicas</text>
+            <text x="447" y="149" text-anchor="middle" font-size="15" font-family="Times New Roman">App Router</text>
+            <rect x="560" y="92" width="165" height="86" rx="12" fill="#ffffff" stroke="#64748b"/>
+            <text x="642" y="125" text-anchor="middle" font-size="18" font-family="Times New Roman">Backoffice</text>
+            <text x="642" y="149" text-anchor="middle" font-size="15" font-family="Times New Roman">CRUD e Governação</text>
+
+            <rect x="335" y="250" width="420" height="170" rx="18" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+            <text x="545" y="287" text-anchor="middle" font-size="25" font-family="Times New Roman">Camada de Serviços</text>
+            <rect x="360" y="310" width="170" height="76" rx="12" fill="#ffffff" stroke="#64748b"/>
+            <text x="445" y="340" text-anchor="middle" font-size="17" font-family="Times New Roman">Rotas API</text>
+            <text x="445" y="363" text-anchor="middle" font-size="14" font-family="Times New Roman">/api/[section], /api/gallery</text>
+            <rect x="560" y="310" width="170" height="76" rx="12" fill="#ffffff" stroke="#64748b"/>
+            <text x="645" y="340" text-anchor="middle" font-size="17" font-family="Times New Roman">Módulo CMS</text>
+            <text x="645" y="363" text-anchor="middle" font-size="14" font-family="Times New Roman">parsing, autorização, auditoria</text>
+
+            <rect x="825" y="70" width="230" height="120" rx="18" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+            <text x="940" y="110" text-anchor="middle" font-size="24" font-family="Times New Roman">Auth0</text>
+            <text x="940" y="138" text-anchor="middle" font-size="17" font-family="Times New Roman">Sessão e gestão de roles</text>
+
+            <rect x="810" y="290" width="250" height="140" rx="18" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+            <text x="935" y="330" text-anchor="middle" font-size="24" font-family="Times New Roman">PostgreSQL</text>
+            <text x="935" y="358" text-anchor="middle" font-size="17" font-family="Times New Roman">Persistência relacional</text>
+            <text x="935" y="383" text-anchor="middle" font-size="15" font-family="Times New Roman">acessada via Prisma ORM</text>
+
+            <line x1="260" y1="100" x2="335" y2="100" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="260" y1="135" x2="335" y2="150" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="755" y1="135" x2="825" y2="135" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="730" y1="348" x2="810" y2="348" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="645" y1="210" x2="645" y2="250" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+              </marker>
+            </defs>
+          </svg>
+          <div class="caption">Figura 1 — Arquitetura lógica simplificada do sistema CEISCaramulo.</div>
+        </div>
+
+        <h2>4.1 Características arquiteturais relevantes</h2>
+        <ul>
+          <li>Co-localização entre UI e API, reduzindo fricção entre frontend e backend.</li>
+          <li>Separação clara entre autenticação externa (Auth0) e autorização interna baseada em permissões.</li>
+          <li>Módulo CMS comum reutilizado por várias rotas, centralizando validações e parsing.</li>
+          <li>Renderização pública com fallback para conteúdos estáticos em cenários degradados.</li>
+        </ul>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">5 Modelação de dados</h1>
+        <p>
+          A modelação da base de dados foi definida no Prisma Schema, permitindo representar conteúdos editoriais, utilizadores administrativos, configurações do site, auditoria e mensagens de contacto. O esquema adota um desenho relacional suficientemente flexível para operações CRUD e suficientemente explícito para garantir integridade semântica.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Entidade</th>
+                <th>Responsabilidade</th>
+                <th>Atributos-chave</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>News</td>
+                <td>Gestão de notícias institucionais.</td>
+                <td>title, slug, excerpt, content, category, image, publishedAt</td>
+              </tr>
+              <tr>
+                <td>Activity</td>
+                <td>Agenda e atividades públicas.</td>
+                <td>title, description, date, endDate, location, image, category</td>
+              </tr>
+              <tr>
+                <td>Project</td>
+                <td>Projetos estratégicos e operacionais.</td>
+                <td>title, description, status, startDate, endDate, partners</td>
+              </tr>
+              <tr>
+                <td>Publication</td>
+                <td>Biblioteca e publicações.</td>
+                <td>title, author, year, type, description, downloadUrl, coverImage</td>
+              </tr>
+              <tr>
+                <td>GalleryMedia</td>
+                <td>Media da galeria multimédia.</td>
+                <td>type, source, thumbnail, mimeType, published</td>
+              </tr>
+              <tr>
+                <td>AdminUser</td>
+                <td>Utilizadores do backoffice.</td>
+                <td>email, role, active, createdBy</td>
+              </tr>
+              <tr>
+                <td>AdminAuditLog</td>
+                <td>Rastreabilidade de operações.</td>
+                <td>actorEmail, action, targetType, targetId, summary, before, after</td>
+              </tr>
+              <tr>
+                <td>SiteLayout / SiteSetting</td>
+                <td>Configuração visual e parâmetros persistidos.</td>
+                <td>key, value</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>5.1 Excerto representativo do esquema Prisma</h2>
+        <div class="code-wrap">
+          <pre>model News {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String   @db.Text
+  category    String
+  image       String?
+  author      String
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AdminUser {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  role      AdminRole @default(editor)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+}</pre>
+        </div>
+        <div class="caption">Código 1 — Modelos representativos do domínio persistente.</div>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">6 Fluxos operacionais e diagramas</h1>
+        <h2>6.1 Diagrama de casos de uso</h2>
+        <div class="diagram-wrap">
+          <svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de casos de uso">
+            <ellipse cx="120" cy="180" rx="80" ry="40" fill="#edf3e7" stroke="#27441d" stroke-width="2"/>
+            <text x="120" y="187" text-anchor="middle" font-size="20" font-family="Times New Roman">Visitante</text>
+
+            <ellipse cx="120" cy="430" rx="90" ry="40" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+            <text x="120" y="437" text-anchor="middle" font-size="20" font-family="Times New Roman">Administrador</text>
+
+            <rect x="250" y="45" width="780" height="520" rx="20" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+            <text x="640" y="85" text-anchor="middle" font-size="24" font-family="Times New Roman">Sistema CEISCaramulo</text>
+
+            <ellipse cx="410" cy="170" rx="135" ry="38" fill="#f8fafc" stroke="#64748b"/>
+            <text x="410" y="177" text-anchor="middle" font-size="18" font-family="Times New Roman">Consultar conteúdos públicos</text>
+
+            <ellipse cx="690" cy="170" rx="130" ry="38" fill="#f8fafc" stroke="#64748b"/>
+            <text x="690" y="177" text-anchor="middle" font-size="18" font-family="Times New Roman">Ver galeria multimédia</text>
+
+            <ellipse cx="540" cy="275" rx="150" ry="38" fill="#f8fafc" stroke="#64748b"/>
+            <text x="540" y="282" text-anchor="middle" font-size="18" font-family="Times New Roman">Enviar mensagem de contacto</text>
+
+            <ellipse cx="430" cy="405" rx="150" ry="38" fill="#f8fafc" stroke="#64748b"/>
+            <text x="430" y="412" text-anchor="middle" font-size="18" font-family="Times New Roman">Gerir conteúdos e media</text>
+
+            <ellipse cx="720" cy="405" rx="145" ry="38" fill="#f8fafc" stroke="#64748b"/>
+            <text x="720" y="412" text-anchor="middle" font-size="18" font-family="Times New Roman">Gerir admins e permissões</text>
+
+            <ellipse cx="580" cy="500" rx="145" ry="38" fill="#f8fafc" stroke="#64748b"/>
+            <text x="580" y="507" text-anchor="middle" font-size="18" font-family="Times New Roman">Consultar auditoria</text>
+
+            <line x1="200" y1="180" x2="275" y2="170" stroke="#475569" stroke-width="2"/>
+            <line x1="200" y1="190" x2="560" y2="170" stroke="#475569" stroke-width="2"/>
+            <line x1="200" y1="200" x2="390" y2="275" stroke="#475569" stroke-width="2"/>
+
+            <line x1="210" y1="420" x2="285" y2="405" stroke="#475569" stroke-width="2"/>
+            <line x1="210" y1="430" x2="575" y2="405" stroke="#475569" stroke-width="2"/>
+            <line x1="210" y1="440" x2="435" y2="500" stroke="#475569" stroke-width="2"/>
+          </svg>
+          <div class="caption">Figura 2 — Casos de uso centrais do sistema.</div>
+        </div>
+
+        <h2>6.2 Diagrama de sequência — autenticação administrativa</h2>
+        <div class="diagram-wrap">
+          <svg viewBox="0 0 1100 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de sequência de autenticação administrativa">
+            <text x="130" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">Admin</text>
+            <text x="390" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">Frontend</text>
+            <text x="660" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">Auth0</text>
+            <text x="930" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">API / Sessão</text>
+
+            <line x1="130" y1="60" x2="130" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+            <line x1="390" y1="60" x2="390" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+            <line x1="660" y1="60" x2="660" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+            <line x1="930" y1="60" x2="930" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+
+            <line x1="130" y1="110" x2="390" y2="110" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="260" y="98" text-anchor="middle" font-size="16" font-family="Times New Roman">1. Acede a /backoffice/login</text>
+
+            <line x1="390" y1="180" x2="660" y2="180" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="525" y="168" text-anchor="middle" font-size="16" font-family="Times New Roman">2. /auth/login</text>
+
+            <line x1="660" y1="250" x2="390" y2="250" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="525" y="238" text-anchor="middle" font-size="16" font-family="Times New Roman">3. Callback com sessão</text>
+
+            <line x1="390" y1="330" x2="930" y2="330" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="660" y="318" text-anchor="middle" font-size="16" font-family="Times New Roman">4. GET /api/admin/session</text>
+
+            <line x1="930" y1="400" x2="660" y2="400" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="795" y="388" text-anchor="middle" font-size="16" font-family="Times New Roman">5. Valida sessão</text>
+
+            <line x1="660" y1="470" x2="930" y2="470" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="795" y="458" text-anchor="middle" font-size="16" font-family="Times New Roman">6. Utilizador autenticado</text>
+
+            <line x1="930" y1="550" x2="390" y2="550" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="660" y="538" text-anchor="middle" font-size="16" font-family="Times New Roman">7. Contexto admin e permissões</text>
+
+            <line x1="390" y1="620" x2="130" y2="620" stroke="#334155" stroke-width="2" marker-end="url(#seqArrow)"/>
+            <text x="260" y="608" text-anchor="middle" font-size="16" font-family="Times New Roman">8. Painel carregado</text>
+
+            <defs>
+              <marker id="seqArrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#334155"/>
+              </marker>
+            </defs>
+          </svg>
+          <div class="caption">Figura 3 — Sequência simplificada de autenticação e bootstrap administrativo.</div>
+        </div>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">6 Fluxos operacionais e diagramas (continuação)</h1>
+        <h2>6.3 Diagrama de sequência — criação de item multimédia</h2>
+        <div class="diagram-wrap">
+          <svg viewBox="0 0 1100 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de sequência de criação de item de galeria">
+            <text x="120" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">Admin</text>
+            <text x="360" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">Backoffice</text>
+            <text x="640" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">API / Gallery</text>
+            <text x="920" y="45" text-anchor="middle" font-size="20" font-family="Times New Roman">Prisma / BD</text>
+
+            <line x1="120" y1="60" x2="120" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+            <line x1="360" y1="60" x2="360" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+            <line x1="640" y1="60" x2="640" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+            <line x1="920" y1="60" x2="920" y2="700" stroke="#94a3b8" stroke-dasharray="6 6"/>
+
+            <line x1="120" y1="120" x2="360" y2="120" stroke="#334155" stroke-width="2" marker-end="url(#mediaArrow)"/>
+            <text x="240" y="108" text-anchor="middle" font-size="16" font-family="Times New Roman">1. Seleciona ficheiro</text>
+
+            <line x1="360" y1="205" x2="640" y2="205" stroke="#334155" stroke-width="2" marker-end="url(#mediaArrow)"/>
+            <text x="500" y="193" text-anchor="middle" font-size="16" font-family="Times New Roman">2. POST /api/gallery (FormData)</text>
+
+            <line x1="640" y1="290" x2="640" y2="290" stroke="#334155" stroke-width="2"/>
+            <text x="640" y="278" text-anchor="middle" font-size="16" font-family="Times New Roman">3. Valida tipo, tamanho e permissões</text>
+
+            <line x1="640" y1="375" x2="920" y2="375" stroke="#334155" stroke-width="2" marker-end="url(#mediaArrow)"/>
+            <text x="780" y="363" text-anchor="middle" font-size="16" font-family="Times New Roman">4. createGalleryMedia(...)</text>
+
+            <line x1="920" y1="460" x2="640" y2="460" stroke="#334155" stroke-width="2" marker-end="url(#mediaArrow)"/>
+            <text x="780" y="448" text-anchor="middle" font-size="16" font-family="Times New Roman">5. Registo persistido</text>
+
+            <line x1="640" y1="545" x2="360" y2="545" stroke="#334155" stroke-width="2" marker-end="url(#mediaArrow)"/>
+            <text x="500" y="533" text-anchor="middle" font-size="16" font-family="Times New Roman">6. Resposta JSON 201</text>
+
+            <line x1="360" y1="630" x2="120" y2="630" stroke="#334155" stroke-width="2" marker-end="url(#mediaArrow)"/>
+            <text x="240" y="618" text-anchor="middle" font-size="16" font-family="Times New Roman">7. UI atualiza grelha</text>
+
+            <defs>
+              <marker id="mediaArrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#334155"/>
+              </marker>
+            </defs>
+          </svg>
+          <div class="caption">Figura 4 — Sequência operacional de criação de media no backoffice.</div>
+        </div>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">7 Trechos de código comentados</h1>
+        <p>
+          Nesta secção são apresentados excertos representativos do projeto. A seleção privilegia trechos que materializam decisões de arquitetura, integração com serviços externos e garantias de robustez.
+        </p>
+
+        <h2>7.1 Inicialização do Prisma com adapter PostgreSQL</h2>
+        <div class="code-wrap">
+          <pre>import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@/src/generated/prisma/client';
+
+const connectionString =
+  process.env.DATABASE_URL ??
+  process.env.POSTGRES_URL ??
+  process.env.PRISMA_DATABASE_URL;
+
+const prisma = connectionString
+  ? new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
+    })
+  : ({} as PrismaClient);</pre>
+        </div>
+        <div class="caption">Código 2 — Estratégia de inicialização do cliente Prisma.</div>
+        <p>
+          Este trecho evidencia uma decisão relevante: a aplicação aceita mais de uma variável de ambiente para a cadeia de ligação, o que simplifica a adaptação a diferentes ambientes de deployment. A inicialização condicionada também evita falhas precoces em cenários onde a conexão não se encontra definida, permitindo fallback controlado em certas rotas.
+        </p>
+
+        <h2>7.2 Bootstrap automático do primeiro administrador autenticado</h2>
+        <div class="code-wrap">
+          <pre>const validated = await getAdminAuthSession(request);
+let admin = await getAdminByEmail(validated.email);
+
+if (!admin) {
+  const existingAdmins = await listAdminUsers();
+
+  if (existingAdmins.length === 0) {
+    await saveAdminUsers([
+      {
+        id: validated.uid,
+        email: validated.email,
+        role: 'owner',
+        permissions: [...OWNER_PERMISSIONS],
+        active: true,
+        createdBy: 'auth0-bootstrap',
+      },
+    ]);
+  }
+}</pre>
+        </div>
+        <div class="caption">Código 3 — Criação do primeiro owner em ambiente sem administradores.</div>
+        <p>
+          Trata-se de uma solução pragmática para bootstrap administrativo. Em vez de exigir intervenção manual direta na base de dados, o sistema eleva a primeira conta autenticada a <em>owner</em>, garantindo inicialização funcional do backoffice. A técnica reduz atrito operacional, mas exige controlo cuidadoso do primeiro acesso em ambiente produtivo.
+        </p>
+
+        <h2>7.3 Rota genérica por secção para o CMS</h2>
+        <div class="code-wrap">
+          <pre>if (!isContentSection(section)) {
+  return jsonError('Secção inválida.', 404);
+}
+
+if (!context || !hasAdminPermission(context, getSectionPermission(section))) {
+  return jsonError('Sem permissão para gerir esta secção.', 403);
+}
+
+const formData = await request.formData();
+const data = await parseSectionFormData(section, formData);
+const model = getSectionModel(section);
+
+const created = await model.create({ data });</pre>
+        </div>
+        <div class="caption">Código 4 — Generalização da criação de conteúdo em múltiplas secções.</div>
+        <p>
+          A adoção de uma rota parametrizada reduz duplicação estrutural e favorece consistência entre notícias, atividades, projetos e publicações. O desenho é reforçado pela existência de um módulo CMS partilhado, responsável por validação, parsing e resolução do delegate Prisma adequado.
+        </p>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">7 Trechos de código comentados (continuação)</h1>
+        <h2>7.4 Conversão de ficheiros para Data URL</h2>
+        <div class="code-wrap">
+          <pre>export async function fileToDataUrl(file: File) {
+  const mimeType = file.type || 'application/octet-stream';
+  const arrayBuffer = await file.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+  if (!base64) {
+    throw new Error('Não foi possível converter o ficheiro enviado.');
+  }
+
+  return `data:${mimeType};base64,${base64}`;
+}</pre>
+        </div>
+        <div class="caption">Código 5 — Conversão de media para persistência inline.</div>
+        <p>
+          O projeto adotou persistência em base64 para imagens e determinados recursos multimédia. Embora esta estratégia aumente o tamanho dos dados armazenados, simplifica distribuição e uso direto dos ativos no frontend, elimina dependência imediata de armazenamento externo e foi particularmente útil para hero images, capas e alguns fluxos editoriais.
+        </p>
+
+        <h2>7.5 Sanitização e preparação de rich text</h2>
+        <div class="code-wrap">
+          <pre>export function prepareRichTextForRender(value: string | null | undefined) {
+  const normalized = String(value ?? '').trim();
+
+  if (!normalized) {
+    return '';
+  }
+
+  const hasHtmlTags = /&lt;\/?[a-z][\s\S]*&gt;/i.test(normalized);
+  return hasHtmlTags ? normalized : textToHtml(normalized);
+}</pre>
+        </div>
+        <div class="caption">Código 6 — Normalização do conteúdo antes da renderização pública.</div>
+        <p>
+          Este mecanismo resolve um problema recorrente em CMS híbridos: o conteúdo pode chegar como HTML estruturado ou como texto simples. A função converte texto puro em HTML básico quando necessário, mantendo a renderização consistente nas páginas públicas e evitando exposição de HTML cru ao utilizador final.
+        </p>
+
+        <h2>7.6 Controlo de tamanho em carregamento de áudio</h2>
+        <div class="code-wrap">
+          <pre>if (isInlineAudioUploadTooLarge(sourceFile, type)) {
+  return jsonError(getInlineAudioUploadErrorMessage(), 413);
+}</pre>
+        </div>
+        <div class="caption">Código 7 — Proteção contra uploads excessivos de áudio.</div>
+        <p>
+          A existência de verificação específica para áudio demonstra preocupação com robustez operacional. O código evita uploads inadequados para o modelo de persistência adotado, devolvendo erro HTTP 413 quando o tamanho excede o limite considerado viável.
+        </p>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">8 Qualidade, testes e validação</h1>
+        <p>
+          A estratégia de qualidade do projeto baseia-se em testes automatizados com Vitest, cobrindo rotas administrativas, regras de autenticação, renderização pública, placeholders, slugs, rich text e comportamentos específicos do backoffice. A presença de testes próximos do código alterado reduz regressões e facilita manutenção contínua.
+        </p>
+
+        <h2>8.1 Exemplos de validação automatizada</h2>
+        <div class="code-wrap">
+          <pre>expect(createAuth0PasswordUser).toHaveBeenCalledWith({
+  email: 'novo@ceis.pt',
+  password: 'SenhaSegura123!',
+});
+
+expect(syncAuth0AdminRole).toHaveBeenCalledWith('auth0|new-admin', 'editor');
+expect(response.status).toBe(201);</pre>
+        </div>
+        <div class="caption">Código 8 — Trecho de teste da criação de administradores.</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th>Exemplos observados</th>
+                <th>Benefício</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Rotas administrativas</td>
+                <td>admin-users-route.test.ts, admin-password-route.test.ts</td>
+                <td>Valida autorização, integração Auth0 e persistência.</td>
+              </tr>
+              <tr>
+                <td>Renderização pública</td>
+                <td>public-rich-text-rendering.test.ts, homepage-cards.test.ts</td>
+                <td>Evita regressões visuais e HTML bruto nas páginas.</td>
+              </tr>
+              <tr>
+                <td>Conteúdo institucional</td>
+                <td>public-institutional-pages.test.ts</td>
+                <td>Assegura integridade das páginas fixas.</td>
+              </tr>
+              <tr>
+                <td>Infraestrutura auxiliar</td>
+                <td>geologia-pdf-route.test.ts, site-layout-settings.test.ts</td>
+                <td>Valida rotas e configurações de apoio.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>8.2 Riscos técnicos identificados</h2>
+        <ul>
+          <li>A persistência de ficheiros em base64 simplifica consumo, mas pode pressionar armazenamento e tráfego.</li>
+          <li>Bootstrap automático do primeiro owner exige governação operacional no primeiro acesso.</li>
+          <li>Dependência de serviços externos de autenticação requer configuração rigorosa de variáveis de ambiente e callbacks.</li>
+          <li>Cenários de quota excedida da base de dados devem continuar a ser acompanhados e mitigados.</li>
+        </ul>
+      </section>
+
+      <section class="page">
+        <h1 class="section-title">9 Considerações finais</h1>
+        <p>
+          O projeto CEISCaramulo constitui um caso relevante de aplicação de engenharia de software em contexto institucional e cultural. A solução não se limitou à construção de páginas estáticas; pelo contrário, evoluiu para uma plataforma editorial com autenticação moderna, controlo de permissões, auditoria, modelação relacional, tratamento de rich text, gestão de media e testes automatizados.
+        </p>
+        <p>
+          Em contexto de estágio curricular, o trabalho demonstra domínio transversal sobre análise de requisitos, desenho arquitetural, implementação full stack, integração com serviços externos, manutenção da qualidade e documentação técnica. A existência de um backoffice seguro e de páginas públicas dinâmicas permite à instituição autonomia futura na atualização do site, reforçando a sustentabilidade do produto desenvolvido.
+        </p>
+        <p>
+          Como evolução futura, recomenda-se considerar externalização seletiva de media para armazenamento dedicado, reforço de observabilidade, expansão do domínio analítico do backoffice e incremento da cobertura de testes end-to-end em ambiente próximo de produção.
+        </p>
+      </section>
+
+      <section>
+        <h1 class="section-title">Referências</h1>
+        <ul class="ref-list">
+          <li>NEXT.JS. <strong>Next.js Documentation</strong>. Disponível em: https://nextjs.org/docs. Acesso em: 21 abr. 2026.</li>
+          <li>PRISMA. <strong>Prisma ORM Documentation</strong>. Disponível em: https://www.prisma.io/docs. Acesso em: 21 abr. 2026.</li>
+          <li>AUTH0. <strong>Auth0 Next.js SDK</strong>. Disponível em: https://auth0.com/docs/quickstart/webapp/nextjs. Acesso em: 21 abr. 2026.</li>
+          <li>POSTGRESQL GLOBAL DEVELOPMENT GROUP. <strong>PostgreSQL Documentation</strong>. Disponível em: https://www.postgresql.org/docs. Acesso em: 21 abr. 2026.</li>
+          <li>CEISCARAMULO. <strong>Código-fonte do projeto CEISCaramulo</strong>. Repositório local analisado em contexto de estágio curricular. Caramulo, 2026.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

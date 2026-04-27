@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import SiteLogo from '@/components/SiteLogo';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -33,10 +34,10 @@ const Header: React.FC = () => {
       <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="font-display text-xl font-bold tracking-[-0.05em] text-[#3e5c32]"
+          className="inline-flex items-center"
           aria-label="CEISCaramulo - Página inicial"
         >
-          CEISCaramulo
+          <SiteLogo imageClassName="h-11 w-auto sm:h-12" />
         </Link>
 
         <nav className="hidden items-center lg:flex" aria-label="Navegação principal">

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, Menu, TreePine, X } from 'lucide-react';
+import { ArrowDown, Menu, X } from 'lucide-react';
+import SiteLogo from '@/components/SiteLogo';
 import { Button } from '@/components/ui/button';
 import type { NavItem, SiteLayoutSettings } from '@/types';
 
@@ -53,13 +54,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
         <div className="mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 py-3 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] backdrop-blur md:px-8">
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <TreePine className="h-4 w-4" />
-              </span>
-              <span className="leading-none">
-                <span className="block text-sm font-bold tracking-[-0.02em]">CEISCaramulo</span>
-                <span className="block pt-1 text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Serra do Caramulo</span>
-              </span>
+              <SiteLogo imageClassName="h-10 w-auto sm:h-12" />
             </Link>
 
             <nav className="hidden items-center gap-4 md:flex lg:gap-6" aria-label="Navegação principal da homepage">
@@ -125,7 +120,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
-        <h1 className="mt-6 max-w-[750px] font-display text-5xl font-bold leading-[0.92] text-white sm:text-6xl md:text-[84px]">
+        <h1 className="font-hero mt-6 max-w-[750px] text-5xl font-bold leading-[0.92] text-white sm:text-6xl md:text-[84px]">
           <span className="block">{hero.titleLine1}</span>
           <span className="block text-[#9dc44d]">{hero.titleLine2}</span>
           <span className="block">{hero.titleLine3}</span>
