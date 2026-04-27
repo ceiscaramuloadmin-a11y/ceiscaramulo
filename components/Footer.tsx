@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import SiteLogo from '@/components/SiteLogo';
 import { contactInfo } from '@/data/site';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
@@ -50,8 +51,8 @@ const Footer: React.FC = () => {
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-5">
           <div className="space-y-4">
-            <Link href="/" className="font-display text-[1.7rem] text-[#3e5c32]">
-              CEISCaramulo
+            <Link href="/" className="inline-flex items-center" aria-label="CEISCaramulo - Página inicial">
+              <SiteLogo imageClassName="h-14 w-auto" />
             </Link>
             <p className="max-w-xs text-sm leading-[1.7] text-stone-500">
               {layoutSettings.footer.brandDescription}

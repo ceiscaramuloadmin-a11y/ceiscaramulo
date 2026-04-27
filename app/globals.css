@@ -4,6 +4,14 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
+@font-face {
+  font-family: 'Coolvetica';
+  src: local('Coolvetica'), local('Coolvetica Rg');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -71,6 +79,11 @@
 /* Skip navigation link for accessibility */
 .skip-nav {
   @apply absolute -top-10 left-4 z-[100] rounded bg-primary px-4 py-2 text-primary-foreground transition-all focus:top-4;
+}
+
+.font-hero {
+  font-family: 'Coolvetica', var(--font-playfair), Georgia, serif;
+  letter-spacing: -0.04em;
 }
 
 /* Custom scrollbar styles */
