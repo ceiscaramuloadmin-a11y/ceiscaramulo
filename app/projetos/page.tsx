@@ -8,7 +8,7 @@ import { projects as fallbackProjects } from '@/data/content';
 import { getProjectSlug } from '@/lib/public-content-slugs';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
-import { prepareRichTextForRender } from '@/lib/richText';
+import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatShortDate, getAssetUrl } from '@/lib/utils';
 
@@ -125,10 +125,9 @@ export default async function ProjetosPage() {
                   <h2 className="mt-4 font-display text-xl font-bold leading-tight text-foreground group-hover:text-primary">
                     {project.title}
                   </h2>
-                  <div
-                    className="mt-2 rich-text-content overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                    dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(project.description) }}
-                  />
+                  <p className="mt-2 overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                    {richTextToPlainText(project.description)}
+                  </p>
                   {project.partners && project.partners.length > 0 && (
                     <div className="mt-4 flex flex-wrap gap-2">
                       {project.partners.slice(0, 2).map((partner, index) => (

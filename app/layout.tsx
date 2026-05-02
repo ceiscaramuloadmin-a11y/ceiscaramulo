@@ -19,7 +19,8 @@ const playfair = Playfair_Display({
 const coolvetica = localFont({
   src: '../src/assets/coolvetica/Coolvetica Rg.otf',
   variable: '--font-coolvetica',
-  display: 'swap',
+  display: 'optional',
+  fallback: ['Arial Black', 'Helvetica Neue', 'Arial', 'sans-serif'],
 });
 
 export const metadata: Metadata = {

@@ -75,7 +75,10 @@
 
 .font-hero {
   font-family: var(--font-coolvetica), var(--font-playfair), Georgia, serif;
+  font-weight: 400;
   letter-spacing: -0.02em;
+  text-wrap: balance;
+  font-synthesis-weight: none;
 }
 
 /* Custom scrollbar styles */

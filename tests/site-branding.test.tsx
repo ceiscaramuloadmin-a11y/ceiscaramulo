@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import HomeHero from '@/components/HomeHero';
+import SiteLogo from '@/components/SiteLogo';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -92,5 +93,14 @@ describe('site branding', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /Explorar A Serra Do Caramulo/i })
     ).toHaveClass('font-hero');
+  });
+
+  it('reserves intrinsic logo dimensions to avoid layout shift', () => {
+    render(<SiteLogo />);
+
+    const logo = screen.getByRole('img', { name: 'CEISCaramulo' });
+
+    expect(logo).toHaveAttribute('width', '474');
+    expect(logo).toHaveAttribute('height', '299');
   });
 });

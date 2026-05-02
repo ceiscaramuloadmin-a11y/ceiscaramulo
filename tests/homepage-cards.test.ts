@@ -13,16 +13,15 @@ describe('homepage cards', () => {
   });
 
   it('renders activity and news card copy as rich text previews instead of raw html strings', () => {
-    expect(homePageSource).toContain('prepareRichTextForRender(activity.description)');
-    expect(homePageSource).toContain('prepareRichTextForRender(article.excerpt)');
-    expect(homePageSource).toContain('dangerouslySetInnerHTML');
+    expect(homePageSource).toContain('richTextToPlainText(activity.description)');
+    expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
   });
 
   it('limits card titles to 3 lines and descriptions to 4 lines', () => {
     expect(homePageSource).toContain('[-webkit-line-clamp:3]');
-    expect(homePageSource).toContain('prepareRichTextForRender(activity.description)');
-    expect(homePageSource).toContain('prepareRichTextForRender(article.excerpt)');
-    expect(homePageSource).toContain('prepareRichTextForRender(project.description)');
+    expect(homePageSource).toContain('richTextToPlainText(activity.description)');
+    expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
+    expect(homePageSource).toContain('richTextToPlainText(project.description)');
     expect(homePageSource).toContain('[-webkit-line-clamp:4]');
   });
 
@@ -32,6 +31,6 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain('Projetos');
     expect(homePageSource).toContain('href={`/projetos/${getProjectSlug(project)}`}');
     expect(homePageSource).toContain('src={getAssetUrl(project.image)}');
-    expect(homePageSource).toContain('prepareRichTextForRender(project.description)');
+    expect(homePageSource).toContain('richTextToPlainText(project.description)');
   });
 });

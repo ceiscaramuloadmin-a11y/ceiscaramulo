@@ -8,7 +8,7 @@ import { activities as fallbackActivities } from '@/data/content';
 import { getActivitySlug } from '@/lib/public-content-slugs';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
-import { prepareRichTextForRender } from '@/lib/richText';
+import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatShortDate, capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 
@@ -142,10 +142,9 @@ export default async function AtividadesPage() {
                   <h2 className="mt-4 font-display text-xl font-bold leading-tight text-foreground group-hover:text-primary">
                     {activity.title}
                   </h2>
-                  <div
-                    className="mt-2 rich-text-content overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                    dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(activity.description) }}
-                  />
+                  <p className="mt-2 overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                    {richTextToPlainText(activity.description)}
+                  </p>
                   <div className="mt-4 flex items-center gap-1 text-sm font-medium text-primary">
                     Ver detalhes
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

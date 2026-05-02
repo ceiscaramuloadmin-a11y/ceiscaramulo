@@ -120,7 +120,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
-        <h1 className="font-hero mt-6 max-w-[750px] text-5xl font-bold leading-[0.92] text-white sm:text-6xl md:text-[84px]">
+        <h1 className="font-hero mt-6 max-w-[11ch] text-[clamp(3.8rem,8vw,5.25rem)] font-bold leading-[0.9] text-white sm:text-[clamp(4.4rem,8vw,5.8rem)] md:text-[84px]">
           <span className="block">{hero.titleLine1}</span>
           <span className="block text-[#9dc44d]">{hero.titleLine2}</span>
           <span className="block">{hero.titleLine3}</span>

@@ -8,7 +8,7 @@ import { activities as fallbackActivities, newsArticles as fallbackNewsArticles,
 import { navigationItems } from '@/data/navigation';
 import { contactInfo, siteConfig } from '@/data/site';
 import { getActivitySlug, getProjectSlug } from '@/lib/public-content-slugs';
-import { prepareRichTextForRender } from '@/lib/richText';
+import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import prisma from '@/lib/prisma';
 import { getAssetUrl } from '@/lib/utils';
@@ -203,10 +203,9 @@ export default async function HomePage() {
                 <h3 className="mt-4 overflow-hidden font-display text-[1.75rem] font-bold leading-[1.12] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {activity.title}
                 </h3>
-                <div
-                  className="mt-4 rich-text-content overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                  dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(activity.description) }}
-                />
+                <p className="mt-4 overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                  {richTextToPlainText(activity.description)}
+                </p>
                 <p className="mt-6 text-[11px] text-[#8a8a8a]">
                   {activity.location} • {formatShortDate(activity.date)}
                 </p>
@@ -253,10 +252,9 @@ export default async function HomePage() {
                 <h3 className="mt-6 overflow-hidden font-display text-[2rem] font-bold leading-[1.04] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {article.title}
                 </h3>
-                <div
-                  className="mt-6 rich-text-content max-w-[34rem] overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                  dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(article.excerpt) }}
-                />
+                <p className="mt-6 max-w-[34rem] overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                  {richTextToPlainText(article.excerpt)}
+                </p>
               </Link>
             ))}
           </div>
@@ -300,10 +298,9 @@ export default async function HomePage() {
                 <h3 className="mt-4 overflow-hidden font-display text-[1.75rem] font-bold leading-[1.12] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {project.title}
                 </h3>
-                <div
-                  className="mt-4 rich-text-content overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                  dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(project.description) }}
-                />
+                <p className="mt-4 overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                  {richTextToPlainText(project.description)}
+                </p>
                 <p className="mt-6 text-[11px] text-[#8a8a8a]">
                   {formatShortDate(project.startDate)}
                   {project.endDate ? ` • ${formatShortDate(project.endDate)}` : ''}
