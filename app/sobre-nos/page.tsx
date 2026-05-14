@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { contactInfo, siteConfig } from '@/data/site';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Sobre Nós | CEISCaramulo',

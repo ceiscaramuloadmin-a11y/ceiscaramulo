@@ -5,28 +5,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
+import { navigationItems as navItems } from '@/data/navigation';
+import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { label: 'Sobre Nós', href: '/sobre-nos' },
-  { label: 'Atividades', href: '/atividades' },
-  { label: 'Notícias', href: '/noticias' },
-  { label: 'Projetos', href: '/projetos' },
-  { label: 'Biblioteca', href: '/biblioteca' },
-  { label: 'A Serra', href: '/serra-do-caramulo' },
-  { label: 'Galeria', href: '/galeria' },
-];
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-stone-200/70 bg-[rgba(255,255,255,0.84)] backdrop-blur-md">
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 border-b border-stone-200/70 bg-[rgba(255,255,255,0.84)] backdrop-blur-md transition-shadow duration-200',
+        navBarElevatedClasses(scrollY, 'global'),
+      )}
+    >
       <a href="#main-content" className="skip-nav">
         Saltar para o conteúdo principal
       </a>
@@ -96,7 +100,7 @@ const Header: React.FC = () => {
       >
         <div className="min-h-0">
           <nav className="mx-auto grid max-w-7xl gap-1 px-4 py-4 sm:px-6" aria-label="Menu móvel">
-            {[...navItems, { label: 'Contactos', href: '/contactos' }].map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href;
 
               return (
@@ -108,6 +112,7 @@ const Header: React.FC = () => {
                     isActive ? 'bg-[#f3f4f1] font-medium text-[#3e5c32]' : 'text-stone-600 hover:bg-stone-50'
                   )}
                   aria-current={isActive ? 'page' : undefined}
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
                 </Link>

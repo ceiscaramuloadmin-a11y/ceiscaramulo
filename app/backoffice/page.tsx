@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
 import RichTextEditor from '@/components/RichTextEditor';
+import { backofficePrimaryActionLabel } from '@/lib/backoffice-primary-label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -959,7 +960,7 @@ export default function BackofficePage() {
                   className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
                   disabled={busy}
                 >
-                  Atualizar palavra-passe
+                  {backofficePrimaryActionLabel(busy, 'Atualizar palavra-passe')}
                 </button>
               </form>
             </div>
@@ -986,7 +987,9 @@ export default function BackofficePage() {
               <FileInput label="Imagem" onFile={(file) => setNewsForm((c) => ({ ...c, imageFile: file }))} />
               <Check label="Remover imagem atual" checked={newsForm.removeImage} onChange={(checked) => setNewsForm((c) => ({ ...c, removeImage: checked }))} />
               <Check label="Publicado" checked={newsForm.published} onChange={(checked) => setNewsForm((c) => ({ ...c, published: checked }))} />
-              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{editingId ? 'Guardar alterações' : 'Criar notícia'}</button>
+              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                {backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar notícia')}
+              </button>
             </form>
           }
         />
@@ -1001,7 +1004,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{editingId ? 'Guardar alterações' : 'Criar atividade'}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
         />
       ) : null}
 
@@ -1014,7 +1017,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('projects', item as Project)}
           onDelete={(id) => void deleteSectionItem('projects', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleProjectSubmit(event)}><Input label="Título" value={projectForm.title} onChange={(v) => setProjectForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={projectForm.description} onChange={(v) => setProjectForm((c) => ({ ...c, description: v }))} /><Input label="Estado" value={projectForm.status} onChange={(v) => setProjectForm((c) => ({ ...c, status: v }))} required /><Input label="Data início" type="date" value={projectForm.startDate} onChange={(v) => setProjectForm((c) => ({ ...c, startDate: v }))} required /><Input label="Data fim" type="date" value={projectForm.endDate} onChange={(v) => setProjectForm((c) => ({ ...c, endDate: v }))} /><Input label="Parceiros (separados por vírgula)" value={projectForm.partners} onChange={(v) => setProjectForm((c) => ({ ...c, partners: v }))} /><FileInput label="Imagem" onFile={(file) => setProjectForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={projectForm.removeImage} onChange={(checked) => setProjectForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={projectForm.published} onChange={(checked) => setProjectForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{editingId ? 'Guardar alterações' : 'Criar projeto'}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleProjectSubmit(event)}><Input label="Título" value={projectForm.title} onChange={(v) => setProjectForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={projectForm.description} onChange={(v) => setProjectForm((c) => ({ ...c, description: v }))} /><Input label="Estado" value={projectForm.status} onChange={(v) => setProjectForm((c) => ({ ...c, status: v }))} required /><Input label="Data início" type="date" value={projectForm.startDate} onChange={(v) => setProjectForm((c) => ({ ...c, startDate: v }))} required /><Input label="Data fim" type="date" value={projectForm.endDate} onChange={(v) => setProjectForm((c) => ({ ...c, endDate: v }))} /><Input label="Parceiros (separados por vírgula)" value={projectForm.partners} onChange={(v) => setProjectForm((c) => ({ ...c, partners: v }))} /><FileInput label="Imagem" onFile={(file) => setProjectForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={projectForm.removeImage} onChange={(checked) => setProjectForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={projectForm.published} onChange={(checked) => setProjectForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar projeto')}</button></form>}
         />
       ) : null}
 
@@ -1027,7 +1030,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{editingId ? 'Guardar alterações' : 'Criar publicação'}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar publicação')}</button></form>}
         />
       ) : null}
 
@@ -1287,7 +1290,7 @@ export default function BackofficePage() {
                     className="flex-1 rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
                     disabled={busy || galleryBatchItems.length === 0}
                   >
-                    Guardar lote
+                    {backofficePrimaryActionLabel(busy, 'Guardar lote')}
                   </button>
                   <button
                     type="button"
@@ -1336,7 +1339,7 @@ export default function BackofficePage() {
                 <Check label="Publicado" checked={galleryForm.published} onChange={(checked) => setGalleryForm((c) => ({ ...c, published: checked }))} />
 
                 <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-                  {galleryEditingId ? 'Guardar alterações' : 'Criar media'}
+                  {backofficePrimaryActionLabel(busy, galleryEditingId ? 'Guardar alterações' : 'Criar media')}
                 </button>
               </form>
             </div>
@@ -1399,7 +1402,7 @@ export default function BackofficePage() {
                     </p>
                   )}
                   <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-                    Adicionar admin
+                    {backofficePrimaryActionLabel(busy, 'Adicionar admin')}
                   </button>
                 </form>
 
@@ -1558,7 +1561,7 @@ export default function BackofficePage() {
               className="rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
               disabled={busy || !selectedAdmin || selectedAdmin.role === 'owner'}
             >
-              Guardar permissões
+              {backofficePrimaryActionLabel(busy, 'Guardar permissões')}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -1669,7 +1672,7 @@ export default function BackofficePage() {
             </div>
 
             <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-              Guardar layout
+              {backofficePrimaryActionLabel(busy, 'Guardar layout')}
             </button>
           </form>
           )}
@@ -1783,7 +1786,9 @@ function SectionLayout({
       <div className="rounded-xl border border-stone-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-[#27441d]">{title}</h2>
-          <button type="button" onClick={onNew} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
+          <button type="button" onClick={onNew} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
+            Novo
+          </button>
         </div>
         <div className="space-y-3">
           {loading ? <SectionListSkeleton /> : null}
@@ -1791,8 +1796,17 @@ function SectionLayout({
             <article key={item.id} className="rounded-lg border border-stone-200 p-3">
               <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
               <div className="mt-2 flex gap-2">
-                <button type="button" onClick={() => onEdit(item)} className="rounded border px-2 py-1 text-xs">Editar</button>
-                <button type="button" onClick={() => onDelete(item.id)} className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700">Apagar</button>
+                <button type="button" onClick={() => onEdit(item)} disabled={busy} className="rounded border px-2 py-1 text-xs disabled:opacity-50">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(item.id)}
+                  disabled={busy}
+                  className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700 disabled:opacity-50"
+                >
+                  Apagar
+                </button>
               </div>
             </article>
           ))}
@@ -1800,7 +1814,9 @@ function SectionLayout({
         </div>
       </div>
       <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
-        <div className={busy ? 'pointer-events-none opacity-70' : ''}>{form}</div>
+        <div className={busy ? 'pointer-events-none opacity-70' : ''} aria-busy={busy}>
+          {form}
+        </div>
       </div>
     </section>
   );
@@ -1883,8 +1899,17 @@ function GalleryGroup({
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => onEdit(item)} className="rounded border px-2 py-1 text-xs">Editar</button>
-                      <button type="button" onClick={() => onDelete(item.id)} className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700">Apagar</button>
+                      <button type="button" onClick={() => onEdit(item)} disabled={busy} className="rounded border px-2 py-1 text-xs disabled:opacity-50">
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(item.id)}
+                        disabled={busy}
+                        className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700 disabled:opacity-50"
+                      >
+                        Apagar
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -22,7 +22,7 @@ describe('content image storage', () => {
   });
 
   it('does not keep a static project path as the default hero image source', () => {
-    expect(siteLayoutSource).toContain("imageUrl: ''");
+    expect(siteLayoutSource).toMatch(/imageUrl:\s*'\/og-image\.svg\|\/placeholder\.svg'/);
     expect(siteLayoutSource).not.toContain("imageUrl: '/hero-serra.jpg'");
   });
 });

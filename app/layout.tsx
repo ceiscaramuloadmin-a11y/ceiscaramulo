@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import localFont from 'next/font/local';
 import { Toaster } from '@/components/ui/toaster';
@@ -22,6 +22,10 @@ const coolvetica = localFont({
   display: 'optional',
   fallback: ['Arial Black', 'Helvetica Neue', 'Arial', 'sans-serif'],
 });
+
+export const viewport: Viewport = {
+  themeColor: '#27441d',
+};
 
 export const metadata: Metadata = {
   title: {

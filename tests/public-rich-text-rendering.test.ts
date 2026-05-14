@@ -22,12 +22,10 @@ describe('public rich text rendering', () => {
     }
   });
 
-  it('renders rich text previews for projects and publications listing cards', () => {
+  it('renders safe plain-text previews for projects and publications listing cards', () => {
     for (const path of ['app/projetos/page.tsx', 'app/biblioteca/page.tsx']) {
       const source = readAppFile(path);
-      expect(source).toContain('prepareRichTextForRender');
-      expect(source).toContain('dangerouslySetInnerHTML');
-      expect(source).toContain('rich-text-content');
+      expect(source).toContain('richTextToPlainText');
     }
   });
 });

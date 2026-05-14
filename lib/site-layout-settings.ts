@@ -3,6 +3,7 @@ import { defaultSiteLayoutSettings, deepMergeSettings, SITE_LAYOUT_SETTINGS_KEY 
 import type { SiteLayoutSettings } from '@/types';
 
 const SITE_LAYOUT_RETRY_DELAY_MS = 5 * 60 * 1000;
+export const PUBLIC_HERO_IMAGE_ROUTE = '/api/layout/hero-image';
 
 let siteLayoutRetryAfter = 0;
 
@@ -14,10 +15,33 @@ function isQuotaExceededError(error: unknown) {
   );
 }
 
+function normalizePublicHeroImageUrl(imageUrl: string) {
+  const normalized = (imageUrl || '').trim();
+
+  if (!normalized.startsWith('data:')) {
+    return normalized;
+  }
+
+  return PUBLIC_HERO_IMAGE_ROUTE;
+}
+
+function normalizePublicLayoutSettings(settings: SiteLayoutSettings): SiteLayoutSettings {
+  return {
+    ...settings,
+    home: {
+      ...settings.home,
+      hero: {
+        ...settings.home.hero,
+        imageUrl: normalizePublicHeroImageUrl(settings.home.hero.imageUrl),
+      },
+    },
+  };
+}
+
 // Carrega definições públicas de layout com fallback para os valores por omissão.
 export async function getPublicSiteLayoutSettings(): Promise<SiteLayoutSettings> {
   if (siteLayoutRetryAfter > Date.now()) {
-    return defaultSiteLayoutSettings;
+    return normalizePublicLayoutSettings(defaultSiteLayoutSettings);
   }
 
   try {
@@ -35,7 +59,7 @@ export async function getPublicSiteLayoutSettings(): Promise<SiteLayoutSettings>
       : null;
 
     if (layoutFromJsonColumn?.value) {
-      return deepMergeSettings(defaultSiteLayoutSettings, layoutFromJsonColumn.value);
+      return normalizePublicLayoutSettings(deepMergeSettings(defaultSiteLayoutSettings, layoutFromJsonColumn.value));
     }
 
     const setting = await prismaAny.siteSetting.findUnique({ where: { key: SITE_LAYOUT_SETTINGS_KEY } });
@@ -43,21 +67,21 @@ export async function getPublicSiteLayoutSettings(): Promise<SiteLayoutSettings>
     if (setting?.value) {
       try {
         const parsed = JSON.parse(setting.value) as unknown;
-        return deepMergeSettings(defaultSiteLayoutSettings, parsed);
+        return normalizePublicLayoutSettings(deepMergeSettings(defaultSiteLayoutSettings, parsed));
       } catch {
-        return defaultSiteLayoutSettings;
+        return normalizePublicLayoutSettings(defaultSiteLayoutSettings);
       }
     }
 
-    return defaultSiteLayoutSettings;
+    return normalizePublicLayoutSettings(defaultSiteLayoutSettings);
   } catch (error) {
     if (isQuotaExceededError(error)) {
       siteLayoutRetryAfter = Date.now() + SITE_LAYOUT_RETRY_DELAY_MS;
       console.warn('Database quota exceeded while loading public site layout; using default layout settings.');
-      return defaultSiteLayoutSettings;
+      return normalizePublicLayoutSettings(defaultSiteLayoutSettings);
     }
 
     console.warn('Error fetching public site layout settings; using defaults.');
-    return defaultSiteLayoutSettings;
+    return normalizePublicLayoutSettings(defaultSiteLayoutSettings);
   }
 }

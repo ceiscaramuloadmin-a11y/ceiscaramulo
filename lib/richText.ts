@@ -5,6 +5,7 @@ type SanitizeOptions = {
 const allowedTags = new Set([
   'A',
   'AUDIO',
+  'B',
   'BLOCKQUOTE',
   'BR',
   'DIV',
@@ -16,6 +17,7 @@ const allowedTags = new Set([
   'H3',
   'H4',
   'HR',
+  'I',
   'IFRAME',
   'IMG',
   'LI',

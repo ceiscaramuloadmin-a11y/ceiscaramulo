@@ -10,7 +10,7 @@ import prisma from '@/lib/prisma';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatDate, getAssetUrl } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Notícias | CEISCaramulo',

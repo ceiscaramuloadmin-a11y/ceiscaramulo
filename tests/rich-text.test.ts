@@ -13,6 +13,12 @@ describe('rich-text', () => {
     expect(html).not.toContain('javascript:');
   });
 
+  it('keeps semantic bold/italic from execCommand (<b>, <i>) in the editor path', () => {
+    const html = sanitizeRichTextHtml('<p>Teste <b>negrito</b> e <i>itálico</i>.</p>', { forEditor: true });
+    expect(html).toContain('<b>');
+    expect(html).toContain('<i>');
+  });
+
   it('converts text blocks into paragraphs', () => {
     expect(textToHtml('Linha 1\nLinha 2\n\nLinha 3')).toBe('<p>Linha 1<br>Linha 2</p><p>Linha 3</p>');
   });

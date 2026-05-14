@@ -90,9 +90,7 @@ describe('site branding', () => {
       />
     );
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: /Explorar A Serra Do Caramulo/i })
-    ).toHaveClass('font-hero');
+    expect(screen.getByRole('heading', { level: 1, name: /Explorar A Serra Do Caramulo/i })).toHaveClass('font-hero');
   });
 
   it('reserves intrinsic logo dimensions to avoid layout shift', () => {

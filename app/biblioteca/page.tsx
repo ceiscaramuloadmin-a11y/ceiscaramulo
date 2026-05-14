@@ -1,18 +1,22 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Download, Tag, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { publications as fallbackPublications } from '@/data/content';
+import {
+  bibliotecaPublicationTypes,
+  filterBibliotecaByTipo,
+  parseBibliotecaTipoParam,
+} from '@/lib/biblioteca-filters';
 import { getPublicationSlug } from '@/lib/public-content-slugs';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
 import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
-import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
+import { capitalizeFirstLetter, cn, getAssetUrl } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Biblioteca | CEISCaramulo',
@@ -66,8 +70,18 @@ async function getPublicPublications() {
   }
 }
 
-export default async function BibliotecaPage() {
-  const publications = await getPublicPublications();
+export default async function BibliotecaPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = searchParams ? await searchParams : {};
+  const tipoRaw = sp.tipo;
+  const publicationsAll = await getPublicPublications();
+  const pubForFilter = publicationsAll as ReadonlyArray<{ type: string }>;
+  const distinctTypes = bibliotecaPublicationTypes(pubForFilter);
+  const tipo = parseBibliotecaTipoParam(tipoRaw, distinctTypes);
+  const publications = filterBibliotecaByTipo(pubForFilter, tipo) as typeof publicationsAll;
   const layout = await getPublicSiteLayoutSettings();
 
   const typeLabels: Record<string, string> = {
@@ -92,10 +106,50 @@ export default async function BibliotecaPage() {
             </p>
           </div>
 
-          {publications.length === 0 ? (
+          {publicationsAll.length > 0 && (
+            <div className="mb-10 flex flex-wrap gap-2" role="navigation" aria-label="Filtrar por tipo">
+              <Link
+                href="/biblioteca"
+                prefetch={false}
+                className={cn(
+                  'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
+                  !tipo
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-background text-muted-foreground hover:bg-muted/60',
+                )}
+                aria-current={!tipo ? 'page' : undefined}
+              >
+                Todos os tipos
+              </Link>
+              {distinctTypes.map((code) => (
+                <Link
+                  key={code}
+                  href={`/biblioteca?tipo=${encodeURIComponent(code)}`}
+                  prefetch={false}
+                  className={cn(
+                    'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
+                    tipo === code
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-background text-muted-foreground hover:bg-muted/60',
+                  )}
+                  aria-current={tipo === code ? 'page' : undefined}
+                >
+                  {typeLabels[code] || capitalizeFirstLetter(code)}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {publicationsAll.length === 0 ? (
             <div className="rounded-lg bg-muted p-12 text-center">
               <p className="text-lg text-muted-foreground">
                 {layout.pages.biblioteca.emptyMessage}
+              </p>
+            </div>
+          ) : publications.length === 0 ? (
+            <div className="rounded-lg bg-muted p-12 text-center">
+              <p className="text-lg text-muted-foreground">
+                Não há publicações deste tipo. Escolha outro filtro ou veja todas.
               </p>
             </div>
           ) : (

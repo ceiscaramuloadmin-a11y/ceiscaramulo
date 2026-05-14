@@ -12,7 +12,7 @@ import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatShortDate, getAssetUrl } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Projetos | CEISCaramulo',
