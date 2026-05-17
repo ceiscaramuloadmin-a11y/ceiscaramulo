@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import localFont from 'next/font/local';
 import { Toaster } from '@/components/ui/toaster';
@@ -19,8 +19,13 @@ const playfair = Playfair_Display({
 const coolvetica = localFont({
   src: '../src/assets/coolvetica/Coolvetica Rg.otf',
   variable: '--font-coolvetica',
-  display: 'swap',
+  display: 'optional',
+  fallback: ['Arial Black', 'Helvetica Neue', 'Arial', 'sans-serif'],
 });
+
+export const viewport: Viewport = {
+  themeColor: '#27441d',
+};
 
 export const metadata: Metadata = {
   title: {
@@ -37,7 +42,6 @@ export const metadata: Metadata = {
     'património cultural',
     'notícias',
     'atividades',
-    'projetos',
     'biblioteca',
     'conservação da natureza',
     'educação ambiental',

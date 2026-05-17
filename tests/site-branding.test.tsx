@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import HomeHero from '@/components/HomeHero';
+import SiteLogo from '@/components/SiteLogo';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -89,8 +90,29 @@ describe('site branding', () => {
       />
     );
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: /Explorar A Serra Do Caramulo/i })
-    ).toHaveClass('font-hero');
+    expect(screen.getByRole('heading', { level: 1, name: /Explorar A Serra Do Caramulo/i })).toHaveClass('font-hero');
+  });
+
+  it('reserves intrinsic logo dimensions to avoid layout shift', () => {
+    render(<SiteLogo />);
+
+    const logo = screen.getByRole('img', { name: 'CEISCaramulo' });
+
+    expect(logo).toHaveAttribute('width', '474');
+    expect(logo).toHaveAttribute('height', '299');
+  });
+
+  it('shrinks the fixed header after scrolling', async () => {
+    render(<Header />);
+
+    const header = screen.getByRole('banner');
+    expect(header).toHaveClass('fixed', 'top-0', 'bg-white/95');
+    expect(header.className).not.toContain('backdrop-blur');
+    expect(header).toHaveAttribute('data-shrunk', 'false');
+
+    Object.defineProperty(window, 'scrollY', { value: 32, configurable: true });
+    window.dispatchEvent(new Event('scroll'));
+
+    await waitFor(() => expect(header).toHaveAttribute('data-shrunk', 'true'));
   });
 });

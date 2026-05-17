@@ -5,39 +5,50 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
+import { navigationItems as navItems } from '@/data/navigation';
+import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { label: 'Sobre Nós', href: '/sobre-nos' },
-  { label: 'Atividades', href: '/atividades' },
-  { label: 'Notícias', href: '/noticias' },
-  { label: 'Projetos', href: '/projetos' },
-  { label: 'Biblioteca', href: '/biblioteca' },
-  { label: 'A Serra', href: '/serra-do-caramulo' },
-  { label: 'Galeria', href: '/galeria' },
-];
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const pathname = usePathname();
+  const isShrunk = scrollY > 8;
 
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-stone-200/70 bg-[rgba(255,255,255,0.84)] backdrop-blur-md">
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 bg-white/95 transition-[box-shadow,background-color] duration-200',
+        navBarElevatedClasses(scrollY, 'global'),
+      )}
+      data-shrunk={isShrunk ? 'true' : 'false'}
+    >
       <a href="#main-content" className="skip-nav">
         Saltar para o conteúdo principal
       </a>
 
-      <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 transition-[height] duration-200 sm:px-6 lg:px-8',
+          isShrunk ? 'h-14' : 'h-20'
+        )}
+      >
         <Link
           href="/"
           className="inline-flex items-center"
           aria-label="CEISCaramulo - Página inicial"
         >
-          <SiteLogo imageClassName="h-11 w-auto sm:h-12" />
+          <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-8 sm:h-9' : 'h-11 sm:h-12')} />
         </Link>
 
         <nav className="hidden items-center lg:flex" aria-label="Navegação principal">
@@ -90,13 +101,13 @@ const Header: React.FC = () => {
       <div
         id="global-mobile-menu"
         className={cn(
-          'grid overflow-hidden border-t border-stone-200/70 bg-white transition-all duration-300 lg:hidden',
+          'grid overflow-hidden bg-white/95 transition-all duration-300 lg:hidden',
           isMenuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
       >
         <div className="min-h-0">
           <nav className="mx-auto grid max-w-7xl gap-1 px-4 py-4 sm:px-6" aria-label="Menu móvel">
-            {[...navItems, { label: 'Contactos', href: '/contactos' }].map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href;
 
               return (
@@ -108,6 +119,7 @@ const Header: React.FC = () => {
                     isActive ? 'bg-[#f3f4f1] font-medium text-[#3e5c32]' : 'text-stone-600 hover:bg-stone-50'
                   )}
                   aria-current={isActive ? 'page' : undefined}
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
                 </Link>

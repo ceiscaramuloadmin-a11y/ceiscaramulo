@@ -8,11 +8,12 @@ import { activities as fallbackActivities } from '@/data/content';
 import { getActivitySlug } from '@/lib/public-content-slugs';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
-import { prepareRichTextForRender } from '@/lib/richText';
+import { richTextToPlainText } from '@/lib/richText';
+import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCalendar';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatShortDate, capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Atividades | CEISCaramulo',
@@ -87,6 +88,11 @@ async function getPublicActivities() {
 export default async function AtividadesPage() {
   const activities = await getPublicActivities();
   const layout = await getPublicSiteLayoutSettings();
+  const calendarEntries = activities.map((activity) => ({
+    startMs: new Date(activity.date).getTime(),
+    href: `/atividades/${getActivitySlug(activity)}`,
+    title: activity.title,
+  }));
 
   return (
     <>
@@ -109,6 +115,22 @@ export default async function AtividadesPage() {
               </p>
             </div>
           ) : (
+            <>
+              <section
+                aria-label="Calendário interativo de atividades"
+                className="mb-14 rounded-2xl border border-border bg-card/40 p-6 shadow-sm backdrop-blur sm:p-8"
+              >
+                <div className="flex flex-col gap-2 pb-8 text-center sm:text-left">
+                  <h2 className="font-display text-2xl font-bold leading-tight text-foreground">
+                    Mapa rápido de datas
+                  </h2>
+                  <p className="max-w-xl text-sm text-muted-foreground">
+                    Dias com iniciativas publicadas ficam destacados. Clica para abrir a ficha quando existirem registos coincidentes.
+                  </p>
+                </div>
+                <ActivitiesMonthCalendar entries={calendarEntries} />
+              </section>
+
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {activities.map((activity) => (
                 <Link
@@ -142,10 +164,9 @@ export default async function AtividadesPage() {
                   <h2 className="mt-4 font-display text-xl font-bold leading-tight text-foreground group-hover:text-primary">
                     {activity.title}
                   </h2>
-                  <div
-                    className="mt-2 rich-text-content overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                    dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(activity.description) }}
-                  />
+                  <p className="mt-2 overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                    {richTextToPlainText(activity.description)}
+                  </p>
                   <div className="mt-4 flex items-center gap-1 text-sm font-medium text-primary">
                     Ver detalhes
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -153,6 +174,7 @@ export default async function AtividadesPage() {
                 </Link>
               ))}
             </div>
+            </>
           )}
         </div>
       </main>

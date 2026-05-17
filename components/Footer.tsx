@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import SiteLogo from '@/components/SiteLogo';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import { contactInfo } from '@/data/site';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
@@ -57,6 +58,7 @@ const Footer: React.FC = () => {
             <p className="max-w-xs text-sm leading-[1.7] text-stone-500">
               {layoutSettings.footer.brandDescription}
             </p>
+            <NewsletterSignup />
           </div>
 
           {layoutSettings.footer.columns.map((column) => (

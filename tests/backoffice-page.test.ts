@@ -10,9 +10,26 @@ const backofficePageSource = readFileSync(
 );
 
 describe('backoffice news and gallery guards', () => {
+  it('uses a fixed collapsible sidebar for backoffice navigation', () => {
+    expect(backofficePageSource).toContain('isSidebarCollapsed');
+    expect(backofficePageSource).toContain('aria-label="Navegação do backoffice"');
+    expect(backofficePageSource).toContain('fixed left-0 top-0');
+    expect(backofficePageSource).toContain('h-screen');
+    expect(backofficePageSource).toContain('BACKOFFICE_NAV_ITEMS');
+    expect(backofficePageSource).toContain('Colapsar menu lateral');
+    expect(backofficePageSource).toContain('Expandir menu lateral');
+    expect(backofficePageSource).not.toContain('lg:hidden');
+  });
+
+  it('renames Layout CMS to Aparência in backoffice navigation', () => {
+    expect(backofficePageSource).toContain("{ id: 'layout', label: 'Aparência' }");
+    expect(backofficePageSource).not.toContain('Layout CMS');
+  });
+
   it('exposes a dedicated contacts section in the backoffice with read-state actions', () => {
-    expect(backofficePageSource).toContain("availableSections.includes('contacts')");
-    expect(backofficePageSource).toContain("setActiveSection('contacts')");
+    expect(backofficePageSource).toContain("{ id: 'contacts', label: 'Contactos' }");
+    expect(backofficePageSource).toContain('availableSections.includes(item.id)');
+    expect(backofficePageSource).toContain('setActiveSection(item.id)');
     expect(backofficePageSource).toContain('Mensagens de contacto');
     expect(backofficePageSource).toContain('Marcar como lida');
     expect(backofficePageSource).toContain('Marcar como não lida');

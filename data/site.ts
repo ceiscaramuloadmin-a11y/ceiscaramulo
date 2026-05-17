@@ -21,9 +21,9 @@ export const siteConfig = {
 export const defaultSEO: SEOData = {
   title: 'CEISCaramulo — Centro de Estudos e Interpretação da Serra do Caramulo',
   description:
-    'Associação sem fins lucrativos dedicada ao estudo, preservação e divulgação do património natural, cultural e histórico da Serra do Caramulo. Notícias, atividades, projetos, biblioteca e recursos multimédia.',
+    'Associação sem fins lucrativos dedicada ao estudo, preservação e divulgação do património natural, cultural e histórico da Serra do Caramulo. Notícias, atividades, biblioteca e recursos multimédia.',
   keywords:
-    'CEISCaramulo, Serra do Caramulo, associação, património natural, património cultural, notícias, atividades, projetos, biblioteca, conservação da natureza, educação ambiental, Tondela, Viseu',
+    'CEISCaramulo, Serra do Caramulo, associação, património natural, património cultural, notícias, atividades, biblioteca, conservação da natureza, educação ambiental, Tondela, Viseu',
   ogImage: siteConfig.ogImage,
   ogType: 'website',
 };

@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import GalleryTabs from '@/components/GalleryTabs';
 import { listGalleryMedia } from '@/app/api/_lib/cms';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Galeria Multimédia | CEISCaramulo',
