@@ -2,18 +2,18 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Facebook, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
-import { Button } from '@/components/ui/button';
 import HomeHero from '@/components/HomeHero';
-import { activities as fallbackActivities, newsArticles as fallbackNewsArticles, projects as fallbackProjects } from '@/data/content';
+import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCalendar';
+import { activities as fallbackActivities, newsArticles as fallbackNewsArticles } from '@/data/content';
 import { navigationItems } from '@/data/navigation';
 import { contactInfo, siteConfig } from '@/data/site';
-import { getActivitySlug, getProjectSlug } from '@/lib/public-content-slugs';
-import { prepareRichTextForRender } from '@/lib/richText';
+import { getActivitySlug } from '@/lib/public-content-slugs';
+import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import prisma from '@/lib/prisma';
 import { getAssetUrl } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'CEISCaramulo — Centro de Estudos e Interpretação da Serra do Caramulo',
@@ -27,7 +27,6 @@ export const metadata: Metadata = {
     'património cultural',
     'notícias',
     'atividades',
-    'projetos',
     'biblioteca',
     'conservação da natureza',
     'educação ambiental',
@@ -87,7 +86,26 @@ const formatShortDate = (value: string | Date) =>
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+function hasFindMany(delegate: unknown): delegate is {
+  findMany: (args: Record<string, unknown>) => Promise<unknown[]>;
+} {
+  return !!delegate && typeof (delegate as { findMany?: unknown }).findMany === 'function';
+}
+
 async function getPublicNews() {
+  if (!hasFindMany(prisma.news)) {
+    return fallbackNewsArticles.slice(0, 2).map((article) => ({
+      id: article.id,
+      title: article.title,
+      slug: article.slug,
+      excerpt: article.excerpt,
+      category: article.category,
+      image: article.image ?? null,
+      publishedAt: article.date,
+      createdAt: article.date,
+    }));
+  }
+
   try {
     const news = await prisma.news.findMany({
       where: { published: true },
@@ -111,6 +129,18 @@ async function getPublicNews() {
 }
 
 async function getPublicActivities() {
+  if (!hasFindMany(prisma.activity)) {
+    return fallbackActivities.slice(0, 3).map((activity) => ({
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      date: activity.date,
+      location: activity.location,
+      image: activity.image ?? null,
+      category: activity.category,
+    }));
+  }
+
   try {
     const activities = await prisma.activity.findMany({
       where: { published: true },
@@ -132,39 +162,24 @@ async function getPublicActivities() {
   }
 }
 
-async function getPublicProjects() {
-  try {
-    const projects = await prisma.project.findMany({
-      where: { published: true },
-      orderBy: { startDate: 'desc' },
-      take: 3,
-    });
-    return projects;
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    return fallbackProjects.slice(0, 3).map((project) => ({
-      id: project.id,
-      title: project.title,
-      description: project.description,
-      status: project.status,
-      startDate: project.startDate,
-      endDate: project.endDate ?? null,
-      image: project.image ?? null,
-      partners: project.partners ?? [],
-    }));
-  }
-}
-
 export default async function HomePage() {
   const currentYear = new Date().getFullYear();
   const newsArticles = await getPublicNews();
   const activities = await getPublicActivities();
-  const projects = await getPublicProjects();
   const layout = await getPublicSiteLayoutSettings();
+  const calendarEntries = activities.map((activity) => ({
+    startMs: new Date(activity.date).getTime(),
+    href: `/atividades/${getActivitySlug(activity)}`,
+    title: activity.title,
+  }));
+  const hero = {
+    ...layout.home.hero,
+    imageUrl: '/hero-imgs/hero-img.jpg',
+  };
 
   return (
     <div className="bg-white text-foreground">
-      <HomeHero hero={layout.home.hero} navigationItems={navigationItems} />
+      <HomeHero hero={hero} navigationItems={navigationItems} />
 
       <section className="px-4 py-24 sm:px-6">
         <div className="mx-auto max-w-5xl">
@@ -182,6 +197,26 @@ export default async function HomePage() {
               Ver todas <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+
+          {calendarEntries.length > 0 ? (
+            <section
+              aria-label="Calendário de atividades na página inicial"
+              className="mt-12 border-y border-[#f1f3f5] py-10"
+            >
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(20rem,1fr)] lg:items-start">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Agenda</p>
+                  <h3 className="mt-2 font-display text-[1.75rem] font-bold leading-tight text-[#1a1a1a]">
+                    Datas no calendário
+                  </h3>
+                  <p className="mt-4 max-w-md text-sm leading-[1.65] text-[#666]">
+                    Os dias destacados têm atividades publicadas e abrem diretamente a respetiva ficha.
+                  </p>
+                </div>
+                <ActivitiesMonthCalendar entries={calendarEntries} />
+              </div>
+            </section>
+          ) : null}
 
           <div className="mt-12 grid gap-8 lg:grid-cols-3">
             {activities.map((activity) => (
@@ -203,10 +238,9 @@ export default async function HomePage() {
                 <h3 className="mt-4 overflow-hidden font-display text-[1.75rem] font-bold leading-[1.12] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {activity.title}
                 </h3>
-                <div
-                  className="mt-4 rich-text-content overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                  dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(activity.description) }}
-                />
+                <p className="mt-4 overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                  {richTextToPlainText(activity.description)}
+                </p>
                 <p className="mt-6 text-[11px] text-[#8a8a8a]">
                   {activity.location} • {formatShortDate(activity.date)}
                 </p>
@@ -253,81 +287,12 @@ export default async function HomePage() {
                 <h3 className="mt-6 overflow-hidden font-display text-[2rem] font-bold leading-[1.04] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {article.title}
                 </h3>
-                <div
-                  className="mt-6 rich-text-content max-w-[34rem] overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                  dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(article.excerpt) }}
-                />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-24 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Em Destaque</p>
-              <h2 className="mt-2 font-display text-[2.25rem] font-bold leading-tight text-[#1a1a1a]">
-                Projetos
-              </h2>
-            </div>
-            <Link
-              href="/projetos"
-              className="inline-flex items-center gap-1 text-sm text-[#666] transition-colors hover:text-primary"
-            >
-              Ver todos <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="mt-12 grid gap-8 lg:grid-cols-3">
-            {projects.map((project) => (
-              <Link
-                key={project.id}
-                href={`/projetos/${getProjectSlug(project)}`}
-                className="rounded-xl border border-[#f1f3f5] bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-34px_rgba(0,0,0,0.3)]"
-              >
-                <div className="mb-4 overflow-hidden rounded-lg">
-                  <img
-                    src={getAssetUrl(project.image)}
-                    alt={project.title}
-                    className="h-48 w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                  />
-                </div>
-                <span className="inline-flex rounded-md bg-[#f4f5f7] px-2 py-1 text-[10px] font-medium text-[#666]">
-                  {capitalize(project.status)}
-                </span>
-                <h3 className="mt-4 overflow-hidden font-display text-[1.75rem] font-bold leading-[1.12] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
-                  {project.title}
-                </h3>
-                <div
-                  className="mt-4 rich-text-content overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
-                  dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(project.description) }}
-                />
-                <p className="mt-6 text-[11px] text-[#8a8a8a]">
-                  {formatShortDate(project.startDate)}
-                  {project.endDate ? ` • ${formatShortDate(project.endDate)}` : ''}
+                <p className="mt-6 max-w-[34rem] overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                  {richTextToPlainText(article.excerpt)}
                 </p>
               </Link>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="px-4 pb-24 pt-4 sm:px-6">
-        <div className="mx-auto max-w-[1024px] rounded-[20px] bg-[#f4f5f7] px-6 py-16 text-center sm:px-12">
-          <h2 className="font-display text-[2.25rem] font-bold leading-tight text-[#1a1a1a]">
-            {layout.home.join.title}
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#666]">
-            {layout.home.join.description}
-          </p>
-          <Button
-            asChild
-            className="mt-8 h-12 rounded-md bg-primary px-8 text-sm font-semibold text-white hover:bg-primary/95"
-          >
-            <Link href={layout.home.join.ctaHref}>{layout.home.join.ctaLabel}</Link>
-          </Button>
         </div>
       </section>
 

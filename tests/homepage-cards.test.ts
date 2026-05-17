@@ -12,26 +12,34 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain('src={getAssetUrl(article.image)}');
   });
 
+  it('uses the local hero image asset for the homepage hero', () => {
+    expect(homePageSource).toContain("imageUrl: '/hero-imgs/hero-img.jpg'");
+    expect(homePageSource).toContain('<HomeHero hero={hero}');
+  });
+
   it('renders activity and news card copy as rich text previews instead of raw html strings', () => {
-    expect(homePageSource).toContain('prepareRichTextForRender(activity.description)');
-    expect(homePageSource).toContain('prepareRichTextForRender(article.excerpt)');
-    expect(homePageSource).toContain('dangerouslySetInnerHTML');
+    expect(homePageSource).toContain('richTextToPlainText(activity.description)');
+    expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
   });
 
   it('limits card titles to 3 lines and descriptions to 4 lines', () => {
     expect(homePageSource).toContain('[-webkit-line-clamp:3]');
-    expect(homePageSource).toContain('prepareRichTextForRender(activity.description)');
-    expect(homePageSource).toContain('prepareRichTextForRender(article.excerpt)');
-    expect(homePageSource).toContain('prepareRichTextForRender(project.description)');
+    expect(homePageSource).toContain('richTextToPlainText(activity.description)');
+    expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
     expect(homePageSource).toContain('[-webkit-line-clamp:4]');
   });
 
-  it('includes a projects section on the homepage with project cards', () => {
-    expect(homePageSource).toContain('async function getPublicProjects()');
-    expect(homePageSource).toContain('const projects = await getPublicProjects()');
-    expect(homePageSource).toContain('Projetos');
-    expect(homePageSource).toContain('href={`/projetos/${getProjectSlug(project)}`}');
-    expect(homePageSource).toContain('src={getAssetUrl(project.image)}');
-    expect(homePageSource).toContain('prepareRichTextForRender(project.description)');
+  it('does not highlight a Projetos carousel on the homepage (section removed from destaques)', () => {
+    expect(homePageSource).not.toContain('async function getPublicProjects()');
+    expect(homePageSource).not.toContain('getPublicProjects()');
+    expect(homePageSource).not.toContain('getProjectSlug');
+    expect(homePageSource).not.toContain('href="/projetos"');
+    expect(homePageSource).not.toContain("href='/projetos'");
+    expect(homePageSource).not.toContain('Em Destaque');
+  });
+
+  it('does not render the join / comunidade CTA block pulled from layout.home.join', () => {
+    expect(homePageSource).not.toContain('layout.home.join.title');
+    expect(homePageSource).not.toContain('layout.home.join.description');
   });
 });

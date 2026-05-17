@@ -9,10 +9,9 @@ function readAppFile(path: string) {
 }
 
 describe('public rich text rendering', () => {
-  it('renders rich text content for activity, project and publication detail pages', () => {
+  it('renders rich text content for activity and publication detail pages', () => {
     for (const path of [
       'app/atividades/[id]/page.tsx',
-      'app/projetos/[id]/page.tsx',
       'app/biblioteca/[id]/page.tsx',
     ]) {
       const source = readAppFile(path);
@@ -22,12 +21,8 @@ describe('public rich text rendering', () => {
     }
   });
 
-  it('renders rich text previews for projects and publications listing cards', () => {
-    for (const path of ['app/projetos/page.tsx', 'app/biblioteca/page.tsx']) {
-      const source = readAppFile(path);
-      expect(source).toContain('prepareRichTextForRender');
-      expect(source).toContain('dangerouslySetInnerHTML');
-      expect(source).toContain('rich-text-content');
-    }
+  it('renders safe plain-text previews for publication listing cards', () => {
+    const source = readAppFile('app/biblioteca/page.tsx');
+    expect(source).toContain('richTextToPlainText');
   });
 });

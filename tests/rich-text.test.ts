@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeHtml, sanitizeRichTextHtml, textToHtml } from '@/lib/richText';
+import { escapeHtml, prepareRichTextForRender, richTextToPlainText, sanitizeRichTextHtml, textToHtml } from '@/lib/richText';
 
 describe('rich-text', () => {
   it('escapes plain text into safe html', () => {
@@ -13,7 +13,23 @@ describe('rich-text', () => {
     expect(html).not.toContain('javascript:');
   });
 
+  it('keeps semantic bold/italic from execCommand (<b>, <i>) in the editor path', () => {
+    const html = sanitizeRichTextHtml('<p>Teste <b>negrito</b> e <i>itálico</i>.</p>', { forEditor: true });
+    expect(html).toContain('<b>');
+    expect(html).toContain('<i>');
+  });
+
   it('converts text blocks into paragraphs', () => {
     expect(textToHtml('Linha 1\nLinha 2\n\nLinha 3')).toBe('<p>Linha 1<br>Linha 2</p><p>Linha 3</p>');
+  });
+
+  it('removes clipboard html comments before rendering rich text', () => {
+    expect(prepareRichTextForRender('<!--StartFragment--><p>Olá</p><!--EndFragment-->')).toBe('<p>Olá</p>');
+  });
+
+  it('converts rich text into stable plain-text previews', () => {
+    expect(richTextToPlainText('<!--StartFragment--><p>2019-02-21</p><p><strong>Olá</strong><br>Mundo</p><!--EndFragment-->')).toBe(
+      '2019-02-21 Olá Mundo'
+    );
   });
 });

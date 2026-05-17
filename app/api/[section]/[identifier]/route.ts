@@ -11,6 +11,7 @@ import {
   parseSectionFormData,
   requireAdminContextFromRequest,
 } from '@/app/api/_lib/cms';
+import { enqueueNewsPublishedNotifications } from '@/lib/newsletter-on-publish';
 
 // Estas rotas cobrem operações por item:
 // - GET: detalhe público (ou admin com `scope=admin`)
@@ -92,6 +93,10 @@ export async function PUT(
       data,
     });
 
+    const beforeNews = currentItem as { slug?: string; title?: string; excerpt?: string; published?: boolean };
+    const prevPublished =
+      typeof beforeNews.published === 'boolean' ? beforeNews.published : null;
+
     if (context) {
       await appendAuditLog({
         actor: context,
@@ -102,6 +107,23 @@ export async function PUT(
         before: currentItem,
         after: updated as Record<string, unknown>,
       });
+    }
+
+    if (section === 'news') {
+      const next = updated as { slug?: string; title?: string; excerpt?: string; published?: boolean };
+      if (
+        next.slug &&
+        next.title &&
+        next.excerpt !== undefined &&
+        typeof next.published === 'boolean'
+      ) {
+        enqueueNewsPublishedNotifications(prevPublished, {
+          slug: next.slug,
+          title: next.title,
+          excerpt: next.excerpt,
+          published: next.published,
+        });
+      }
     }
 
     return NextResponse.json(updated);

@@ -4,9 +4,6 @@ export const navigationItems: NavItem[] = [
   { label: 'Sobre Nós', href: '/sobre-nos' },
   { label: 'Atividades', href: '/atividades' },
   { label: 'Notícias', href: '/noticias' },
-  { label: 'Projetos', href: '/projetos' },
-  { label: 'Biblioteca', href: '/biblioteca' },
-  { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
-  { label: 'Galeria Multimédia', href: '/galeria' },
+  { label: 'Conteúdos e Recursos', href: '/biblioteca' },
   { label: 'Contactos', href: '/contactos' },
 ];

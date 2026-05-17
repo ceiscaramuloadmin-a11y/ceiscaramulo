@@ -1,9 +1,12 @@
 /* @vitest-environment node */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PUBLIC_HERO_IMAGE_ROUTE } from '@/lib/site-layout-settings';
 
-const siteLayoutFindUnique = vi.fn();
-const siteSettingFindUnique = vi.fn();
+const { siteLayoutFindUnique, siteSettingFindUnique } = vi.hoisted(() => ({
+  siteLayoutFindUnique: vi.fn(),
+  siteSettingFindUnique: vi.fn(),
+}));
 
 vi.mock('@/lib/prisma', () => ({
   default: {
@@ -40,7 +43,7 @@ describe('public site layout settings', () => {
     const { getPublicSiteLayoutSettings } = await import('@/lib/site-layout-settings');
     const settings = await getPublicSiteLayoutSettings();
 
-    expect(settings.home.hero.imageUrl).toBe('data:image/png;base64,hero-image');
+    expect(settings.home.hero.imageUrl).toBe(PUBLIC_HERO_IMAGE_ROUTE);
     expect(settings.home.hero.titleLine1).toBe('Hero from DB');
     expect(siteSettingFindUnique).not.toHaveBeenCalled();
   });
@@ -60,6 +63,6 @@ describe('public site layout settings', () => {
     const { getPublicSiteLayoutSettings } = await import('@/lib/site-layout-settings');
     const settings = await getPublicSiteLayoutSettings();
 
-    expect(settings.home.hero.imageUrl).toBe('data:image/jpeg;base64,legacy-hero');
+    expect(settings.home.hero.imageUrl).toBe(PUBLIC_HERO_IMAGE_ROUTE);
   });
 });

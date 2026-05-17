@@ -10,6 +10,7 @@ import {
   requireAdminContextFromRequest,
   sectionConfig,
 } from '@/app/api/_lib/cms';
+import { enqueueNewsPublishedNotifications } from '@/lib/newsletter-on-publish';
 
 // Estas rotas cobrem operações de coleção por secção:
 // - GET: listagem pública (ou admin com `scope=admin`)
@@ -87,6 +88,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         summary: `Criação de registo na secção ${section}.`,
         after: createdRecord,
       });
+    }
+
+    if (section === 'news') {
+      const draft = created as { slug?: string; title?: string; excerpt?: string; published?: boolean };
+      if (
+        draft.slug &&
+        draft.title &&
+        draft.excerpt !== undefined &&
+        typeof draft.published === 'boolean'
+      ) {
+        enqueueNewsPublishedNotifications(null, {
+          slug: draft.slug,
+          title: draft.title,
+          excerpt: draft.excerpt,
+          published: draft.published,
+        });
+      }
     }
 
     return NextResponse.json(created, { status: 201 });

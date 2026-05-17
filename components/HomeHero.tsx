@@ -1,10 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, X } from 'lucide-react';
+import { Autoplay, EffectFade } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import SiteLogo from '@/components/SiteLogo';
-import { Button } from '@/components/ui/button';
+import heroImage from '@/src/assets/hero-imgs/hero-img.jpg';
+import heroImage2 from '@/src/assets/hero-imgs/hero-img2.jpg';
+import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
+import { cn } from '@/lib/utils';
 import type { NavItem, SiteLayoutSettings } from '@/types';
 
 type HeroProps = {
@@ -12,29 +17,38 @@ type HeroProps = {
   navigationItems: NavItem[];
 };
 
+/**
+ * Barra de navegação da homepage: mantém-se fixa no topo durante o scroll.
+ */
+const NAV_OUTER_CLASSES =
+  'fixed inset-x-0 top-0 z-50 bg-transparent px-4 pt-4 pb-2 transition-[box-shadow]';
+
+const HERO_SWIPER_INTERVAL_MS = 6000;
+
+const localHeroImages = [heroImage, heroImage2]
+  .map((image) => (typeof image === 'string' ? image : image.src))
+  .filter(Boolean);
+
 export default function HomeHero({ hero, navigationItems }: HeroProps) {
-  const [activeSlide, setActiveSlide] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const isShrunk = scrollY > 8;
 
-  const heroImages = useMemo(() => {
-    const raw = (hero.imageUrl || '').trim();
-    if (!raw.startsWith('data:')) {
-      return ['/placeholder.svg'];
-    }
-
-    return [raw];
-  }, [hero.imageUrl]);
+  const trimmedTitleLines = [hero.titleLine1, hero.titleLine2, hero.titleLine3, hero.titleLine4].map((line) =>
+    (line || '').trim()
+  );
+  const heroTitlePieces = trimmedTitleLines.filter(Boolean);
+  const singleLineHeroTitle = heroTitlePieces.length <= 1;
 
   useEffect(() => {
-    if (heroImages.length <= 1) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mq.matches);
 
-    const timer = setInterval(() => {
-      setActiveSlide((current) => (current + 1) % heroImages.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [heroImages.length]);
+    const onChange = () => setPrefersReducedMotion(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -42,19 +56,20 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [activeSlide]);
-
-  const parallaxOffset = Math.min(scrollY * 0.22, 120);
+  const parallaxOffset = prefersReducedMotion ? 0 : Math.min(scrollY * 0.22, 120);
 
   return (
     <section className="relative min-h-[870px] overflow-hidden">
-      <div className="absolute inset-x-0 top-6 z-30 px-4">
-        <div className="mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 py-3 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] backdrop-blur md:px-8">
+      <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
+        <div
+          className={cn(
+            'mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-8',
+            isShrunk ? 'py-2' : 'py-3'
+          )}
+        >
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName="h-10 w-auto sm:h-12" />
+              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-8 sm:h-9' : 'h-10 sm:h-12')} />
             </Link>
 
             <nav className="hidden items-center gap-4 md:flex lg:gap-6" aria-label="Navegação principal da homepage">
@@ -84,7 +99,9 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
 
         <div
           id="home-mobile-menu"
-          className={isMobileMenuOpen ? 'mx-auto mt-3 max-w-7xl rounded-2xl border border-white/30 bg-white/95 p-2 shadow-xl md:hidden' : 'hidden'}
+          className={
+            isMobileMenuOpen ? 'mx-auto mt-3 max-w-7xl rounded-2xl border border-white/30 bg-white/95 p-2 shadow-xl md:hidden' : 'hidden'
+          }
         >
           <nav className="grid gap-1" aria-label="Menu móvel da homepage">
             {navigationItems.map((item) => (
@@ -102,58 +119,57 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       </div>
 
       <div className="absolute inset-0">
-        {heroImages.map((imageUrl, index) => (
-          <img
-            key={`${imageUrl}-${index}`}
-            src={imageUrl}
-            alt={hero.imageAlt}
-            className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
-            style={{
-              opacity: index === activeSlide ? 1 : 0,
-              transform: `translateY(${parallaxOffset}px) scale(1.08)`,
-            }}
-          />
-        ))}
+        <Swiper
+          modules={[Autoplay, EffectFade]}
+          className="absolute inset-0 z-0 h-full w-full"
+          slidesPerView={1}
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          loop={localHeroImages.length > 1}
+          allowTouchMove={false}
+          autoplay={
+            !prefersReducedMotion && localHeroImages.length > 1
+              ? { delay: HERO_SWIPER_INTERVAL_MS, disableOnInteraction: false }
+              : false
+          }
+        >
+          {localHeroImages.map((imageSrc, index) => (
+            <SwiperSlide key={`${imageSrc}-${index}`} className="h-full w-full">
+              <img
+                src={imageSrc}
+                alt={hero.imageAlt}
+                className="h-full w-full object-cover"
+                style={{
+                  transform: `translateY(${parallaxOffset}px) scale(1.08)`,
+                }}
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
 
-        <div className="absolute inset-0 bg-[#27441d]/35" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[#27441d]/35" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
-        <h1 className="font-hero mt-6 max-w-[750px] text-5xl font-bold leading-[0.92] text-white sm:text-6xl md:text-[84px]">
-          <span className="block">{hero.titleLine1}</span>
-          <span className="block text-[#9dc44d]">{hero.titleLine2}</span>
-          <span className="block">{hero.titleLine3}</span>
-          <span className="block">{hero.titleLine4}</span>
+      <div className="relative z-20 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
+        <h1
+          className={`font-hero mt-6 text-[clamp(3.8rem,8vw,5.25rem)] font-bold leading-[0.9] text-white sm:text-[clamp(4.4rem,8vw,5.8rem)] md:text-[84px] ${
+            singleLineHeroTitle ? 'max-w-[20ch]' : 'max-w-[11ch]'
+          }`}
+        >
+          {singleLineHeroTitle ? (
+            <span className="block text-[#9dc44d]">{heroTitlePieces[0] || hero.titleLine1}</span>
+          ) : (
+            <>
+              <span className="block">{hero.titleLine1}</span>
+              <span className="block text-[#9dc44d]">{hero.titleLine2}</span>
+              <span className="block">{hero.titleLine3}</span>
+              <span className="block">{hero.titleLine4}</span>
+            </>
+          )}
         </h1>
 
         <p className="mt-6 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">{hero.description}</p>
-
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Button
-            asChild
-            size="lg"
-            className="h-12 rounded-md bg-primary px-8 text-sm font-semibold text-white shadow-[0_12px_24px_-14px_rgba(58,90,42,0.8)] hover:bg-primary/95"
-          >
-            <Link href={hero.primaryCtaHref}>{hero.primaryCtaLabel}</Link>
-          </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="h-12 rounded-md border-white/45 bg-white/18 px-8 text-sm font-semibold text-white backdrop-blur hover:bg-white/25"
-          >
-            <Link href={hero.secondaryCtaHref}>{hero.secondaryCtaLabel}</Link>
-          </Button>
-        </div>
-
-        <a
-          href="#explore"
-          className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center justify-center text-white/60 transition-colors hover:text-white"
-          aria-label="Descer para explorar a homepage"
-        >
-          <ArrowDown className="h-6 w-6" />
-        </a>
       </div>
     </section>
   );

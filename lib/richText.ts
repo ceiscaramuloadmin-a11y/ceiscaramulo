@@ -5,6 +5,7 @@ type SanitizeOptions = {
 const allowedTags = new Set([
   'A',
   'AUDIO',
+  'B',
   'BLOCKQUOTE',
   'BR',
   'DIV',
@@ -16,6 +17,7 @@ const allowedTags = new Set([
   'H3',
   'H4',
   'HR',
+  'I',
   'IFRAME',
   'IMG',
   'LI',
@@ -62,8 +64,29 @@ export function normalizeHtml(value: string) {
   return value === '<br>' ? '' : value.trim();
 }
 
+export function stripHtmlComments(value: string) {
+  return value.replace(/<!--[\s\S]*?-->/g, '').trim();
+}
+
+export function richTextToPlainText(value: string | null | undefined) {
+  const normalized = stripHtmlComments(String(value ?? '').trim());
+
+  if (!normalized) {
+    return '';
+  }
+
+  const withBreaks = normalized
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|ul|ol|blockquote|h1|h2|h3|h4|figure|figcaption)>/gi, '\n');
+
+  return decodeHtmlEntities(withBreaks.replace(/<[^>]+>/g, ' '))
+    .replace(/\s*\n\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function prepareRichTextForRender(value: string | null | undefined) {
-  const normalized = String(value ?? '').trim();
+  const normalized = stripHtmlComments(String(value ?? '').trim());
 
   if (!normalized) {
     return '';
@@ -71,6 +94,16 @@ export function prepareRichTextForRender(value: string | null | undefined) {
 
   const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(normalized);
   return hasHtmlTags ? normalized : textToHtml(normalized);
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
 }
 
 function walk(root: ParentNode, options: SanitizeOptions) {
