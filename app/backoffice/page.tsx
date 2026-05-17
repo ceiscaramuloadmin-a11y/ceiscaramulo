@@ -18,6 +18,7 @@ import {
 import { layoutIconMap } from '@/lib/layout-icons';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import { MAX_INLINE_AUDIO_UPLOAD_BYTES, getInlineAudioUploadErrorMessage } from '@/lib/gallery-upload';
+import { cn } from '@/lib/utils';
 import type {
   Activity,
   AdminPermission,
@@ -48,12 +49,26 @@ const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = 
   { id: 'audit', label: 'Auditoria' },
 ];
 
+const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
+  { id: 'overview', label: 'Visão geral' },
+  { id: 'news', label: 'Notícias' },
+  { id: 'activities', label: 'Atividades' },
+  { id: 'projects', label: 'Projetos' },
+  { id: 'publications', label: 'Biblioteca' },
+  { id: 'contacts', label: 'Contactos' },
+  { id: 'gallery', label: 'Galeria' },
+  { id: 'admins', label: 'Admins' },
+  { id: 'audit', label: 'Auditoria' },
+  { id: 'layout', label: 'Aparência' },
+];
+
 export default function BackofficePage() {
   const router = useRouter();
   const exportAuthMode = isExportAdminAuthMode();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const [busy, setBusy] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [isLoadingGovernance, setIsLoadingGovernance] = useState(true);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
@@ -877,51 +892,85 @@ export default function BackofficePage() {
   }
 
   return (
-    <main className="mx-auto min-h-[70vh] w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl text-[#27441d]">Backoffice CEISCaramulo</h1>
-          <p className="mt-2 text-sm text-stone-600">
-            {exportAuthMode
-              ? 'Modo export: sessão local para aceder ao painel estático.'
-              : 'Autenticação administrativa com CRUD completo nas secções disponíveis.'}
-          </p>
+    <main className="min-h-screen bg-stone-50">
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-stone-200 bg-white px-2 py-5 shadow-sm transition-[width] duration-200 sm:px-3',
+          isSidebarCollapsed ? 'w-16 sm:w-20' : 'w-56 sm:w-64'
+        )}
+        aria-label="Navegação do backoffice"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className={cn('text-sm font-semibold uppercase tracking-[0.16em] text-[#27441d]', isSidebarCollapsed && 'sr-only')}>
+            Backoffice
+          </span>
+          <button
+            type="button"
+            aria-label={isSidebarCollapsed ? 'Expandir menu lateral' : 'Colapsar menu lateral'}
+            aria-expanded={!isSidebarCollapsed}
+            onClick={() => setIsSidebarCollapsed((value) => !value)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-200 text-stone-700"
+          >
+            {isSidebarCollapsed ? '›' : '‹'}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={async () => {
-            await adminAuthClient.adapter.signOut();
-            if (exportAuthMode || typeof window === 'undefined') {
-              router.replace('/backoffice/login');
-              return;
-            }
 
-            window.location.assign(AUTH0_ADMIN_LOGOUT_PATH);
-          }}
-          className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
-        >
-          Terminar sessão
-        </button>
-      </div>
+        <nav className="mt-6 grid gap-2" aria-label="Secções do backoffice">
+          {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id)).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveSection(item.id)}
+              title={item.label}
+              className={sidebarNavClass(activeSection === item.id, isSidebarCollapsed)}
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-stone-100 text-xs font-semibold text-[#27441d]">
+                {item.label.charAt(0)}
+              </span>
+              <span className={cn(isSidebarCollapsed && 'sr-only')}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <div
+        className={cn(
+          'min-h-screen w-full py-8 pr-4 transition-[padding] duration-200 sm:py-10 sm:pr-6 lg:pr-8',
+          isSidebarCollapsed ? 'pl-20 sm:pl-28' : 'pl-60 sm:pl-72'
+        )}
+      >
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="font-display text-4xl text-[#27441d]">Backoffice CEISCaramulo</h1>
+              <p className="mt-2 text-sm text-stone-600">
+                {exportAuthMode
+                  ? 'Modo export: sessão local para aceder ao painel estático.'
+                  : 'Autenticação administrativa com CRUD completo nas secções disponíveis.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await adminAuthClient.adapter.signOut();
+                if (exportAuthMode || typeof window === 'undefined') {
+                  router.replace('/backoffice/login');
+                  return;
+                }
+
+                window.location.assign(AUTH0_ADMIN_LOGOUT_PATH);
+              }}
+              className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
+            >
+              Terminar sessão
+            </button>
+          </div>
 
       {exportAuthMode ? (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Esta sessão é compatível com `output: "export"` e protege a interface do backoffice no cliente. As operações de gestão de conteúdos continuam a exigir um deploy com runtime servidor.
         </div>
       ) : null}
-
-      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {availableSections.includes('overview') ? <button type="button" onClick={() => setActiveSection('overview')} className={tabClass(activeSection === 'overview')}>Visão geral</button> : null}
-        {availableSections.includes('news') ? <button type="button" onClick={() => setActiveSection('news')} className={tabClass(activeSection === 'news')}>Notícias</button> : null}
-        {availableSections.includes('activities') ? <button type="button" onClick={() => setActiveSection('activities')} className={tabClass(activeSection === 'activities')}>Atividades</button> : null}
-        {availableSections.includes('projects') ? <button type="button" onClick={() => setActiveSection('projects')} className={tabClass(activeSection === 'projects')}>Projetos</button> : null}
-        {availableSections.includes('publications') ? <button type="button" onClick={() => setActiveSection('publications')} className={tabClass(activeSection === 'publications')}>Biblioteca</button> : null}
-        {availableSections.includes('contacts') ? <button type="button" onClick={() => setActiveSection('contacts')} className={tabClass(activeSection === 'contacts')}>Contactos</button> : null}
-        {availableSections.includes('gallery') ? <button type="button" onClick={() => setActiveSection('gallery')} className={tabClass(activeSection === 'gallery')}>Galeria</button> : null}
-        {availableSections.includes('admins') ? <button type="button" onClick={() => setActiveSection('admins')} className={tabClass(activeSection === 'admins')}>Admins</button> : null}
-        {availableSections.includes('audit') ? <button type="button" onClick={() => setActiveSection('audit')} className={tabClass(activeSection === 'audit')}>Auditoria</button> : null}
-        {availableSections.includes('layout') ? <button type="button" onClick={() => setActiveSection('layout')} className={tabClass(activeSection === 'layout')}>Layout CMS</button> : null}
-      </div>
 
       {activeSection === 'overview' ? (
         <section className="mt-8 space-y-6">
@@ -1678,6 +1727,8 @@ export default function BackofficePage() {
           )}
         </section>
       ) : null}
+        </div>
+      </div>
     </main>
   );
 }
@@ -1747,10 +1798,14 @@ function permissionLabel(permission: AdminPermission) {
   return found?.label || permission;
 }
 
-function tabClass(active: boolean) {
-  return active
-    ? 'rounded-lg bg-[#27441d] px-4 py-2 text-sm font-medium text-white'
-    : 'rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700';
+function sidebarNavClass(active: boolean, collapsed: boolean) {
+  return cn(
+    'flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors',
+    collapsed && 'justify-center px-2',
+    active
+      ? 'bg-[#27441d] font-medium text-white [&_span:first-child]:bg-white/15 [&_span:first-child]:text-white'
+      : 'text-stone-700 hover:bg-stone-100'
+  );
 }
 
 function Card({ title, value, loading = false }: { title: string; value: number | undefined; loading?: boolean }) {

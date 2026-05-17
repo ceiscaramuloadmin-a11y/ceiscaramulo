@@ -12,6 +12,11 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain('src={getAssetUrl(article.image)}');
   });
 
+  it('uses the local hero image asset for the homepage hero', () => {
+    expect(homePageSource).toContain("imageUrl: '/hero-imgs/hero-img.jpg'");
+    expect(homePageSource).toContain('<HomeHero hero={hero}');
+  });
+
   it('renders activity and news card copy as rich text previews instead of raw html strings', () => {
     expect(homePageSource).toContain('richTextToPlainText(activity.description)');
     expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
@@ -28,6 +33,8 @@ describe('homepage cards', () => {
     expect(homePageSource).not.toContain('async function getPublicProjects()');
     expect(homePageSource).not.toContain('getPublicProjects()');
     expect(homePageSource).not.toContain('getProjectSlug');
+    expect(homePageSource).not.toContain('href="/projetos"');
+    expect(homePageSource).not.toContain("href='/projetos'");
     expect(homePageSource).not.toContain('Em Destaque');
   });
 

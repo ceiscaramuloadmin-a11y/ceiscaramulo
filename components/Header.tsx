@@ -13,6 +13,7 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const pathname = usePathname();
+  const isShrunk = scrollY > 8;
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -27,21 +28,27 @@ const Header: React.FC = () => {
   return (
     <header
       className={cn(
-        'fixed inset-x-0 top-0 z-50 border-b border-stone-200/70 bg-[rgba(255,255,255,0.84)] backdrop-blur-md transition-shadow duration-200',
+        'fixed inset-x-0 top-0 z-50 bg-white/95 transition-[box-shadow,background-color] duration-200',
         navBarElevatedClasses(scrollY, 'global'),
       )}
+      data-shrunk={isShrunk ? 'true' : 'false'}
     >
       <a href="#main-content" className="skip-nav">
         Saltar para o conteúdo principal
       </a>
 
-      <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 transition-[height] duration-200 sm:px-6 lg:px-8',
+          isShrunk ? 'h-14' : 'h-20'
+        )}
+      >
         <Link
           href="/"
           className="inline-flex items-center"
           aria-label="CEISCaramulo - Página inicial"
         >
-          <SiteLogo imageClassName="h-11 w-auto sm:h-12" />
+          <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-8 sm:h-9' : 'h-11 sm:h-12')} />
         </Link>
 
         <nav className="hidden items-center lg:flex" aria-label="Navegação principal">
@@ -94,7 +101,7 @@ const Header: React.FC = () => {
       <div
         id="global-mobile-menu"
         className={cn(
-          'grid overflow-hidden border-t border-stone-200/70 bg-white transition-all duration-300 lg:hidden',
+          'grid overflow-hidden bg-white/95 transition-all duration-300 lg:hidden',
           isMenuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
       >

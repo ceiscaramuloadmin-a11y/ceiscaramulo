@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { deepMergeSettings, defaultSiteLayoutSettings } from '@/lib/site-layout';
 
 describe('site-layout', () => {
-  it('default explore links omit the old Projetos highlight (projetos stay in nav global, not explore cards)', () => {
+  it('default explore links omit the old Projetos highlight', () => {
     const hrefs = defaultSiteLayoutSettings.home.explore.links.map((link) => link.href);
     expect(hrefs).not.toContain('/projetos');
     expect(hrefs.length).toBeGreaterThanOrEqual(4);

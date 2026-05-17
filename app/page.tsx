@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, Facebook, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
 import HomeHero from '@/components/HomeHero';
+import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCalendar';
 import { activities as fallbackActivities, newsArticles as fallbackNewsArticles } from '@/data/content';
 import { navigationItems } from '@/data/navigation';
 import { contactInfo, siteConfig } from '@/data/site';
@@ -26,7 +27,6 @@ export const metadata: Metadata = {
     'património cultural',
     'notícias',
     'atividades',
-    'projetos',
     'biblioteca',
     'conservação da natureza',
     'educação ambiental',
@@ -86,7 +86,26 @@ const formatShortDate = (value: string | Date) =>
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+function hasFindMany(delegate: unknown): delegate is {
+  findMany: (args: Record<string, unknown>) => Promise<unknown[]>;
+} {
+  return !!delegate && typeof (delegate as { findMany?: unknown }).findMany === 'function';
+}
+
 async function getPublicNews() {
+  if (!hasFindMany(prisma.news)) {
+    return fallbackNewsArticles.slice(0, 2).map((article) => ({
+      id: article.id,
+      title: article.title,
+      slug: article.slug,
+      excerpt: article.excerpt,
+      category: article.category,
+      image: article.image ?? null,
+      publishedAt: article.date,
+      createdAt: article.date,
+    }));
+  }
+
   try {
     const news = await prisma.news.findMany({
       where: { published: true },
@@ -110,6 +129,18 @@ async function getPublicNews() {
 }
 
 async function getPublicActivities() {
+  if (!hasFindMany(prisma.activity)) {
+    return fallbackActivities.slice(0, 3).map((activity) => ({
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      date: activity.date,
+      location: activity.location,
+      image: activity.image ?? null,
+      category: activity.category,
+    }));
+  }
+
   try {
     const activities = await prisma.activity.findMany({
       where: { published: true },
@@ -136,10 +167,19 @@ export default async function HomePage() {
   const newsArticles = await getPublicNews();
   const activities = await getPublicActivities();
   const layout = await getPublicSiteLayoutSettings();
+  const calendarEntries = activities.map((activity) => ({
+    startMs: new Date(activity.date).getTime(),
+    href: `/atividades/${getActivitySlug(activity)}`,
+    title: activity.title,
+  }));
+  const hero = {
+    ...layout.home.hero,
+    imageUrl: '/hero-imgs/hero-img.jpg',
+  };
 
   return (
     <div className="bg-white text-foreground">
-      <HomeHero hero={layout.home.hero} navigationItems={navigationItems} />
+      <HomeHero hero={hero} navigationItems={navigationItems} />
 
       <section className="px-4 py-24 sm:px-6">
         <div className="mx-auto max-w-5xl">
@@ -157,6 +197,26 @@ export default async function HomePage() {
               Ver todas <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+
+          {calendarEntries.length > 0 ? (
+            <section
+              aria-label="Calendário de atividades na página inicial"
+              className="mt-12 border-y border-[#f1f3f5] py-10"
+            >
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(20rem,1fr)] lg:items-start">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Agenda</p>
+                  <h3 className="mt-2 font-display text-[1.75rem] font-bold leading-tight text-[#1a1a1a]">
+                    Datas no calendário
+                  </h3>
+                  <p className="mt-4 max-w-md text-sm leading-[1.65] text-[#666]">
+                    Os dias destacados têm atividades publicadas e abrem diretamente a respetiva ficha.
+                  </p>
+                </div>
+                <ActivitiesMonthCalendar entries={calendarEntries} />
+              </div>
+            </section>
+          ) : null}
 
           <div className="mt-12 grid gap-8 lg:grid-cols-3">
             {activities.map((activity) => (

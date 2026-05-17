@@ -42,7 +42,6 @@ export const metadata: Metadata = {
     'património cultural',
     'notícias',
     'atividades',
-    'projetos',
     'biblioteca',
     'conservação da natureza',
     'educação ambiental',

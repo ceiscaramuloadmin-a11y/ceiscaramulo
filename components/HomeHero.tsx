@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, X } from 'lucide-react';
+import { Autoplay, EffectFade } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import SiteLogo from '@/components/SiteLogo';
-import { carouselIndexAfterStep } from '@/lib/carousel-nav';
-import { splitHeroImageSources } from '@/lib/hero-image-sources';
+import heroImage from '@/src/assets/hero-imgs/hero-img.jpg';
+import heroImage2 from '@/src/assets/hero-imgs/hero-img2.jpg';
 import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
 import type { NavItem, SiteLayoutSettings } from '@/types';
@@ -16,64 +18,28 @@ type HeroProps = {
 };
 
 /**
- * Barra de navegação da homepage: mantém-se visível no topo ao fazer scroll graças a `sticky`.
- * Isto replica a sensação de “navbar fixa” pedida no roadmap, sem sobrepor outras páginas que usam `<Header />`.
+ * Barra de navegação da homepage: mantém-se fixa no topo durante o scroll.
  */
 const NAV_OUTER_CLASSES =
-  'sticky top-0 z-50 bg-white/60 px-4 pt-4 pb-2 backdrop-blur-md transition-[box-shadow]';
+  'fixed inset-x-0 top-0 z-50 bg-transparent px-4 pt-4 pb-2 transition-[box-shadow]';
 
-/** Intervalo entre trocas de slide no carrossel (milisegundos). */
-const HERO_ROTATION_MS = 5000;
+const HERO_SWIPER_INTERVAL_MS = 6000;
+
+const localHeroImages = [heroImage, heroImage2]
+  .map((image) => (typeof image === 'string' ? image : image.src))
+  .filter(Boolean);
 
 export default function HomeHero({ hero, navigationItems }: HeroProps) {
-  const [activeSlide, setActiveSlide] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const autoplayPauseUntilRef = useRef(0);
-
-  const heroImages = useMemo(() => splitHeroImageSources(hero.imageUrl || ''), [hero.imageUrl]);
-
-  const pauseAutoplayMomentarily = useCallback(() => {
-    autoplayPauseUntilRef.current = Date.now() + HERO_ROTATION_MS * 2;
-  }, []);
-
-  const goToRelativeSlide = useCallback(
-    (delta: number) => {
-      pauseAutoplayMomentarily();
-      setActiveSlide((current) => carouselIndexAfterStep(current, heroImages.length, delta));
-    },
-    [heroImages.length, pauseAutoplayMomentarily],
-  );
-
-  const goToSlideIndex = useCallback(
-    (index: number) => {
-      pauseAutoplayMomentarily();
-      setActiveSlide(carouselIndexAfterStep(index, heroImages.length, 0));
-    },
-    [heroImages.length, pauseAutoplayMomentarily],
-  );
+  const isShrunk = scrollY > 8;
 
   const trimmedTitleLines = [hero.titleLine1, hero.titleLine2, hero.titleLine3, hero.titleLine4].map((line) =>
     (line || '').trim()
   );
   const heroTitlePieces = trimmedTitleLines.filter(Boolean);
   const singleLineHeroTitle = heroTitlePieces.length <= 1;
-
-  useEffect(() => {
-    if (heroImages.length <= 1 || prefersReducedMotion) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      if (Date.now() < autoplayPauseUntilRef.current) {
-        return;
-      }
-      setActiveSlide((current) => carouselIndexAfterStep(current, heroImages.length, 1));
-    }, HERO_ROTATION_MS);
-
-    return () => window.clearInterval(timer);
-  }, [heroImages.length, prefersReducedMotion]);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -90,22 +56,20 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [activeSlide]);
-
   const parallaxOffset = prefersReducedMotion ? 0 : Math.min(scrollY * 0.22, 120);
 
   return (
-    <section
-      className="relative min-h-[870px] overflow-hidden"
-      aria-label={heroImages.length > 1 ? `Destaque com ${heroImages.length} imagens` : undefined}
-    >
-      <div className={`${navBarElevatedClasses(scrollY, 'hero')} ${NAV_OUTER_CLASSES}`}>
-        <div className="mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 py-3 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] backdrop-blur md:px-8">
+    <section className="relative min-h-[870px] overflow-hidden">
+      <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
+        <div
+          className={cn(
+            'mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-8',
+            isShrunk ? 'py-2' : 'py-3'
+          )}
+        >
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName="h-10 w-auto sm:h-12" />
+              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-8 sm:h-9' : 'h-10 sm:h-12')} />
             </Link>
 
             <nav className="hidden items-center gap-4 md:flex lg:gap-6" aria-label="Navegação principal da homepage">
@@ -155,24 +119,39 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       </div>
 
       <div className="absolute inset-0">
-        {heroImages.map((imageUrl, index) => (
-          <img
-            key={`${imageUrl}-${index}`}
-            src={imageUrl}
-            alt={hero.imageAlt}
-            className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 motion-reduce:transition-none motion-reduce:duration-0"
-            style={{
-              opacity: index === activeSlide ? 1 : 0,
-              transform: `translateY(${parallaxOffset}px) scale(1.08)`,
-            }}
-          />
-        ))}
+        <Swiper
+          modules={[Autoplay, EffectFade]}
+          className="absolute inset-0 z-0 h-full w-full"
+          slidesPerView={1}
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          loop={localHeroImages.length > 1}
+          allowTouchMove={false}
+          autoplay={
+            !prefersReducedMotion && localHeroImages.length > 1
+              ? { delay: HERO_SWIPER_INTERVAL_MS, disableOnInteraction: false }
+              : false
+          }
+        >
+          {localHeroImages.map((imageSrc, index) => (
+            <SwiperSlide key={`${imageSrc}-${index}`} className="h-full w-full">
+              <img
+                src={imageSrc}
+                alt={hero.imageAlt}
+                className="h-full w-full object-cover"
+                style={{
+                  transform: `translateY(${parallaxOffset}px) scale(1.08)`,
+                }}
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
 
-        <div className="absolute inset-0 bg-[#27441d]/35" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[#27441d]/35" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
+      <div className="relative z-20 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
         <h1
           className={`font-hero mt-6 text-[clamp(3.8rem,8vw,5.25rem)] font-bold leading-[0.9] text-white sm:text-[clamp(4.4rem,8vw,5.8rem)] md:text-[84px] ${
             singleLineHeroTitle ? 'max-w-[20ch]' : 'max-w-[11ch]'
@@ -191,46 +170,6 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
         </h1>
 
         <p className="mt-6 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">{hero.description}</p>
-
-        {heroImages.length > 1 && (
-          <div className="mt-10 flex flex-col items-center gap-4" role="group" aria-label="Controlo do carrossel">
-            <div className="flex items-center justify-center gap-5">
-              <button
-                type="button"
-                onClick={() => goToRelativeSlide(-1)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white shadow-md backdrop-blur-sm transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                aria-label="Imagem anterior"
-              >
-                <ChevronLeft className="h-6 w-6" aria-hidden />
-              </button>
-
-              <div className="flex flex-wrap justify-center gap-2">
-                {heroImages.map((_, index) => (
-                  <button
-                    key={`hero-dot-${index}`}
-                    type="button"
-                    onClick={() => goToSlideIndex(index)}
-                    className={cn(
-                      'h-2.5 w-2.5 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
-                      activeSlide === index ? 'bg-white shadow' : 'bg-white/45 hover:bg-white/75',
-                    )}
-                    aria-label={`Mostrar imagem ${index + 1} de ${heroImages.length}`}
-                    aria-current={activeSlide === index ? 'true' : undefined}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => goToRelativeSlide(1)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white shadow-md backdrop-blur-sm transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                aria-label="Imagem seguinte"
-              >
-                <ChevronRight className="h-6 w-6" aria-hidden />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

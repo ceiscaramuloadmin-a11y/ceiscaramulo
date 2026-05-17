@@ -129,16 +129,12 @@ describe('public content cover placeholders', () => {
     expect(screen.getAllByRole('img', { name: 'Notícia sem capa' }).at(-1)).toHaveAttribute('src', '/placeholder.svg');
   });
 
-  it('renders placeholders for activity, project and publication details when images are missing', async () => {
+  it('renders placeholders for activity and publication details when images are missing', async () => {
     const { default: AtividadeDetalhePage } = await import('@/app/atividades/[id]/page');
-    const { default: ProjetoDetalhePage } = await import('@/app/projetos/[id]/page');
     const { default: PublicacaoDetalhePage } = await import('@/app/biblioteca/[id]/page');
 
     render(await AtividadeDetalhePage({ params: Promise.resolve({ id: 'atividade-sem-capa' }) }));
     expect(screen.getByRole('img', { name: 'Atividade sem capa' })).toHaveAttribute('src', '/placeholder.svg');
-
-    render(await ProjetoDetalhePage({ params: Promise.resolve({ id: 'projeto-sem-capa' }) }));
-    expect(screen.getByRole('img', { name: 'Projeto sem capa' })).toHaveAttribute('src', '/placeholder.svg');
 
     render(await PublicacaoDetalhePage({ params: Promise.resolve({ id: 'publicação-sem-capa' }) }));
     expect(screen.getByRole('img', { name: 'Publicação sem capa' })).toHaveAttribute('src', '/placeholder.svg');

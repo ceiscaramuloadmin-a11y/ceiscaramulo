@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import HomeHero from '@/components/HomeHero';
 
@@ -11,6 +11,30 @@ vi.mock('next/link', () => ({
     <a href={href} {...props}>
       {children}
     </a>
+  ),
+}));
+
+vi.mock('swiper/modules', () => ({
+  Autoplay: {},
+  EffectFade: {},
+}));
+
+vi.mock('swiper/react', () => ({
+  Swiper: ({
+    children,
+    className,
+  }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div data-testid="hero-swiper" className={className}>
+      {children}
+    </div>
+  ),
+  SwiperSlide: ({
+    children,
+    className,
+  }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div data-testid="hero-swiper-slide" className={className}>
+      {children}
+    </div>
   ),
 }));
 
@@ -43,35 +67,27 @@ const baseHero = {
   imageAlt: 'Serra',
 };
 
-describe('HomeHero carousel', () => {
+describe('HomeHero image', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
   });
 
-  it('mostra controlos anterior/seguinte e pontos quando há várias imagens', () => {
+  it('renders the local hero image folder as an image-only swiper', () => {
     mockMatchMedia(false);
     render(<HomeHero hero={baseHero} navigationItems={[]} />);
 
-    expect(screen.getByRole('button', { name: /imagem anterior/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /imagem seguinte/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Mostrar imagem \d de 3/i })).toHaveLength(3);
+    expect(screen.getByTestId('hero-swiper')).toBeInTheDocument();
+    expect(screen.getByTestId('hero-swiper')).toHaveClass('z-0');
+    expect(screen.getAllByTestId('hero-swiper-slide')).toHaveLength(2);
+    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(2);
+    expect(document.querySelectorAll('.z-10.bg-\\[\\#27441d\\]\\/35')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /imagem seguinte/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Mostrar imagem/i })).toBeNull();
   });
 
-  it('o botão seguinte activa o segundo indicador', () => {
-    mockMatchMedia(false);
-    render(<HomeHero hero={baseHero} navigationItems={[]} />);
-
-    const dot1 = screen.getByRole('button', { name: /Mostrar imagem 1 de 3/i });
-    const dot2 = screen.getByRole('button', { name: /Mostrar imagem 2 de 3/i });
-    expect(dot1).toHaveAttribute('aria-current', 'true');
-
-    fireEvent.click(screen.getByRole('button', { name: /imagem seguinte/i }));
-
-    expect(dot2).toHaveAttribute('aria-current', 'true');
-  });
-
-  it('com uma única imagem, não mostra controlo do carrossel', () => {
+  it('does not render carousel controls for a single image', () => {
     mockMatchMedia(false);
     render(
       <HomeHero
@@ -81,5 +97,22 @@ describe('HomeHero carousel', () => {
     );
 
     expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
+    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(2);
+  });
+
+  it('shrinks the sticky hero navigation after scrolling', async () => {
+    mockMatchMedia(false);
+    render(<HomeHero hero={baseHero} navigationItems={[]} />);
+
+    const navShell = screen.getByLabelText('CEISCaramulo - Página inicial').closest('[data-shrunk]');
+    expect(navShell).toHaveClass('fixed', 'top-0', 'bg-transparent');
+    expect(navShell?.className).not.toContain('backdrop-blur');
+    expect(navShell?.firstElementChild).toHaveClass('rounded-full', 'bg-white/90');
+    expect(navShell).toHaveAttribute('data-shrunk', 'false');
+
+    Object.defineProperty(window, 'scrollY', { value: 32, configurable: true });
+    window.dispatchEvent(new Event('scroll'));
+
+    await waitFor(() => expect(navShell).toHaveAttribute('data-shrunk', 'true'));
   });
 });

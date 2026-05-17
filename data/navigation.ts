@@ -4,7 +4,6 @@ export const navigationItems: NavItem[] = [
   { label: 'Sobre Nós', href: '/sobre-nos' },
   { label: 'Atividades', href: '/atividades' },
   { label: 'Notícias', href: '/noticias' },
-  { label: 'Projetos', href: '/projetos' },
   { label: 'Conteúdos e Recursos', href: '/biblioteca' },
   { label: 'Contactos', href: '/contactos' },
 ];

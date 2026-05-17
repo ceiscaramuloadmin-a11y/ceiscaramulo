@@ -7,10 +7,10 @@ describe('navBarElevatedClasses', () => {
     expect(navBarElevatedClasses(NAV_SCROLL_ELEVATION_PX)).toBe('');
   });
 
-  it('global: shadow mais suave + blur quando desce mais', () => {
+  it('global: shadow mais suave quando desce mais, sem blur', () => {
     const elevated = navBarElevatedClasses(NAV_SCROLL_ELEVATION_PX + 1, 'global');
     expect(elevated).toContain('shadow-[0_8px_24px_-18px_rgba(0,0,0,0.18)]');
-    expect(elevated).toContain('backdrop-blur-lg');
+    expect(elevated).not.toContain('backdrop-blur');
   });
 
   it('hero: mantém sombra mais marcada sobre imagens', () => {
