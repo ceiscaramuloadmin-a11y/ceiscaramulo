@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { newsArticles as fallbackNewsArticles } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
+import { withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatDate, getAssetUrl } from '@/lib/utils';
@@ -62,7 +63,7 @@ async function getPublicNews() {
       where: { published: true },
       orderBy: { publishedAt: 'desc' },
     });
-    return news;
+    return news.map((article) => withPublicContentAsset('news', article));
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
       markPublicDbQuotaExceeded('public news');

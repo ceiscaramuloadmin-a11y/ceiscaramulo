@@ -10,7 +10,9 @@ import {
   requireAdminContextFromRequest,
   sectionConfig,
 } from '@/app/api/_lib/cms';
+import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
 import { enqueueNewsPublishedNotifications } from '@/lib/newsletter-on-publish';
+import { withPublicContentAsset, type PublicContentSection } from '@/lib/public-content-assets';
 
 // Estas rotas cobrem operações de coleção por secção:
 // - GET: listagem pública (ou admin com `scope=admin`)
@@ -46,6 +48,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: scope === 'admin' ? {} : config.publicWhere,
       orderBy: config.listOrder,
     });
+
+    if (scope === 'public') {
+      const publicItems = items.map((item) =>
+        withPublicContentAsset(section as PublicContentSection, item as { id: string })
+      );
+
+      return NextResponse.json(publicItems, {
+        headers: PUBLIC_DATA_CACHE_HEADERS,
+      });
+    }
 
     return NextResponse.json(items);
   } catch (error) {

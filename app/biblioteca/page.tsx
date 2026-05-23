@@ -10,6 +10,7 @@ import {
   parseBibliotecaTipoParam,
 } from '@/lib/biblioteca-filters';
 import { getPublicationSlug } from '@/lib/public-content-slugs';
+import { withPublicContentAsset } from '@/lib/public-content-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
 import { richTextToPlainText } from '@/lib/richText';
@@ -59,7 +60,7 @@ async function getPublicPublications() {
       where: { published: true },
       orderBy: { year: 'desc' },
     });
-    return publications;
+    return publications.map((publication) => withPublicContentAsset('publications', publication));
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
       markPublicDbQuotaExceeded('public publications');
