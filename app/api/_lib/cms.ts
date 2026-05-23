@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
+import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
 import { defaultSiteLayoutSettings, deepMergeSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
@@ -1023,7 +1024,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
     }
   }
 
-  return items.map((item) => ({
+  const publicItems = items.map((item) => ({
     id: item.id,
     title: item.title,
     description: item.description,
@@ -1035,6 +1036,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   }));
+
+  return scope === 'public' ? publicItems.map(withPublicGalleryAssets) : publicItems;
 }
 
 export async function getGalleryMediaById(id: string, scope: 'public' | 'admin') {

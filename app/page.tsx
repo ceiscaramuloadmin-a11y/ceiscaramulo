@@ -8,6 +8,7 @@ import { activities as fallbackActivities, newsArticles as fallbackNewsArticles 
 import { navigationItems } from '@/data/navigation';
 import { contactInfo, siteConfig } from '@/data/site';
 import { getActivitySlug } from '@/lib/public-content-slugs';
+import { withPublicContentAsset } from '@/lib/public-content-assets';
 import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import prisma from '@/lib/prisma';
@@ -112,7 +113,7 @@ async function getPublicNews() {
       orderBy: { publishedAt: 'desc' },
       take: 2,
     });
-    return news;
+    return news.map((article) => withPublicContentAsset('news', article));
   } catch (error) {
     console.error('Error fetching news:', error);
     return fallbackNewsArticles.slice(0, 2).map((article) => ({
@@ -147,7 +148,7 @@ async function getPublicActivities() {
       orderBy: { date: 'asc' },
       take: 3,
     });
-    return activities;
+    return activities.map((activity) => withPublicContentAsset('activities', activity));
   } catch (error) {
     console.error('Error fetching activities:', error);
     return fallbackActivities.slice(0, 3).map((activity) => ({
@@ -174,7 +175,7 @@ export default async function HomePage() {
   }));
   const hero = {
     ...layout.home.hero,
-    imageUrl: '/hero-imgs/hero-img.jpg',
+    imageUrl: '/hero-imgs/hero-img.webp',
   };
 
   return (

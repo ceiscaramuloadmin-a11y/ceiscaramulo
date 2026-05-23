@@ -9,6 +9,7 @@ import ContentComments from '@/components/ContentComments';
 import { activities as fallbackActivities } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { getActivitySlug } from '@/lib/public-content-slugs';
+import { publicAssetValue, withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
 import { prepareRichTextForRender } from '@/lib/richText';
 import { formatDate, formatShortDate, capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
@@ -37,7 +38,7 @@ async function getActivity(identifier: string) {
     });
 
     if (activityById) {
-      return activityById;
+      return withPublicContentAsset('activities', activityById);
     }
 
     const activities = await prisma.activity.findMany({
@@ -45,7 +46,8 @@ async function getActivity(identifier: string) {
       orderBy: { date: 'asc' },
     });
 
-    return activities.find((activity) => getActivitySlug(activity) === identifier) ?? null;
+    const activity = activities.find((item) => getActivitySlug(item) === identifier) ?? null;
+    return activity ? withPublicContentAsset('activities', activity) : null;
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
       markPublicDbQuotaExceeded('activity detail');
@@ -81,7 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: activity.image
         ? [
             {
-              url: activity.image,
+              url: publicAssetValue('activities', activity.id, activity.image) || '/og-image.svg',
               width: 1200,
               height: 630,
               alt: activity.title,
@@ -102,7 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title: activity.title,
       description: activity.description,
-      images: activity.image ? [activity.image] : ['/og-image.svg'],
+      images: activity.image ? [publicAssetValue('activities', activity.id, activity.image) || '/og-image.svg'] : ['/og-image.svg'],
     },
     alternates: {
       canonical: `/atividades/${getActivitySlug(activity)}`,
@@ -123,7 +125,7 @@ export default async function AtividadeDetalhePage({ params }: Props) {
     '@type': 'Event',
     name: activity.title,
     description: activity.description,
-    image: activity.image || '/og-image.svg',
+    image: publicAssetValue('activities', activity.id, activity.image) || '/og-image.svg',
     startDate: activity.date,
     endDate: activity.endDate || undefined,
     location: activity.location

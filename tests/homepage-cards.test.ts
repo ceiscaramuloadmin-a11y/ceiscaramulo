@@ -13,7 +13,7 @@ describe('homepage cards', () => {
   });
 
   it('uses the local hero image asset for the homepage hero', () => {
-    expect(homePageSource).toContain("imageUrl: '/hero-imgs/hero-img.jpg'");
+    expect(homePageSource).toContain("imageUrl: '/hero-imgs/hero-img.webp'");
     expect(homePageSource).toContain('<HomeHero hero={hero}');
   });
 
