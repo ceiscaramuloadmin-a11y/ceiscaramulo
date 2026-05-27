@@ -14,6 +14,9 @@ const Header: React.FC = () => {
   const [scrollY, setScrollY] = useState(0);
   const pathname = usePathname();
   const isShrunk = scrollY > 8;
+  const visibleNavItems = navItems.filter(
+    (item) => !['Atividades', 'Notícias', 'Contactos'].includes(item.label)
+  );
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -30,6 +33,7 @@ const Header: React.FC = () => {
       className={cn(
         'fixed inset-x-0 top-0 z-50 bg-white/95 transition-[box-shadow,background-color] duration-200',
         navBarElevatedClasses(scrollY, 'global'),
+        pathname !== '/' && 'border-b border-[#0f4c36]/20'
       )}
       data-shrunk={isShrunk ? 'true' : 'false'}
     >
@@ -39,8 +43,8 @@ const Header: React.FC = () => {
 
       <div
         className={cn(
-          'mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 transition-[height] duration-200 sm:px-6 lg:px-8',
-          isShrunk ? 'h-14' : 'h-20'
+          'mx-auto flex w-full max-w-[96rem] items-center justify-between gap-3 px-4 transition-[height] duration-200 sm:px-6 lg:px-8',
+          isShrunk ? 'h-16' : 'h-24'
         )}
       >
         <Link
@@ -48,20 +52,25 @@ const Header: React.FC = () => {
           className="inline-flex items-center"
           aria-label="CEISCaramulo - Página inicial"
         >
-          <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-8 sm:h-9' : 'h-11 sm:h-12')} />
+          <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-10 sm:h-11' : 'h-14 sm:h-16')} />
         </Link>
 
-        <nav className="hidden items-center lg:flex" aria-label="Navegação principal">
-          {navItems.map((item) => {
+        <nav className="hidden min-w-0 items-center xl:flex" aria-label="Navegação principal">
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href;
+            const activeLinkClass = isActive
+              ? pathname === '/'
+                ? 'font-medium text-[#0f4c36]'
+                : 'font-medium text-stone-800 underline decoration-[#0f4c36] decoration-1 underline-offset-4'
+              : undefined;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'px-4 text-sm text-stone-600 transition-colors hover:text-[#3e5c32]',
-                  isActive && 'font-medium text-[#3e5c32]'
+                  'whitespace-nowrap px-1.5 text-[11px] text-stone-600 transition-colors hover:text-[#0f4c36] 2xl:px-2 2xl:text-xs',
+                  activeLinkClass
                 )}
                 aria-current={isActive ? 'page' : undefined}
               >
@@ -71,24 +80,9 @@ const Header: React.FC = () => {
           })}
         </nav>
 
-        <div className="hidden lg:block">
-          <Link
-            href="/contactos"
-            className={cn(
-              'border-b-2 pb-1 text-sm transition-colors',
-              pathname === '/contactos'
-                ? 'border-[#3e5c32] text-[#3e5c32]'
-                : 'border-transparent text-stone-600 hover:border-[#3e5c32]/40 hover:text-[#3e5c32]'
-            )}
-            aria-current={pathname === '/contactos' ? 'page' : undefined}
-          >
-            Contactos
-          </Link>
-        </div>
-
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 text-stone-700 lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 text-stone-700 xl:hidden"
           aria-expanded={isMenuOpen}
           aria-controls="global-mobile-menu"
           aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
@@ -101,22 +95,28 @@ const Header: React.FC = () => {
       <div
         id="global-mobile-menu"
         className={cn(
-          'grid overflow-hidden bg-white/95 transition-all duration-300 lg:hidden',
+          'grid overflow-hidden bg-white/95 transition-all duration-300 xl:hidden',
           isMenuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
       >
         <div className="min-h-0">
           <nav className="mx-auto grid max-w-7xl gap-1 px-4 py-4 sm:px-6" aria-label="Menu móvel">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = pathname === item.href;
 
-              return (
+              const activeMobileClass = isActive
+              ? pathname === '/'
+                ? 'bg-[#f3f4f1] font-medium text-[#0f4c36]'
+                : 'bg-[#f3f4f1] font-medium text-stone-800 underline decoration-[#0f4c36] decoration-1 underline-offset-4'
+              : 'text-stone-600 hover:bg-stone-50';
+
+            return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
                     'rounded-md px-4 py-3 text-sm transition-colors',
-                    isActive ? 'bg-[#f3f4f1] font-medium text-[#3e5c32]' : 'text-stone-600 hover:bg-stone-50'
+                    activeMobileClass
                   )}
                   aria-current={isActive ? 'page' : undefined}
                   onClick={() => setIsMenuOpen(false)}

@@ -40,6 +40,9 @@ const sectionLinks = [
 ] as const;
 
 const footerPrimaryLinks = navigationItems.slice(0, 4);
+const homepageNavItems = navigationItems.filter(
+  (item) => !['Atividades', 'Notícias', 'Contactos'].includes(item.label)
+);
 const footerExploreLinks = [
   { label: 'Biblioteca', href: '/biblioteca' },
   { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
@@ -94,7 +97,7 @@ const FloatingNav = () => {
           </button>
 
           <nav className="hidden items-center gap-6 md:flex" aria-label="Navegação principal da homepage">
-            {navigationItems.map((item) => (
+            {homepageNavItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
@@ -115,7 +118,7 @@ const FloatingNav = () => {
         >
           <div className="min-h-0">
             <nav className="grid gap-1 rounded-[28px] border border-border/70 bg-white p-3" aria-label="Menu móvel da homepage">
-              {navigationItems.map((item) => (
+              {homepageNavItems.map((item) => (
                 <Link
                   key={item.href}
                   to={item.href}
@@ -162,14 +165,10 @@ const Index: React.FC = () => {
 
             <h1 className="mt-6 max-w-[750px] font-display text-5xl font-bold leading-[0.92] text-white sm:text-6xl md:text-[84px]">
               <span className="block">Centro de Estudos e</span>
-              <span className="block text-[#9dc44d]">Interpretação</span>
-              <span className="block">da Serra</span>
-              <span className="block">do Caramulo</span>
+              <span className="block text-white">Interpretação</span>
+              <span className="block"><span className="text-white">da</span> <span className="text-[#9dc44d]">Serra</span></span>
+              <span className="block text-[#9dc44d]">do Caramulo</span>
             </h1>
-
-            <p className="mt-6 max-w-2xl text-base leading-7 text-white/75 sm:text-lg">
-              Preservar, estudar e divulgar o património natural, cultural e histórico da Serra do Caramulo.
-            </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Button

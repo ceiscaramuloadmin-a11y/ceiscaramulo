@@ -37,7 +37,8 @@ export const contactInfo: ContactInfo = {
   coordinates: { lat: 40.5731, lng: -8.1683 },
   socialMedia: {
     facebook: 'https://facebook.com/CEISCaramulo',
-    // instagram: 'https://instagram.com/CEISCaramulo',
+    instagram: 'https://www.instagram.com/ceiscaramulo_/',
+    linkedin: 'https://www.linkedin.com/in/ceiscaramulo-ceiscaramulo-88b71a3b6/',
     // youtube: 'https://youtube.com/@CEISCaramulo',
   },
 };

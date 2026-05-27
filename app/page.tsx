@@ -1,12 +1,11 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Facebook, Instagram, Mail, MapPin, Phone, Youtube } from 'lucide-react';
-import SiteLogo from '@/components/SiteLogo';
+import { ArrowRight } from 'lucide-react';
+import Footer from '@/components/Footer';
 import HomeHero from '@/components/HomeHero';
 import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCalendar';
 import { activities as fallbackActivities, newsArticles as fallbackNewsArticles } from '@/data/content';
 import { navigationItems } from '@/data/navigation';
-import { contactInfo, siteConfig } from '@/data/site';
 import { getActivitySlug } from '@/lib/public-content-slugs';
 import { withPublicContentAsset } from '@/lib/public-content-assets';
 import { richTextToPlainText } from '@/lib/richText';
@@ -62,14 +61,6 @@ export const metadata: Metadata = {
     canonical: '/',
   },
 };
-
-const footerPrimaryLinks = navigationItems.slice(0, 4);
-const footerExploreLinks = [
-  { label: 'Biblioteca', href: '/biblioteca' },
-  { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
-  { label: 'Galeria Multimédia', href: '/galeria' },
-  { label: 'Contactos', href: '/contactos' },
-];
 
 const formatLongDate = (value: string | Date) =>
   new Date(value).toLocaleDateString('pt-PT', {
@@ -164,7 +155,6 @@ async function getPublicActivities() {
 }
 
 export default async function HomePage() {
-  const currentYear = new Date().getFullYear();
   const newsArticles = await getPublicNews();
   const activities = await getPublicActivities();
   const layout = await getPublicSiteLayoutSettings();
@@ -297,104 +287,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-[#f3f4f6] bg-white px-4 pb-8 pt-20 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <div className="grid gap-12 pb-16 md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-6">
-              <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-                <SiteLogo imageClassName="h-12 w-auto" />
-              </Link>
-              <p className="max-w-[17rem] text-sm leading-[1.65] text-[#666]">{siteConfig.description}</p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-[#1a1a1a]">Navegação</h3>
-              <div className="mt-6 grid gap-4">
-                {footerPrimaryLinks.map((item) => (
-                  <Link key={item.href} href={item.href} className="text-sm text-[#666] transition-colors hover:text-primary">
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-[#1a1a1a]">Explorar</h3>
-              <div className="mt-6 grid gap-4">
-                {footerExploreLinks.map((item) => (
-                  <Link key={item.href} href={item.href} className="text-sm text-[#666] transition-colors hover:text-primary">
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-[#1a1a1a]">Contactos</h3>
-              <div className="mt-6 grid gap-4 text-sm text-[#666]">
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#8fb339]" />
-                  <p>
-                    {contactInfo.address}, {contactInfo.postalCode} {contactInfo.city}
-                  </p>
-                </div>
-                <a href={`tel:${contactInfo.phone}`} className="flex items-center gap-3 transition-colors hover:text-primary">
-                  <Phone className="h-4 w-4 shrink-0 text-[#8fb339]" />
-                  <span>{contactInfo.phone}</span>
-                </a>
-                <a href={`mailto:${contactInfo.email}`} className="flex items-center gap-3 transition-colors hover:text-primary">
-                  <Mail className="h-4 w-4 shrink-0 text-[#8fb339]" />
-                  <span>{contactInfo.email}</span>
-                </a>
-              </div>
-              <div className="mt-6 flex items-center gap-4">
-                {contactInfo.socialMedia.facebook ? (
-                  <a
-                    href={contactInfo.socialMedia.facebook}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Facebook"
-                    className="text-[#666] transition-colors hover:text-primary"
-                  >
-                    <Facebook className="h-4 w-4" />
-                  </a>
-                ) : null}
-                {contactInfo.socialMedia.instagram ? (
-                  <a
-                    href={contactInfo.socialMedia.instagram}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Instagram"
-                    className="text-[#666] transition-colors hover:text-primary"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </a>
-                ) : null}
-                {contactInfo.socialMedia.youtube ? (
-                  <a
-                    href={contactInfo.socialMedia.youtube}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="YouTube"
-                    className="text-[#666] transition-colors hover:text-primary"
-                  >
-                    <Youtube className="h-4 w-4" />
-                  </a>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-[#f9fafb] pt-8 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#666]">
-              © {currentYear} CEISCaramulo. Todos os direitos reservados.
-            </p>
-            <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-[#666]">
-              Associação sem fins lucrativos
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

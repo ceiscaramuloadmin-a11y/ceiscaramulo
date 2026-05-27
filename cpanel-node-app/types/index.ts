@@ -121,6 +121,7 @@ export interface ContactInfo {
   socialMedia: {
     facebook?: string;
     instagram?: string;
+    linkedin?: string;
     youtube?: string;
     twitter?: string;
   };

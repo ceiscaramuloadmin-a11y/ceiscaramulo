@@ -51,5 +51,8 @@ describe('homepage prisma fallback', () => {
     expect(screen.getByTestId('home-hero')).toBeInTheDocument();
     expect(screen.getAllByText('Atividades').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Notícias').length).toBeGreaterThan(0);
+    const sectionLinks = screen.getAllByRole('link', { name: /Ver todas/i });
+    expect(sectionLinks[0]).toHaveAttribute('href', '/atividades');
+    expect(sectionLinks[1]).toHaveAttribute('href', '/noticias');
   });
 });

@@ -25,7 +25,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       titleLine2: '',
       titleLine3: '',
       titleLine4: '',
-      description: 'Preservar, estudar e divulgar o património natural, cultural e histórico da Serra do Caramulo.',
+      description: 'Centro de estudos e interpretação da Serra do Caramulo',
       primaryCtaLabel: 'Conhecer a Associação',
       primaryCtaHref: '/sobre-nos',
       secondaryCtaLabel: 'Ver Atividades',
@@ -142,13 +142,6 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
           { label: 'Galeria Multimédia', href: '/galeria' },
           { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
           { label: 'Contactos', href: '/contactos' },
-        ],
-      },
-      {
-        title: 'Área Restrita',
-        links: [
-          { label: 'Backoffice', href: '/backoffice' },
-          { label: 'Login Administrativo', href: '/backoffice/login' },
         ],
       },
     ],
