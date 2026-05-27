@@ -63,21 +63,21 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
         <div
           className={cn(
-            'mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-8',
-            isShrunk ? 'py-2' : 'py-3'
+            'mx-auto max-w-[96rem] rounded-full border border-white/35 bg-white/90 px-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-8',
+            isShrunk ? 'py-3' : 'py-4'
           )}
         >
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-8 sm:h-9' : 'h-10 sm:h-12')} />
+              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-10 sm:h-11' : 'h-14 sm:h-16')} />
             </Link>
 
-            <nav className="hidden items-center gap-4 md:flex lg:gap-6" aria-label="Navegação principal da homepage">
+            <nav className="hidden min-w-0 items-center gap-2 xl:flex 2xl:gap-3" aria-label="Navegação principal da homepage">
               {navigationItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground transition-colors hover:text-primary"
+                  className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.03em] text-foreground transition-colors hover:text-[#0f4c36] 2xl:text-[11px] 2xl:tracking-[0.06em]"
                 >
                   {item.label}
                 </Link>
@@ -86,7 +86,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
 
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 text-stone-700 md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 text-stone-700 xl:hidden"
               onClick={() => setIsMobileMenuOpen((value) => !value)}
               aria-expanded={isMobileMenuOpen}
               aria-controls="home-mobile-menu"
@@ -100,7 +100,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
         <div
           id="home-mobile-menu"
           className={
-            isMobileMenuOpen ? 'mx-auto mt-3 max-w-7xl rounded-2xl border border-white/30 bg-white/95 p-2 shadow-xl md:hidden' : 'hidden'
+            isMobileMenuOpen ? 'mx-auto mt-3 max-w-[96rem] rounded-2xl border border-white/30 bg-white/95 p-2 shadow-xl xl:hidden' : 'hidden'
           }
         >
           <nav className="grid gap-1" aria-label="Menu móvel da homepage">
@@ -162,14 +162,16 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
           ) : (
             <>
               <span className="block">{hero.titleLine1}</span>
-              <span className="block text-[#9dc44d]">{hero.titleLine2}</span>
-              <span className="block">{hero.titleLine3}</span>
-              <span className="block">{hero.titleLine4}</span>
+              <span className="block text-white">{hero.titleLine2}</span>
+              {hero.titleLine3 === 'da Serra' ? (
+                <span className="block"><span className="text-white">da</span> <span className="text-[#9dc44d]">Serra</span></span>
+              ) : (
+                <span className="block text-[#9dc44d]">{hero.titleLine3}</span>
+              )}
+              <span className="block text-[#9dc44d]">{hero.titleLine4}</span>
             </>
           )}
         </h1>
-
-        <p className="mt-6 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">{hero.description}</p>
       </div>
     </section>
   );

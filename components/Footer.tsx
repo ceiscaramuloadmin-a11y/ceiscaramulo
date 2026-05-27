@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Instagram, Linkedin, Facebook, Youtube } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import { contactInfo } from '@/data/site';
@@ -10,14 +11,25 @@ import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
 
 const socialLinks = [
-  { label: 'Instagram', href: contactInfo.socialMedia.instagram },
-  { label: 'Facebook', href: contactInfo.socialMedia.facebook },
-  { label: 'YouTube', href: contactInfo.socialMedia.youtube },
-].filter((item): item is { label: string; href: string } => Boolean(item.href));
+  { label: 'Instagram', href: contactInfo.socialMedia.instagram, Icon: Instagram },
+  { label: 'LinkedIn', href: contactInfo.socialMedia.linkedin, Icon: Linkedin },
+  { label: 'Facebook', href: contactInfo.socialMedia.facebook, Icon: Facebook },
+  { label: 'YouTube', href: contactInfo.socialMedia.youtube, Icon: Youtube },
+].filter((item): item is { label: string; href: string; Icon: typeof Instagram } => Boolean(item.href));
+
+const getPublicFooterColumns = (settings: SiteLayoutSettings) =>
+  settings.footer.columns
+    .filter((column) => !column.title.toLowerCase().includes('restrita'))
+    .map((column) => ({
+      ...column,
+      links: column.links.filter((item) => !item.href.startsWith('/backoffice')),
+    }))
+    .filter((column) => column.links.length > 0);
 
 const Footer: React.FC = () => {
   const pathname = usePathname();
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
+  const footerColumns = getPublicFooterColumns(layoutSettings);
 
   useEffect(() => {
     let mounted = true;
@@ -61,7 +73,7 @@ const Footer: React.FC = () => {
             <NewsletterSignup />
           </div>
 
-          {layoutSettings.footer.columns.map((column) => (
+          {footerColumns.map((column) => (
             <div key={column.title}>
               <h3 className="text-sm font-bold text-[#3e5c32]">{column.title}</h3>
               <div className="mt-6 grid gap-4">
@@ -84,15 +96,16 @@ const Footer: React.FC = () => {
 
           <div>
             <h3 className="text-sm font-bold text-[#3e5c32]">{layoutSettings.footer.socialTitle}</h3>
-            <div className="mt-6 grid gap-4">
+            <div className="mt-6 grid gap-3">
               {socialLinks.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline"
+                  className="inline-flex items-center gap-2 text-sm text-stone-500 transition-colors hover:text-[#3e5c32]"
                 >
+                  <item.Icon className="h-4 w-4" />
                   {item.label}
                 </a>
               ))}

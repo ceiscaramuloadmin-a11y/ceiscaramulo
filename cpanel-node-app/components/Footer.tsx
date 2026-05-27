@@ -13,9 +13,19 @@ const socialLinks = [
   { label: 'YouTube', href: contactInfo.socialMedia.youtube },
 ].filter((item): item is { label: string; href: string } => Boolean(item.href));
 
+const getPublicFooterColumns = (settings: SiteLayoutSettings) =>
+  settings.footer.columns
+    .filter((column) => !column.title.toLowerCase().includes('restrita'))
+    .map((column) => ({
+      ...column,
+      links: column.links.filter((item) => !item.href.startsWith('/backoffice')),
+    }))
+    .filter((column) => column.links.length > 0);
+
 const Footer: React.FC = () => {
   const pathname = usePathname();
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
+  const footerColumns = getPublicFooterColumns(layoutSettings);
 
   useEffect(() => {
     let mounted = true;
@@ -58,7 +68,7 @@ const Footer: React.FC = () => {
             </p>
           </div>
 
-          {layoutSettings.footer.columns.map((column) => (
+          {footerColumns.map((column) => (
             <div key={column.title}>
               <h3 className="text-sm font-bold text-[#3e5c32]">{column.title}</h3>
               <div className="mt-6 grid gap-4">

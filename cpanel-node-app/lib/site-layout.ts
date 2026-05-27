@@ -145,13 +145,6 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
           { label: 'Contactos', href: '/contactos' },
         ],
       },
-      {
-        title: 'Área Restrita',
-        links: [
-          { label: 'Backoffice', href: '/backoffice' },
-          { label: 'Login Administrativo', href: '/backoffice/login' },
-        ],
-      },
     ],
     socialTitle: 'Redes Sociais',
     copyrightLine: '© CEISCaramulo - Organização sem fins lucrativos. Todos os direitos reservados.',

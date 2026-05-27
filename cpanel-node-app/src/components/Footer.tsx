@@ -20,13 +20,6 @@ const footerColumns = [
       { label: 'Contactos', href: '/contactos' },
     ],
   },
-  {
-    title: 'Área Restrita',
-    links: [
-      { label: 'Backoffice', href: '/backoffice' },
-      { label: 'Login Administrativo', href: '/backoffice/login' },
-    ],
-  },
 ];
 
 const socialLinks = [
