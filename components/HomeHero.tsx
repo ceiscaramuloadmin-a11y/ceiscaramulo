@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Autoplay, EffectFade } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import SiteLogo from '@/components/SiteLogo';
-import heroImage from '@/src/assets/hero-imgs/hero-img.jpg';
-import heroImage2 from '@/src/assets/hero-imgs/hero-img2.jpg';
+import heroImage from '@/src/assets/hero-imgs/hero-img.webp';
+import heroImage2 from '@/src/assets/hero-imgs/hero-img2.webp';
 import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
 import type { NavItem, SiteLayoutSettings } from '@/types';
@@ -25,9 +26,7 @@ const NAV_OUTER_CLASSES =
 
 const HERO_SWIPER_INTERVAL_MS = 6000;
 
-const localHeroImages = [heroImage, heroImage2]
-  .map((image) => (typeof image === 'string' ? image : image.src))
-  .filter(Boolean);
+const localHeroImages = [heroImage, heroImage2];
 
 export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -134,10 +133,13 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
           }
         >
           {localHeroImages.map((imageSrc, index) => (
-            <SwiperSlide key={`${imageSrc}-${index}`} className="h-full w-full">
-              <img
+            <SwiperSlide key={`${imageSrc.src}-${index}`} className="h-full w-full">
+              <Image
                 src={imageSrc}
                 alt={hero.imageAlt}
+                fill
+                priority={index === 0}
+                sizes="100vw"
                 className="h-full w-full object-cover"
                 style={{
                   transform: `translateY(${parallaxOffset}px) scale(1.08)`,

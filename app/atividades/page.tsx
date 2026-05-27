@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { activities as fallbackActivities } from '@/data/content';
 import { getActivitySlug } from '@/lib/public-content-slugs';
+import { withPublicContentAsset } from '@/lib/public-content-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
 import { richTextToPlainText } from '@/lib/richText';
@@ -65,7 +66,7 @@ async function getPublicActivities() {
       where: { published: true },
       orderBy: { date: 'asc' },
     });
-    return activities;
+    return activities.map((activity) => withPublicContentAsset('activities', activity));
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
       markPublicDbQuotaExceeded('public activities');

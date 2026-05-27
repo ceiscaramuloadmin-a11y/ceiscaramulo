@@ -9,6 +9,7 @@ import ContentComments from '@/components/ContentComments';
 import { publications as fallbackPublications } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { getPublicationSlug } from '@/lib/public-content-slugs';
+import { publicAssetValue, withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
 import { prepareRichTextForRender } from '@/lib/richText';
 import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
@@ -39,7 +40,7 @@ async function getPublication(identifier: string) {
     });
 
     if (publicationById) {
-      return publicationById;
+      return withPublicContentAsset('publications', publicationById);
     }
 
     const publications = await prisma.publication.findMany({
@@ -47,7 +48,8 @@ async function getPublication(identifier: string) {
       orderBy: { year: 'desc' },
     });
 
-    return publications.find((publication) => getPublicationSlug(publication) === identifier) ?? null;
+    const publication = publications.find((item) => getPublicationSlug(item) === identifier) ?? null;
+    return publication ? withPublicContentAsset('publications', publication) : null;
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
       markPublicDbQuotaExceeded('publication detail');
@@ -86,7 +88,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: publication.coverImage
         ? [
             {
-              url: publication.coverImage,
+              url: publicAssetValue('publications', publication.id, publication.coverImage) || '/og-image.svg',
               width: 1200,
               height: 630,
               alt: publication.title,
@@ -107,7 +109,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title: publication.title,
       description: publication.description,
-      images: publication.coverImage ? [publication.coverImage] : ['/og-image.svg'],
+      images: publication.coverImage
+        ? [publicAssetValue('publications', publication.id, publication.coverImage) || '/og-image.svg']
+        : ['/og-image.svg'],
     },
     alternates: {
       canonical: `/biblioteca/${getPublicationSlug(publication)}`,
@@ -136,7 +140,7 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
     '@type': 'CreativeWork',
     name: publication.title,
     description: publication.description,
-    image: publication.coverImage || '/og-image.svg',
+    image: publicAssetValue('publications', publication.id, publication.coverImage) || '/og-image.svg',
     datePublished: publication.year.toString(),
     author: {
       '@type': 'Person',

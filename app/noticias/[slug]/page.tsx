@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import ContentComments from '@/components/ContentComments';
 import { newsArticles as fallbackNewsArticles } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
+import { publicAssetValue, withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
 import { formatDate, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
@@ -39,7 +40,7 @@ async function getNewsArticle(slug: string) {
         published: true,
       },
     });
-    return article;
+    return article ? withPublicContentAsset('news', article) : null;
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
       markPublicDbQuotaExceeded('news detail');
@@ -74,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: article.image
         ? [
             {
-              url: article.image,
+              url: publicAssetValue('news', article.id, article.image) || '/og-image.svg',
               width: 1200,
               height: 630,
               alt: article.title,
@@ -98,7 +99,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title: article.title,
       description: article.excerpt,
-      images: article.image ? [article.image] : ['/og-image.svg'],
+      images: article.image ? [publicAssetValue('news', article.id, article.image) || '/og-image.svg'] : ['/og-image.svg'],
     },
     alternates: {
       canonical: `/noticias/${article.slug}`,
@@ -119,7 +120,7 @@ export default async function NoticiaDetalhePage({ params }: Props) {
     '@type': 'NewsArticle',
     headline: article.title,
     description: article.excerpt,
-    image: article.image || '/og-image.svg',
+    image: publicAssetValue('news', article.id, article.image) || '/og-image.svg',
     datePublished: toIsoString(article.publishedAt),
     dateModified: toIsoString(article.updatedAt),
     author: {

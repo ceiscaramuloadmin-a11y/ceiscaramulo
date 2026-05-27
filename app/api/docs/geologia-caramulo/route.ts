@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { PUBLIC_MEDIA_CACHE_HEADERS } from '@/lib/cache-headers';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +12,7 @@ export async function GET() {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="GeologiaCaramulo.pdf"',
-      'Cache-Control': 'public, max-age=3600',
+      ...PUBLIC_MEDIA_CACHE_HEADERS,
     },
   });
 }

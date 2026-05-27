@@ -8,6 +8,8 @@ import {
   requireAdminContextFromRequest,
   requireAdminFromRequest,
 } from '@/app/api/_lib/cms';
+import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
+import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
 import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@/lib/gallery-upload';
 import type { GalleryMediaType } from '@/types';
 
@@ -34,6 +36,13 @@ export async function GET(request: NextRequest) {
     }
 
     const items = await listGalleryMedia(scope);
+
+    if (scope === 'public') {
+      return NextResponse.json(items.map(withPublicGalleryAssets), {
+        headers: PUBLIC_DATA_CACHE_HEADERS,
+      });
+    }
+
     return NextResponse.json(items);
   } catch (caughtError) {
     console.error(caughtError);
