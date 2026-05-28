@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
               CEISCaramulo
             </Link>
             <p className="max-w-xs text-sm leading-[1.7] text-stone-500">
-              Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.
+              promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo
             </p>
           </div>
 

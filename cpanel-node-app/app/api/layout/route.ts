@@ -7,7 +7,11 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     const settings = await getSiteLayoutSettings();
-    return NextResponse.json(settings);
+    return NextResponse.json(settings, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (error) {
     console.error(error);
     return jsonError('Ocorreu um erro inesperado.', 500);

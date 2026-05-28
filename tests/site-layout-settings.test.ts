@@ -65,4 +65,22 @@ describe('public site layout settings', () => {
 
     expect(settings.home.hero.imageUrl).toBe(PUBLIC_HERO_IMAGE_ROUTE);
   });
+
+  it('replaces the old stored footer brand description with the requested text', async () => {
+    siteLayoutFindUnique.mockResolvedValue({
+      value: {
+        footer: {
+          brandDescription:
+            'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.',
+        },
+      },
+    });
+
+    const { getPublicSiteLayoutSettings } = await import('@/lib/site-layout-settings');
+    const settings = await getPublicSiteLayoutSettings();
+
+    expect(settings.footer.brandDescription).toBe(
+      'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo'
+    );
+  });
 });
