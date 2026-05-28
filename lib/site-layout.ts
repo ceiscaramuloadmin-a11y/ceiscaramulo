@@ -125,7 +125,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       'O território é caracterizado por uma mistura de florestas autóctones, pastagens e formações rochosas graníticas, proporcionando habitats únicos para diversas espécies de flora e fauna. A região tem sido historicamente importante para a conservação da natureza e a investigação científica.',
   },
   footer: {
-    brandDescription: 'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.',
+    brandDescription: 'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo',
     columns: [
       {
         title: 'Institucional',

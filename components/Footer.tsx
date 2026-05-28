@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Instagram, Linkedin, Facebook, Youtube } from 'lucide-react';
+import { Instagram, Youtube } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import { contactInfo } from '@/data/site';
@@ -11,11 +11,27 @@ import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
 
 const socialLinks = [
-  { label: 'Instagram', href: contactInfo.socialMedia.instagram, Icon: Instagram },
-  { label: 'LinkedIn', href: contactInfo.socialMedia.linkedin, Icon: Linkedin },
-  { label: 'Facebook', href: contactInfo.socialMedia.facebook, Icon: Facebook },
-  { label: 'YouTube', href: contactInfo.socialMedia.youtube, Icon: Youtube },
-].filter((item): item is { label: string; href: string; Icon: typeof Instagram } => Boolean(item.href));
+  { label: 'Facebook', href: contactInfo.socialMedia.facebook },
+  { label: 'LinkedIn', href: contactInfo.socialMedia.linkedin },
+  { label: 'YouTube', href: contactInfo.socialMedia.youtube },
+  { label: 'Instagram', href: contactInfo.socialMedia.instagram },
+].filter((item): item is { label: string; href: string } => Boolean(item.href));
+
+const SocialIcon = ({ label }: { label: string }) => {
+  if (label === 'Facebook') {
+    return <span className="text-[1.45rem] font-black leading-none tracking-normal">f</span>;
+  }
+
+  if (label === 'LinkedIn') {
+    return <span className="text-[1.05rem] font-black leading-none tracking-normal">in</span>;
+  }
+
+  if (label === 'YouTube') {
+    return <Youtube className="h-6 w-6" fill="currentColor" strokeWidth={1.8} />;
+  }
+
+  return <Instagram className="h-6 w-6" strokeWidth={2.2} />;
+};
 
 const getPublicFooterColumns = (settings: SiteLayoutSettings) =>
   settings.footer.columns
@@ -96,17 +112,18 @@ const Footer: React.FC = () => {
 
           <div>
             <h3 className="text-sm font-bold text-[#3e5c32]">{layoutSettings.footer.socialTitle}</h3>
-            <div className="mt-6 grid gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               {socialLinks.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-stone-500 transition-colors hover:text-[#3e5c32]"
+                  aria-label={item.label}
+                  className="inline-flex h-8 w-8 items-center justify-center text-[#3e5c32] transition-colors hover:text-[#6f8f3a]"
                 >
-                  <item.Icon className="h-4 w-4" />
-                  {item.label}
+                  <SocialIcon label={item.label} />
+                  <span className="sr-only">{item.label}</span>
                 </a>
               ))}
             </div>

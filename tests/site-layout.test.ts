@@ -22,6 +22,12 @@ describe('site-layout', () => {
     expect(footerLinks.map((link) => link.href)).not.toContain('/backoffice/login');
   });
 
+  it('uses the requested footer mission text by default', () => {
+    expect(defaultSiteLayoutSettings.footer.brandDescription).toBe(
+      'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo'
+    );
+  });
+
   it('deep merges object branches and replaces arrays', () => {
     const merged = deepMergeSettings(defaultSiteLayoutSettings, {
       home: {
