@@ -57,6 +57,10 @@ type SectionConfig = {
 
 const MAX_AUDIT_LOGS = 500;
 const GALLERY_MEDIA_STORAGE_KEY = 'gallery_media_items';
+const OLD_FOOTER_BRAND_DESCRIPTION =
+  'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.';
+const REQUESTED_FOOTER_BRAND_DESCRIPTION =
+  'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo';
 
 // Configuração transversal por secção.
 export const sectionConfig: Record<ContentSection, SectionConfig> = {
@@ -230,7 +234,18 @@ export async function getSiteLayoutSettings(): Promise<SiteLayoutSettings> {
 
   const fallbackRaw = stored ? null : await getSiteSettingValue(SITE_LAYOUT_SETTINGS_KEY);
   const parsed = safeJsonParse<unknown>(stored ? JSON.stringify(stored.value) : fallbackRaw, {});
-  return deepMergeSettings(defaultSiteLayoutSettings, parsed);
+  const settings = deepMergeSettings(defaultSiteLayoutSettings, parsed);
+
+  return {
+    ...settings,
+    footer: {
+      ...settings.footer,
+      brandDescription:
+        settings.footer.brandDescription === OLD_FOOTER_BRAND_DESCRIPTION
+          ? REQUESTED_FOOTER_BRAND_DESCRIPTION
+          : settings.footer.brandDescription,
+    },
+  };
 }
 
 // Persiste as definições completas de layout do site.

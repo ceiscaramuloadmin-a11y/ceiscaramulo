@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { jsonError } from '@/app/api/_lib/cms';
-import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
 export const runtime = 'nodejs';
@@ -10,7 +9,9 @@ export async function GET() {
   try {
     const settings = await getPublicSiteLayoutSettings();
     return NextResponse.json(settings, {
-      headers: PUBLIC_DATA_CACHE_HEADERS,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
     });
   } catch (error) {
     console.error(error);
