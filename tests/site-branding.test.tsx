@@ -185,6 +185,20 @@ describe('site branding', () => {
     expect(screen.queryByRole('link', { name: 'Backoffice direto' })).not.toBeInTheDocument();
   });
 
+  it('renders footer social links as green standalone icons', () => {
+    render(<Footer />);
+
+    const instagram = screen.getByRole('link', { name: 'Instagram' });
+    const facebook = screen.getByRole('link', { name: 'Facebook' });
+    const linkedIn = screen.getByRole('link', { name: 'LinkedIn' });
+
+    expect(instagram).toHaveClass('h-8', 'w-8', 'text-[#3e5c32]');
+    expect(instagram).not.toHaveClass('rounded-full', 'border-2');
+    expect(facebook).toHaveTextContent('f');
+    expect(linkedIn).toHaveTextContent('in');
+    expect(instagram).toHaveAttribute('target', '_blank');
+  });
+
   it('uses tighter homepage navbar tracking so the tabs read compactly', () => {
     render(
       <HomeHero
