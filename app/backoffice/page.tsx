@@ -853,24 +853,21 @@ export default function BackofficePage() {
     try {
       const galleryContext = activeGalleryConfig?.context || 'global';
       const uploadOne = (item: (typeof galleryBatchItems)[number]) => {
-          const fd = new FormData();
-          fd.append('title', item.title.trim());
-          fd.append('description', item.description.trim());
-          fd.append('type', item.type);
-          fd.append('context', galleryContext);
-          fd.append('published', String(item.published));
-          fd.append('sourceFile', item.file);
+        const fd = new FormData();
+        fd.append('title', item.title.trim());
+        fd.append('description', item.description.trim());
+        fd.append('type', item.type);
+        fd.append('context', galleryContext);
+        fd.append('published', String(item.published));
+        fd.append('sourceFile', item.file);
 
-          return fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
-            method: 'POST',
-            body: fd,
-          });
-        };
-      const uploadConcurrency = 3;
+        return fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
+          method: 'POST',
+          body: fd,
+        });
+      };
 
-      for (let index = 0; index < galleryBatchItems.length; index += uploadConcurrency) {
-        await Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne));
-      }
+      await Promise.all(galleryBatchItems.map(uploadOne));
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
       clearGalleryBatchItems();
