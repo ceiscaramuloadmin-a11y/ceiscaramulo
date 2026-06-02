@@ -112,14 +112,14 @@ describe('gallery route', () => {
     expect(storeUploadedFile).not.toHaveBeenCalled();
   });
 
-  it('stores global gallery uploads as public files', async () => {
-    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-global/foto.png');
+  it('stores global gallery uploads inline to avoid production filesystem errors', async () => {
+    fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,global');
     createGalleryMedia.mockResolvedValueOnce({
       id: 'media-global',
       title: 'Foto global',
       type: 'photo',
       context: 'global',
-      source: '/uploads/backoffice/gallery-global/foto.png',
+      source: 'data:image/png;base64,global',
       published: true,
     });
 
@@ -139,10 +139,10 @@ describe('gallery route', () => {
 
     expect(createGalleryMedia).toHaveBeenCalledWith(expect.objectContaining({
       context: 'global',
-      source: '/uploads/backoffice/gallery-global/foto.png',
+      source: 'data:image/png;base64,global',
     }));
-    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-global');
-    expect(fileToDataUrl).not.toHaveBeenCalled();
+    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
+    expect(storeUploadedFile).not.toHaveBeenCalled();
   });
 
   it('stores programme gallery replacement uploads inline', async () => {

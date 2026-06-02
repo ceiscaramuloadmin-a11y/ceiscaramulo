@@ -7,7 +7,6 @@ import {
   listGalleryMedia,
   requireAdminContextFromRequest,
   requireAdminFromRequest,
-  storeUploadedFile,
 } from '@/app/api/_lib/cms';
 import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
 import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
@@ -15,7 +14,6 @@ import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@
 import type { GalleryMediaType } from '@/types';
 
 export const runtime = 'nodejs';
-const DEFAULT_GALLERY_CONTEXT = 'global';
 
 function normalizeType(value: unknown): GalleryMediaType {
   return value === 'video' || value === 'audio' ? value : 'photo';
@@ -85,17 +83,8 @@ export async function POST(request: NextRequest) {
       return jsonError(getInlineAudioUploadErrorMessage(), 413);
     }
 
-    const storesInline = galleryContext !== DEFAULT_GALLERY_CONTEXT;
-    const source = sourceFile
-      ? storesInline
-        ? await fileToDataUrl(sourceFile)
-        : await storeUploadedFile(sourceFile, `gallery-${galleryContext}`)
-      : sourceUrl;
-    const thumbnail = thumbnailFile
-      ? storesInline
-        ? await fileToDataUrl(thumbnailFile)
-        : await storeUploadedFile(thumbnailFile, `gallery-${galleryContext}-thumbs`)
-      : thumbUrl || null;
+    const source = sourceFile ? await fileToDataUrl(sourceFile) : sourceUrl;
+    const thumbnail = thumbnailFile ? await fileToDataUrl(thumbnailFile) : thumbUrl || null;
 
     if (!title) {
       return jsonError('Título é obrigatório.', 400);
