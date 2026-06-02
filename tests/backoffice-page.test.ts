@@ -132,9 +132,10 @@ describe('backoffice news and gallery guards', () => {
     expect(backofficePageSource).toContain('/api/gallery?scope=admin&context=');
   });
 
-  it('uploads gallery batches with bounded parallel requests', () => {
-    expect(backofficePageSource).toContain('const uploadConcurrency = 3');
-    expect(backofficePageSource).toContain('Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne))');
+  it('uploads every selected gallery batch item without a client-side concurrency limit', () => {
+    expect(backofficePageSource).not.toContain('const uploadConcurrency = 3');
+    expect(backofficePageSource).not.toContain('galleryBatchItems.slice(index, index + uploadConcurrency)');
+    expect(backofficePageSource).toContain('Promise.all(galleryBatchItems.map(uploadOne))');
   });
 
   it('renders dedicated previews for image, video and audio gallery items', () => {
