@@ -867,7 +867,11 @@ export default function BackofficePage() {
         });
       };
 
-      await Promise.all(galleryBatchItems.map(uploadOne));
+      const uploadConcurrency = 3;
+
+      for (let index = 0; index < galleryBatchItems.length; index += uploadConcurrency) {
+        await Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne));
+      }
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
       clearGalleryBatchItems();
