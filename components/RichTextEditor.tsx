@@ -2,18 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import {
   AudioLines,
   Bold,
-  Heading1,
-  Heading2,
   Image as ImageIcon,
   Italic,
   Link as LinkIcon,
   List,
   ListOrdered,
-  Quote,
   Redo2,
   Underline,
   Undo2,
-  Unlink,
   Video,
   Globe,
 } from 'lucide-react';
@@ -89,10 +85,6 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
     restoreSelection();
     document.execCommand(command, false, commandValue);
     syncContent();
-  };
-
-  const setBlock = (tagName: 'H1' | 'H2' | 'P' | 'BLOCKQUOTE') => {
-    runCommand('formatBlock', tagName);
   };
 
   const insertLink = () => {
@@ -171,13 +163,9 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
           <ToolbarButton label="Negrito" onClick={() => runCommand('bold')}><Bold className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Itálico" onClick={() => runCommand('italic')}><Italic className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Sublinhado" onClick={() => runCommand('underline')}><Underline className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Título 1" onClick={() => setBlock('H1')}><Heading1 className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Título 2" onClick={() => setBlock('H2')}><Heading2 className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Citação" onClick={() => setBlock('BLOCKQUOTE')}><Quote className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Lista" onClick={() => runCommand('insertUnorderedList')}><List className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Lista numerada" onClick={() => runCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Link" onClick={insertLink}><LinkIcon className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Remover link" onClick={() => runCommand('unlink')}><Unlink className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Incorporar URL" onClick={insertEmbed}><Globe className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Desfazer" onClick={() => runCommand('undo')}><Undo2 className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Refazer" onClick={() => runCommand('redo')}><Redo2 className="h-4 w-4" /></ToolbarButton>
@@ -193,6 +181,9 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
           className="rich-text-editor min-h-[320px] rounded-b-2xl bg-transparent px-4 py-4 text-black outline-none"
           onInput={syncContent}
           onBlur={syncContent}
+          onFocus={rememberSelection}
+          onKeyUp={rememberSelection}
+          onMouseUp={rememberSelection}
           onPaste={handlePaste}
         />
       </div>
@@ -235,6 +226,20 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
     selection.removeAllRanges();
     selection.addRange(selectionRef.current);
   }
+
+  function rememberSelection() {
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    if (editorRef.current?.contains(range.commonAncestorContainer)) {
+      selectionRef.current = range.cloneRange();
+    }
+  }
 }
 
 function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
@@ -242,6 +247,7 @@ function ToolbarButton({ label, onClick, children }: { label: string; onClick: (
     <button
       type="button"
       title={label}
+      aria-label={label}
       className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-[#3e5c32] hover:text-[#27441d]"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}

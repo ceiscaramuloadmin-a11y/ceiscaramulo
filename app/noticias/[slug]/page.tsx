@@ -13,7 +13,8 @@ import prisma from '@/lib/prisma';
 import { formatDate, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const dynamicParams = true;
 
 interface Props {

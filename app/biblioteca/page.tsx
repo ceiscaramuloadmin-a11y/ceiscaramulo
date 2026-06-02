@@ -17,7 +17,8 @@ import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { capitalizeFirstLetter, cn, getAssetUrl } from '@/lib/utils';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Biblioteca | CEISCaramulo',

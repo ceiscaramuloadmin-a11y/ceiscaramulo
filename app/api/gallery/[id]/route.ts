@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   appendAuditLog,
   deleteGalleryMedia,
-  fileToDataUrl,
   getGalleryMediaById,
   jsonError,
   requireAdminContextFromRequest,
   requireAdminFromRequest,
+  storeUploadedFile,
   updateGalleryMedia,
 } from '@/app/api/_lib/cms';
 import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@/lib/gallery-upload';
@@ -20,6 +20,11 @@ function normalizeType(value: unknown): GalleryMediaType {
 
 function normalizeBoolean(value: unknown) {
   return value === true || value === 'true' || value === 'on' || value === '1';
+}
+
+function normalizeGalleryContext(value: unknown) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized.replace(/[^a-z0-9-]/g, '-') || 'global';
 }
 
 export async function GET(
@@ -73,6 +78,7 @@ export async function PUT(
     const title = String(formData.get('title') || '').trim();
     const description = String(formData.get('description') || '').trim() || null;
     const type = normalizeType(formData.get('type'));
+    const galleryContext = normalizeGalleryContext(formData.get('context') || current.context);
     const published = normalizeBoolean(formData.get('published'));
     const sourceUrl = String(formData.get('sourceUrl') || '').trim();
     const thumbnailUrl = String(formData.get('thumbnailUrl') || '').trim();
@@ -87,23 +93,20 @@ export async function PUT(
       return jsonError(getInlineAudioUploadErrorMessage(), 413);
     }
 
-    const source = sourceFile ? await fileToDataUrl(sourceFile) : sourceUrl || current.source;
+    const source = sourceFile ? await storeUploadedFile(sourceFile, `gallery-${galleryContext}`) : sourceUrl || current.source;
     const thumbnail = thumbnailFile
-      ? await fileToDataUrl(thumbnailFile)
+      ? await storeUploadedFile(thumbnailFile, `gallery-${galleryContext}-thumbs`)
       : thumbnailUrl || current.thumbnail || null;
 
     if (!title) {
       return jsonError('Título é obrigatório.', 400);
     }
 
-    if (!source) {
-      return jsonError('Origem do media é obrigatória.', 400);
-    }
-
     const updated = await updateGalleryMedia(id, {
       title,
       description,
       type,
+      context: galleryContext,
       source,
       thumbnail,
       mimeType: sourceFile?.type || current.mimeType || null,

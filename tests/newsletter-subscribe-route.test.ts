@@ -38,6 +38,28 @@ describe('newsletter subscribe route', () => {
     });
   });
 
+  it('accepts form submissions from the newsletter button', async () => {
+    upsert.mockResolvedValue({ id: 'sub_2' });
+
+    const { POST } = await import('@/app/api/newsletter/subscribe/route');
+    const formData = new FormData();
+    formData.append('newsletter-email', 'JOAO@EXAMPLE.PT');
+
+    const response = await POST(
+      new Request('http://localhost/api/newsletter/subscribe', {
+        method: 'POST',
+        body: formData,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(upsert).toHaveBeenCalledWith({
+      where: { email: 'joao@example.pt' },
+      create: { email: 'joao@example.pt' },
+      update: {},
+    });
+  });
+
   it('rejects payloads without a usable email shape', async () => {
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
     const response = await POST(

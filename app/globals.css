@@ -127,6 +127,21 @@
   @apply text-primary underline underline-offset-4 transition-colors hover:text-primary/80;
 }
 
+a {
+  color: var(--site-link-color, inherit);
+}
+
+button.bg-\[\#27441d\],
+a.bg-\[\#27441d\] {
+  background-color: var(--site-button-color, #27441d);
+}
+
+h1,
+h2,
+.font-display {
+  color: var(--site-title-color, inherit);
+}
+
 .prose ul {
   @apply list-disc space-y-2 pl-6;
 }

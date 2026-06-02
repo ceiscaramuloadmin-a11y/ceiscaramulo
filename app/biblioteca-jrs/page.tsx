@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Biblioteca JRS | CEISCaramulo',
@@ -11,11 +13,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BibliotecaJrsPage() {
+export default async function BibliotecaJrsPage() {
+  const layout = await getPublicSiteLayoutSettings();
+
   return (
     <InstitutionalProgrammePage
-      title="Biblioteca JRS"
-      description="Espaço de consulta e valorização documental integrado no trabalho de estudo e interpretação da Serra do Caramulo."
+      title={layout.pages.bibliotecaJrs.title}
+      description={layout.pages.bibliotecaJrs.description}
     />
   );
 }

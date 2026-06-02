@@ -1,7 +1,11 @@
 import { Metadata } from 'next';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
+import GalleryTabs from '@/components/GalleryTabs';
+import { listGalleryMedia } from '@/app/api/_lib/cms';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Escola dos Nossos Avós | CEISCaramulo',
@@ -11,11 +15,24 @@ export const metadata: Metadata = {
   },
 };
 
-export default function EscolaDosNossosAvosPage() {
+export default async function EscolaDosNossosAvosPage() {
+  const layout = await getPublicSiteLayoutSettings();
+  const media = await listGalleryMedia('public', 'escola-dos-nossos-avos');
+
   return (
     <InstitutionalProgrammePage
-      title="Escola dos Nossos Avós"
-      description="Projeto dedicado à memória, à transmissão de saberes e à ligação entre gerações no território da Serra do Caramulo."
-    />
+      title={layout.pages.escolaDosNossosAvos.title}
+      description={layout.pages.escolaDosNossosAvos.description}
+    >
+      <section className="mt-10">
+        <div className="mb-6">
+          <h2 className="font-display text-3xl font-bold text-foreground">Conteúdos da Escola dos Nossos Avós</h2>
+          <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
+            Fotografias, vídeos e áudios publicados no backoffice para documentar memórias, testemunhos e atividades deste projeto.
+          </p>
+        </div>
+        <GalleryTabs items={media} />
+      </section>
+    </InstitutionalProgrammePage>
   );
 }

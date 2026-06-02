@@ -28,6 +28,31 @@ describe('site-layout', () => {
     );
   });
 
+  it('keeps footer contact details in editable layout settings', () => {
+    expect(defaultSiteLayoutSettings.footer.contactInfo.email).toBe('ceiscaramulo@gmail.com');
+    expect(defaultSiteLayoutSettings.footer.contactInfo.phone).toBe('+351 966 717 360');
+    expect(defaultSiteLayoutSettings.footer.contactInfo.socialMedia.instagram).toBe('https://www.instagram.com/ceiscaramulo_/');
+  });
+
+  it('defines editable visual identity and SEO defaults for the appearance CMS', () => {
+    expect(defaultSiteLayoutSettings.visualIdentity.colors.primary).toBe('#27441d');
+    expect(defaultSiteLayoutSettings.visualIdentity.colors.buttons).toBe('#27441d');
+    expect(defaultSiteLayoutSettings.visualIdentity.logos.primary).toBe('/ceiscaramulo-logo.svg');
+    expect(defaultSiteLayoutSettings.seo.title).toContain('CEISCaramulo');
+    expect(defaultSiteLayoutSettings.seo.ogImage).toBe('/og-image.svg');
+  });
+
+  it('defines editable page intros for the public frontend pages', () => {
+    expect(defaultSiteLayoutSettings.pages.contactos.title).toBe('Fale connosco.');
+    expect(defaultSiteLayoutSettings.pages.galeria.title).toBe('Galeria Multimédia');
+    expect(defaultSiteLayoutSettings.pages.bibliotecaJrs.title).toBe('Biblioteca JRS');
+    expect(defaultSiteLayoutSettings.pages.oficinaDoBurel.title).toBe('Oficina do Burel');
+    expect(defaultSiteLayoutSettings.pages.ponDoJueus.title).toBe('PON do Jueus');
+    expect(defaultSiteLayoutSettings.pages.escolaDosNossosAvos.title).toBe('Escola dos Nossos Avós');
+    expect(defaultSiteLayoutSettings.pages.oficinasDeFormacao.title).toBe('Oficinas de formação');
+    expect(defaultSiteLayoutSettings.pages.publicacoes.title).toBe('Publicações');
+  });
+
   it('deep merges object branches and replaces arrays', () => {
     const merged = deepMergeSettings(defaultSiteLayoutSettings, {
       home: {

@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Publicações | CEISCaramulo',
@@ -11,11 +13,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PublicacoesPage() {
+export default async function PublicacoesPage() {
+  const layout = await getPublicSiteLayoutSettings();
+
   return (
     <InstitutionalProgrammePage
-      title="Publicações"
-      description="Área dedicada às publicações, documentos e materiais produzidos ou divulgados pelo CEISCaramulo."
+      title={layout.pages.publicacoes.title}
+      description={layout.pages.publicacoes.description}
     />
   );
 }

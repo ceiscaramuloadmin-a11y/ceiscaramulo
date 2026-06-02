@@ -14,7 +14,8 @@ import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCale
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { formatShortDate, capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Atividades | CEISCaramulo',

@@ -1,0 +1,60 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import RichTextEditor from '@/components/RichTextEditor';
+
+describe('RichTextEditor', () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('removes the marked toolbar actions from every backoffice rich text form', () => {
+    render(<RichTextEditor label="Descrição" value="" onChange={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: 'Título 1' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Título 2' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Citação' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remover link' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the remaining formatting buttons wired to editor commands', () => {
+    const execCommand = vi.fn();
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    render(<RichTextEditor label="Descrição" value="<p>Texto</p>" onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Negrito' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Itálico' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sublinhado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lista' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lista numerada' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Desfazer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refazer' }));
+
+    expect(execCommand).toHaveBeenCalledWith('bold', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('italic', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('underline', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('insertUnorderedList', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('insertOrderedList', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('undo', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('redo', false, undefined);
+  });
+
+  it('keeps link insertion functional through the toolbar', () => {
+    const execCommand = vi.fn();
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+    vi.spyOn(window, 'prompt').mockReturnValue('https://ceiscaramulo.pt');
+
+    render(<RichTextEditor label="Descrição" value="<p>Texto</p>" onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+
+    expect(execCommand).toHaveBeenCalledWith('createLink', false, 'https://ceiscaramulo.pt');
+  });
+});

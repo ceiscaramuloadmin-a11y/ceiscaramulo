@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 type InstitutionalProgrammePageProps = {
   title: string;
   description: string;
+  children?: React.ReactNode;
 };
 
 export default function InstitutionalProgrammePage({
   title,
   description,
+  children,
 }: InstitutionalProgrammePageProps) {
   return (
     <>
@@ -48,6 +50,7 @@ export default function InstitutionalProgrammePage({
               </Button>
             </div>
           </div>
+          {children}
         </section>
       </main>
       <Footer />

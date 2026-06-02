@@ -24,8 +24,17 @@ describe('public rendering mode', () => {
       'app/galeria/page.tsx',
       'app/sobre-nos/page.tsx',
       'app/serra-do-caramulo/page.tsx',
+      'app/contactos/page.tsx',
+      'app/pon-do-jueus/page.tsx',
+      'app/escola-dos-nossos-avos/page.tsx',
+      'app/oficinas-de-formacao/page.tsx',
+      'app/oficina-do-burel/page.tsx',
+      'app/biblioteca-jrs/page.tsx',
+      'app/publicacoes/page.tsx',
     ]) {
-      expect(readAppFile(path)).toContain("export const dynamic = 'force-dynamic';");
+      const source = readAppFile(path);
+      expect(source).toContain("export const dynamic = 'force-dynamic';");
+      expect(source).toContain('export const revalidate = 0;');
     }
   });
 
@@ -38,6 +47,7 @@ describe('public rendering mode', () => {
     ]) {
       const source = readAppFile(path);
       expect(source).toContain("export const dynamic = 'force-dynamic';");
+      expect(source).toContain('export const revalidate = 0;');
       expect(source).toContain('export const dynamicParams = true;');
       expect(source).not.toContain('export async function generateStaticParams()');
     }

@@ -12,6 +12,7 @@ const contentAssetsSource = readFileSync(
 );
 const sectionRouteSource = readFileSync(resolve(process.cwd(), 'app/api/[section]/route.ts'), 'utf8');
 const gallerySource = readFileSync(resolve(process.cwd(), 'app/api/_lib/cms.ts'), 'utf8');
+const cacheHeadersSource = readFileSync(resolve(process.cwd(), 'lib/cache-headers.ts'), 'utf8');
 
 describe('origin transfer optimization', () => {
   it('keeps Next image optimization enabled on Vercel with long optimized image cache', () => {
@@ -35,6 +36,13 @@ describe('origin transfer optimization', () => {
     expect(contentAssetsSource).toContain('PUBLIC_MEDIA_CACHE_HEADERS');
     expect(sectionRouteSource).toContain('withPublicContentAsset');
     expect(sectionRouteSource).toContain('PUBLIC_DATA_CACHE_HEADERS');
+  });
+
+  it('keeps public CMS data responses uncached so backoffice edits appear immediately', () => {
+    expect(cacheHeadersSource).toContain("'Cache-Control': 'no-store, max-age=0'");
+    expect(cacheHeadersSource).toContain("'CDN-Cache-Control': 'no-store'");
+    expect(cacheHeadersSource).toContain("'Vercel-CDN-Cache-Control': 'no-store'");
+    expect(cacheHeadersSource).toContain('PUBLIC_MEDIA_CACHE_HEADERS');
   });
 
   it('normalizes public gallery data URLs to cached asset URLs', () => {

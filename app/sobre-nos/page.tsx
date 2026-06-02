@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
-import { contactInfo, siteConfig } from '@/data/site';
+import { contactInfo } from '@/data/site';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Sobre Nós | CEISCaramulo',
@@ -153,14 +154,6 @@ export default async function SobreNosPage() {
                 </div>
               </section>
 
-              <div className="rounded-[28px] bg-primary px-8 py-7 text-primary-foreground shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground/75">
-                  Desde {siteConfig.founded}
-                </p>
-                <p className="mt-3 font-display text-2xl font-bold">
-                  Um projeto dedicado a estudar, interpretar e valorizar a Serra do Caramulo.
-                </p>
-              </div>
             </div>
           </div>
 

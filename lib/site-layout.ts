@@ -1,4 +1,5 @@
 import type { LayoutIconName, SiteLayoutSettings } from '@/types';
+import { contactInfo } from '@/data/site';
 
 export const SITE_LAYOUT_SETTINGS_KEY = 'site_layout_settings';
 
@@ -82,6 +83,38 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       title: 'A Serra do Caramulo',
       description: 'Descubra a geografia, flora, fauna e geologia deste território único no centro de Portugal.',
     },
+    contactos: {
+      title: 'Fale connosco.',
+      description: 'Estamos disponíveis para esclarecer dúvidas, receber sugestões e acompanhar iniciativas ligadas ao CEISCaramulo.',
+    },
+    galeria: {
+      title: 'Galeria Multimédia',
+      description: 'Descobre fotografias, vídeos e áudios do património natural e cultural da Serra do Caramulo.',
+    },
+    bibliotecaJrs: {
+      title: 'Biblioteca JRS',
+      description: 'Espaço de consulta e valorização documental integrado no trabalho de estudo e interpretação da Serra do Caramulo.',
+    },
+    oficinaDoBurel: {
+      title: 'Oficina do Burel',
+      description: 'Espaço dedicado à valorização do burel, dos saberes tradicionais e das práticas ligadas à identidade da Serra do Caramulo.',
+    },
+    ponDoJueus: {
+      title: 'PON do Jueus',
+      description: 'Área de apresentação do PON do Jueus e das iniciativas associadas ao trabalho cultural e educativo do CEISCaramulo.',
+    },
+    escolaDosNossosAvos: {
+      title: 'Escola dos Nossos Avós',
+      description: 'Projeto dedicado à memória, à transmissão de saberes e à ligação entre gerações no território da Serra do Caramulo.',
+    },
+    oficinasDeFormacao: {
+      title: 'Oficinas de formação',
+      description: 'Informação sobre oficinas, ações formativas e momentos de aprendizagem promovidos pelo CEISCaramulo.',
+    },
+    publicacoes: {
+      title: 'Publicações',
+      description: 'Área dedicada às publicações, documentos e materiais produzidos ou divulgados pelo CEISCaramulo.',
+    },
   },
   serra: {
     sections: [
@@ -126,6 +159,19 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
   },
   footer: {
     brandDescription: 'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo',
+    contactInfo: {
+      address: contactInfo.address,
+      postalCode: contactInfo.postalCode,
+      city: contactInfo.city,
+      phone: contactInfo.phone,
+      email: contactInfo.email,
+      socialMedia: {
+        facebook: contactInfo.socialMedia.facebook,
+        instagram: contactInfo.socialMedia.instagram,
+        linkedin: contactInfo.socialMedia.linkedin,
+        youtube: contactInfo.socialMedia.youtube,
+      },
+    },
     columns: [
       {
         title: 'Institucional',
@@ -148,6 +194,27 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     socialTitle: 'Redes Sociais',
     copyrightLine: '© CEISCaramulo - Organização sem fins lucrativos. Todos os direitos reservados.',
     legalLine: 'Associação sem fins lucrativos',
+  },
+  visualIdentity: {
+    colors: {
+      primary: '#27441d',
+      secondary: '#3e5c32',
+      accent: '#6f8f3a',
+      buttons: '#27441d',
+      links: '#3e5c32',
+      titles: '#27441d',
+    },
+    logos: {
+      primary: '/ceiscaramulo-logo.svg',
+      footer: '/ceiscaramulo-logo.svg',
+      institutional: '',
+    },
+  },
+  seo: {
+    title: 'CEISCaramulo — Centro de Estudos e Interpretação da Serra do Caramulo',
+    description: 'Associação sem fins lucrativos dedicada ao estudo, preservação e divulgação do património natural, cultural e histórico da Serra do Caramulo.',
+    keywords: 'CEISCaramulo, Serra do Caramulo, património natural, património cultural',
+    ogImage: '/og-image.svg',
   },
 };
 

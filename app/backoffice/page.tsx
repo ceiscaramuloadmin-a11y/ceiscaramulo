@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
@@ -27,6 +27,7 @@ import type {
   AuditLogEntry,
   ContactMessage,
   ContentSection,
+  FooterContactSettings,
   GalleryMediaItem,
   GalleryMediaType,
   LayoutIconName,
@@ -36,7 +37,11 @@ import type {
   SiteLayoutSettings,
 } from '@/types';
 
-type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'gallery' | 'contacts' | ContentSection;
+type ProgrammeGallerySectionId = 'gallery-pon-do-jueus' | 'gallery-escola-dos-nossos-avos' | 'gallery-oficinas-de-formacao';
+type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
+type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
+type AppearanceTab = 'hero' | 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
+type AppearancePageKey = keyof SiteLayoutSettings['pages'];
 const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = [
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
@@ -57,16 +62,75 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'publications', label: 'Biblioteca' },
   { id: 'contacts', label: 'Contactos' },
   { id: 'gallery', label: 'Galeria' },
+  { id: 'gallery-pon-do-jueus', label: 'PON do Jueus' },
+  { id: 'gallery-escola-dos-nossos-avos', label: 'Escola dos Nossos Avós' },
+  { id: 'gallery-oficinas-de-formacao', label: 'Oficinas de formação' },
   { id: 'admins', label: 'Admins' },
   { id: 'audit', label: 'Auditoria' },
   { id: 'layout', label: 'Aparência' },
 ];
+
+function sortBackofficeNavItems(items: Array<{ id: SectionId; label: string }>) {
+  return [...items].sort((a, b) =>
+    a.label.localeCompare(b.label, 'pt-PT', { sensitivity: 'base' })
+  );
+}
+
+const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
+  { id: 'hero', label: 'Hero' },
+  { id: 'pages', label: 'Páginas' },
+  { id: 'footer', label: 'Footer' },
+  { id: 'icons', label: 'Ícones' },
+  { id: 'colors', label: 'Cores' },
+  { id: 'logos', label: 'Logótipos' },
+  { id: 'seo', label: 'SEO e Metadados' },
+];
+
+const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
+  { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
+  { id: 'biblioteca', label: 'Biblioteca', hasEmptyMessage: true },
+  { id: 'bibliotecaJrs', label: 'Biblioteca JRS' },
+  { id: 'contactos', label: 'Contactos' },
+  { id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' },
+  { id: 'galeria', label: 'Galeria' },
+  { id: 'noticias', label: 'Notícias', hasEmptyMessage: true },
+  { id: 'oficinaDoBurel', label: 'Oficina do Burel' },
+  { id: 'oficinasDeFormacao', label: 'Oficinas de formação' },
+  { id: 'ponDoJueus', label: 'PON do Jueus' },
+  { id: 'projetos', label: 'Projetos', hasEmptyMessage: true },
+  { id: 'publicacoes', label: 'Publicações' },
+  { id: 'serra', label: 'Serra do Caramulo' },
+  { id: 'sobre', label: 'Sobre Nós' },
+];
+
+const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: string; context: string; description: string }> = {
+  'gallery-pon-do-jueus': {
+    label: 'PON do Jueus',
+    context: 'pon-do-jueus',
+    description: 'Media associado à página PON do Jueus, com as mesmas ferramentas da galeria principal.',
+  },
+  'gallery-escola-dos-nossos-avos': {
+    label: 'Escola dos Nossos Avós',
+    context: 'escola-dos-nossos-avos',
+    description: 'Media associado à página Escola dos Nossos Avós, com carregamento em massa, preview e seleção múltipla.',
+  },
+  'gallery-oficinas-de-formacao': {
+    label: 'Oficinas de formação',
+    context: 'oficinas-de-formacao',
+    description: 'Media associado à página Oficinas de formação, separado da galeria multimédia geral.',
+  },
+};
+
+function isProgrammeGallerySection(value: SectionId): value is ProgrammeGallerySectionId {
+  return value in PROGRAMME_GALLERY_SECTIONS;
+}
 
 export default function BackofficePage() {
   const router = useRouter();
   const exportAuthMode = isExportAdminAuthMode();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
+  const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('hero');
   const [busy, setBusy] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
@@ -113,6 +177,8 @@ export default function BackofficePage() {
     thumbnailFile: null as File | null,
     published: true,
   });
+  const [galleryFormResetKey, setGalleryFormResetKey] = useState(0);
+  const galleryIndividualFormRef = useRef<HTMLFormElement | null>(null);
   const [galleryBatchType, setGalleryBatchType] = useState<GalleryMediaType>('photo');
   const [galleryBatchItems, setGalleryBatchItems] = useState<Array<{
     id: string;
@@ -144,6 +210,26 @@ export default function BackofficePage() {
     }),
     [galleryItems]
   );
+  const visibleGalleryIds = useMemo(() => new Set(galleryItems.map((item) => item.id)), [galleryItems]);
+  const selectedVisibleGalleryIds = useMemo(
+    () => selectedGalleryIds.filter((id) => visibleGalleryIds.has(id)),
+    [selectedGalleryIds, visibleGalleryIds]
+  );
+  const activeGalleryConfig = useMemo(() => {
+    if (activeSection === 'gallery') {
+      return {
+        label: 'Galeria multimédia',
+        context: 'global',
+        description: 'Fotos, vídeos e áudios separados por tipo com preview e seleção múltipla.',
+      };
+    }
+
+    if (isProgrammeGallerySection(activeSection)) {
+      return PROGRAMME_GALLERY_SECTIONS[activeSection];
+    }
+
+    return null;
+  }, [activeSection]);
   const availableSections = useMemo(() => {
     if (!currentAdmin) {
       return [] as SectionId[];
@@ -163,7 +249,9 @@ export default function BackofficePage() {
     }
 
     if (currentAdmin.role === 'owner' || permissionSet.has('contacts')) sections.push('contacts');
-    if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) sections.push('gallery');
+    if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) {
+      sections.push('gallery', ...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]));
+    }
     if (currentAdmin.role === 'owner' || permissionSet.has('admins')) sections.push('admins');
     if (currentAdmin.role === 'owner' || permissionSet.has('audit')) sections.push('audit');
     if (currentAdmin.role === 'owner' || permissionSet.has('layout')) sections.push('layout');
@@ -281,11 +369,12 @@ export default function BackofficePage() {
 
   const refreshGallery = useCallback(async () => {
     setIsLoadingGallery(true);
-    const data = await fetchAdminEndpoint<GalleryMediaItem[]>('/api/gallery?scope=admin').catch(() => []);
+    const galleryContext = activeGalleryConfig?.context || 'global';
+    const data = await fetchAdminEndpoint<GalleryMediaItem[]>(`/api/gallery?scope=admin&context=${encodeURIComponent(galleryContext)}`).catch(() => []);
     setGalleryItems(data);
     setSelectedGalleryIds([]);
     setIsLoadingGallery(false);
-  }, [fetchAdminEndpoint]);
+  }, [activeGalleryConfig, fetchAdminEndpoint]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -361,6 +450,12 @@ export default function BackofficePage() {
     }
   }, [activeSection, availableSections]);
 
+  useEffect(() => {
+    if (!exportAuthMode && activeGalleryConfig) {
+      void refreshGallery();
+    }
+  }, [activeGalleryConfig, exportAuthMode, refreshGallery]);
+
   async function saveLayoutSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -389,6 +484,97 @@ export default function BackofficePage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function updateFooterContact(updates: Partial<Omit<FooterContactSettings, 'socialMedia'>>) {
+    setLayoutSettings((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        contactInfo: {
+          ...current.footer.contactInfo,
+          ...updates,
+        },
+      },
+    }));
+  }
+
+  function updateFooterSocialMedia(key: keyof FooterContactSettings['socialMedia'], value: string) {
+    setLayoutSettings((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        contactInfo: {
+          ...current.footer.contactInfo,
+          socialMedia: {
+            ...current.footer.contactInfo.socialMedia,
+            [key]: value,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateVisualColor(key: keyof SiteLayoutSettings['visualIdentity']['colors'], value: string) {
+    setLayoutSettings((current) => ({
+      ...current,
+      visualIdentity: {
+        ...current.visualIdentity,
+        colors: {
+          ...current.visualIdentity.colors,
+          [key]: value,
+        },
+      },
+    }));
+  }
+
+  function updateLogo(key: keyof SiteLayoutSettings['visualIdentity']['logos'], value: string) {
+    setLayoutSettings((current) => ({
+      ...current,
+      visualIdentity: {
+        ...current.visualIdentity,
+        logos: {
+          ...current.visualIdentity.logos,
+          [key]: value,
+        },
+      },
+    }));
+  }
+
+  function updateSeo(updates: Partial<SiteLayoutSettings['seo']>) {
+    setLayoutSettings((current) => ({
+      ...current,
+      seo: {
+        ...current.seo,
+        ...updates,
+      },
+    }));
+  }
+
+  function updateAppearancePage<Key extends AppearancePageKey>(
+    key: Key,
+    updates: Partial<SiteLayoutSettings['pages'][Key]>
+  ) {
+    setLayoutSettings((current) => ({
+      ...current,
+      pages: {
+        ...current.pages,
+        [key]: {
+          ...current.pages[key],
+          ...updates,
+        },
+      },
+    }));
+  }
+
+  function moveExploreLink(index: number, direction: -1 | 1) {
+    setLayoutSettings((current) => {
+      const links = [...current.home.explore.links];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= links.length) return current;
+      [links[index], links[nextIndex]] = [links[nextIndex], links[index]];
+      return { ...current, home: { ...current.home, explore: { ...current.home.explore, links } } };
+    });
   }
 
   function resetCurrentForm() {
@@ -450,6 +636,16 @@ export default function BackofficePage() {
       thumbnailUrl: '',
       thumbnailFile: null,
       published: true,
+    });
+    setGalleryFormResetKey((value) => value + 1);
+  }
+
+  function startNewGalleryItem() {
+    resetGalleryForm();
+    setSelectedGalleryIds([]);
+    clearGalleryBatchItems();
+    window.requestAnimationFrame(() => {
+      galleryIndividualFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -527,7 +723,6 @@ export default function BackofficePage() {
   }
 
   function startEditGallery(item: GalleryMediaItem) {
-    setActiveSection('gallery');
     setGalleryEditingId(item.id);
     setGalleryForm({
       title: item.title,
@@ -547,6 +742,7 @@ export default function BackofficePage() {
 
     try {
       const fd = new FormData();
+      fd.append('context', activeGalleryConfig?.context || 'global');
       fd.append('title', galleryForm.title);
       fd.append('description', galleryForm.description);
       fd.append('type', galleryForm.type);
@@ -603,8 +799,9 @@ export default function BackofficePage() {
   }
 
   async function deleteSelectedGalleryItems(type?: GalleryMediaType) {
-    const ids = (type ? groupedGalleryItems[type].map((item) => item.id) : selectedGalleryIds).filter((id) =>
-      selectedGalleryIds.includes(id)
+    const visibleSelectedIds = selectedGalleryIds.filter((id) => visibleGalleryIds.has(id));
+    const ids = (type ? groupedGalleryItems[type].map((item) => item.id) : visibleSelectedIds).filter((id) =>
+      visibleSelectedIds.includes(id)
     );
 
     if (ids.length === 0) {
@@ -624,10 +821,9 @@ export default function BackofficePage() {
 
     setBusy(true);
     try {
-      for (const id of ids) {
-        await fetchAdminEndpoint<null>(`/api/gallery/${id}`, { method: 'DELETE' });
-      }
+      await Promise.all(ids.map((id) => fetchAdminEndpoint<null>(`/api/gallery/${id}`, { method: 'DELETE' })));
 
+      setSelectedGalleryIds((current) => current.filter((id) => !ids.includes(id)));
       toast.success(ids.length === 1 ? 'Item eliminado com sucesso.' : `${ids.length} itens eliminados com sucesso.`);
       await refreshGallery();
     } catch (error) {
@@ -655,18 +851,25 @@ export default function BackofficePage() {
     setBusy(true);
 
     try {
-      for (const item of galleryBatchItems) {
-        const fd = new FormData();
-        fd.append('title', item.title.trim());
-        fd.append('description', item.description.trim());
-        fd.append('type', item.type);
-        fd.append('published', String(item.published));
-        fd.append('sourceFile', item.file);
+      const galleryContext = activeGalleryConfig?.context || 'global';
+      const uploadOne = (item: (typeof galleryBatchItems)[number]) => {
+          const fd = new FormData();
+          fd.append('title', item.title.trim());
+          fd.append('description', item.description.trim());
+          fd.append('type', item.type);
+          fd.append('context', galleryContext);
+          fd.append('published', String(item.published));
+          fd.append('sourceFile', item.file);
 
-        await fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
-          method: 'POST',
-          body: fd,
-        });
+          return fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
+            method: 'POST',
+            body: fd,
+          });
+        };
+      const uploadConcurrency = 3;
+
+      for (let index = 0; index < galleryBatchItems.length; index += uploadConcurrency) {
+        await Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne));
       }
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
@@ -916,7 +1119,9 @@ export default function BackofficePage() {
         </div>
 
         <nav className="mt-6 grid gap-2" aria-label="Secções do backoffice">
-          {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id)).map((item) => (
+          {sortBackofficeNavItems(
+            BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id))
+          ).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -1161,21 +1366,21 @@ export default function BackofficePage() {
         </section>
       ) : null}
 
-      {activeSection === 'gallery' ? (
+      {activeGalleryConfig ? (
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-xl border border-stone-200 bg-white p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-[#27441d]">Galeria multimédia</h2>
-                <p className="mt-1 text-sm text-stone-600">Fotos, vídeos e áudios separados por tipo com preview e seleção múltipla.</p>
+                <h2 className="text-xl font-semibold text-[#27441d]">{activeGalleryConfig.label}</h2>
+                <p className="mt-1 text-sm text-stone-600">{activeGalleryConfig.description}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={resetGalleryForm} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
+                <button type="button" onClick={startNewGalleryItem} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
                 <button
                   type="button"
                   onClick={() => void deleteSelectedGalleryItems()}
                   className="rounded-lg border border-rose-300 px-3 py-2 text-sm text-rose-700"
-                  disabled={busy || selectedGalleryIds.length === 0}
+                  disabled={busy || selectedVisibleGalleryIds.length === 0}
                 >
                   Eliminar selecionados
                 </button>
@@ -1352,7 +1557,7 @@ export default function BackofficePage() {
                 </div>
               </form>
 
-              <form className="space-y-3 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryItem(event)}>
+              <form ref={galleryIndividualFormRef} className="space-y-3 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryItem(event)}>
                 <div>
                   <h3 className="text-base font-semibold text-[#27441d]">Media individual</h3>
                   <p className="mt-1 text-sm text-stone-600">
@@ -1378,13 +1583,14 @@ export default function BackofficePage() {
 
                 <Input label="Fonte URL (opcional)" value={galleryForm.sourceUrl} onChange={(v) => setGalleryForm((c) => ({ ...c, sourceUrl: v }))} />
                 <FileInput
+                  key={`source-${galleryFormResetKey}`}
                   label="Fonte ficheiro"
                   accept={galleryForm.type === 'photo' ? 'image/*' : galleryForm.type === 'video' ? 'video/*' : 'audio/*'}
                   onFile={(file) => setGalleryForm((c) => ({ ...c, sourceFile: file }))}
                 />
 
                 <Input label="Thumbnail URL (opcional)" value={galleryForm.thumbnailUrl} onChange={(v) => setGalleryForm((c) => ({ ...c, thumbnailUrl: v }))} />
-                <FileInput label="Thumbnail ficheiro (opcional)" accept="image/*" onFile={(file) => setGalleryForm((c) => ({ ...c, thumbnailFile: file }))} />
+                <FileInput key={`thumbnail-${galleryFormResetKey}`} label="Thumbnail ficheiro (opcional)" accept="image/*" onFile={(file) => setGalleryForm((c) => ({ ...c, thumbnailFile: file }))} />
                 <Check label="Publicado" checked={galleryForm.published} onChange={(checked) => setGalleryForm((c) => ({ ...c, published: checked }))} />
 
                 <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
@@ -1643,7 +1849,7 @@ export default function BackofficePage() {
 
       {activeSection === 'layout' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Layout do site</h2>
+          <h2 className="text-xl font-semibold text-[#27441d]">Aparência</h2>
           <p className="mt-1 text-sm text-stone-600">Edita hero, footer, textos de páginas e ícones visuais.</p>
 
           {isLoadingLayout ? (
@@ -1652,6 +1858,47 @@ export default function BackofficePage() {
             </div>
           ) : (
           <form className="mt-5 grid gap-6" onSubmit={(event) => void saveLayoutSettings(event)}>
+            <div className="sticky top-4 z-10 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="Separadores da aparência">
+                {APPEARANCE_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={appearanceTab === tab.id}
+                    onClick={() => setAppearanceTab(tab.id)}
+                    className={appearanceTab === tab.id ? 'rounded-lg bg-[#27441d] px-3 py-2 text-sm text-white' : 'rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700'}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button className="rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                  {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
+                </button>
+              </div>
+            </div>
+
+            {appearanceTab === 'hero' ? (
+            <>
+            <AppearanceSectionTitle title="Hero da Página Inicial" description="Gere o título, subtítulo, botões, imagem e pré-visualização do primeiro ecrã." />
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#27441d]">Pré-visualização</p>
+              <div className="mt-3 overflow-hidden rounded-xl border border-stone-200 bg-white">
+                <div className="grid gap-4 p-5 md:grid-cols-[1fr_220px]">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.16em] text-stone-500">{layoutSettings.home.hero.eyebrow}</p>
+                    <h3 className="mt-2 font-display text-3xl font-bold text-[#27441d]">
+                      {[layoutSettings.home.hero.titleLine1, layoutSettings.home.hero.titleLine2, layoutSettings.home.hero.titleLine3, layoutSettings.home.hero.titleLine4].filter(Boolean).join(' ')}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-stone-600">{layoutSettings.home.hero.description}</p>
+                    <span className="mt-4 inline-flex rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white">{layoutSettings.home.hero.primaryCtaLabel}</span>
+                  </div>
+                  <div className="min-h-40 rounded-lg bg-stone-200 bg-cover bg-center" style={{ backgroundImage: `url("${layoutSettings.home.hero.imageUrl.split('|')[0] || '/placeholder.svg'}")` }} />
+                </div>
+              </div>
+            </div>
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="Hero · Eyebrow" value={layoutSettings.home.hero.eyebrow} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, eyebrow: v } } }))} />
               <Input label="Hero · Linha 1" value={layoutSettings.home.hero.titleLine1} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine1: v } } }))} />
@@ -1667,23 +1914,107 @@ export default function BackofficePage() {
             </div>
 
             <TextArea label="Hero · Descrição" value={layoutSettings.home.hero.description} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, description: v } } }))} />
+            </>
+            ) : null}
 
+            {appearanceTab === 'pages' ? (
+            <>
+            <AppearanceSectionTitle title="Conteúdo das Páginas" description="Edita títulos, descrições e mensagens públicas das páginas principais." />
             <div className="grid gap-3 md:grid-cols-2">
-              <Input label="Página Sobre · Título" value={layoutSettings.pages.sobre.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, sobre: { ...c.pages.sobre, title: v } } }))} />
-              <Input label="Página Serra · Título" value={layoutSettings.pages.serra.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, serra: { ...c.pages.serra, title: v } } }))} />
-              <Input label="Página Atividades · Título" value={layoutSettings.pages.atividades.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, atividades: { ...c.pages.atividades, title: v } } }))} />
-              <Input label="Página Notícias · Título" value={layoutSettings.pages.noticias.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, noticias: { ...c.pages.noticias, title: v } } }))} />
-              <Input label="Página Projetos · Título" value={layoutSettings.pages.projetos.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, projetos: { ...c.pages.projetos, title: v } } }))} />
-              <Input label="Página Biblioteca · Título" value={layoutSettings.pages.biblioteca.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, biblioteca: { ...c.pages.biblioteca, title: v } } }))} />
-            </div>
+              {APPEARANCE_PAGE_FIELDS.map((page) => {
+                const pageSettings = layoutSettings.pages[page.id];
 
+                return (
+                  <div key={page.id} className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                    <Input
+                      label={`Página ${page.label} · Título`}
+                      value={pageSettings.title}
+                      onChange={(value) => updateAppearancePage(page.id, { title: value })}
+                    />
+                    <TextArea
+                      label={`Página ${page.label} · Subtítulo`}
+                      value={pageSettings.description}
+                      onChange={(value) => updateAppearancePage(page.id, { description: value })}
+                    />
+                    {page.hasEmptyMessage ? (
+                      <TextArea
+                        label={`Página ${page.label} · Mensagem sem conteúdos`}
+                        value={pageSettings.emptyMessage || ''}
+                        onChange={(value) =>
+                          updateAppearancePage(page.id, { emptyMessage: value } as Partial<(typeof pageSettings)>)
+                        }
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'footer' ? (
+            <>
+            <AppearanceSectionTitle title="Footer" description="Edita contactos, direitos de autor, links úteis e redes sociais." />
             <TextArea label="Footer · Descrição da marca" value={layoutSettings.footer.brandDescription} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, brandDescription: v } }))} />
             <Input label="Footer · Copyright" value={layoutSettings.footer.copyrightLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, copyrightLine: v } }))} />
             <Input label="Footer · Linha legal" value={layoutSettings.footer.legalLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, legalLine: v } }))} />
 
+            <div className="rounded-lg border border-stone-200 p-3">
+              <h3 className="text-sm font-semibold text-[#27441d]">Footer · Contactos</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <Input label="Footer · Morada" value={layoutSettings.footer.contactInfo.address} onChange={(v) => updateFooterContact({ address: v })} />
+                <Input label="Footer · Código postal" value={layoutSettings.footer.contactInfo.postalCode} onChange={(v) => updateFooterContact({ postalCode: v })} />
+                <Input label="Footer · Localidade" value={layoutSettings.footer.contactInfo.city} onChange={(v) => updateFooterContact({ city: v })} />
+                <Input label="Footer · Telefone" value={layoutSettings.footer.contactInfo.phone} onChange={(v) => updateFooterContact({ phone: v })} />
+                <Input label="Footer · Email" type="email" value={layoutSettings.footer.contactInfo.email} onChange={(v) => updateFooterContact({ email: v })} />
+                <Input label="Footer · Facebook" value={layoutSettings.footer.contactInfo.socialMedia.facebook || ''} onChange={(v) => updateFooterSocialMedia('facebook', v)} />
+                <Input label="Footer · Instagram" value={layoutSettings.footer.contactInfo.socialMedia.instagram || ''} onChange={(v) => updateFooterSocialMedia('instagram', v)} />
+                <Input label="Footer · LinkedIn" value={layoutSettings.footer.contactInfo.socialMedia.linkedin || ''} onChange={(v) => updateFooterSocialMedia('linkedin', v)} />
+                <Input label="Footer · YouTube" value={layoutSettings.footer.contactInfo.socialMedia.youtube || ''} onChange={(v) => updateFooterSocialMedia('youtube', v)} />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {layoutSettings.footer.columns.map((column, columnIndex) => (
+                <div key={`${column.title}-${columnIndex}`} className="rounded-lg border border-stone-200 p-3">
+                  <Input label={`Footer coluna ${columnIndex + 1} · Título`} value={column.title} onChange={(value) => setLayoutSettings((current) => {
+                    const columns = [...current.footer.columns];
+                    columns[columnIndex] = { ...columns[columnIndex], title: value };
+                    return { ...current, footer: { ...current.footer, columns } };
+                  })} />
+                  {column.links.map((link, linkIndex) => (
+                    <div key={`${link.href}-${linkIndex}`} className="mt-3 grid gap-2 rounded border border-stone-100 p-2">
+                      <Input label="Texto do link" value={link.label} onChange={(value) => setLayoutSettings((current) => {
+                        const columns = [...current.footer.columns];
+                        const links = [...columns[columnIndex].links];
+                        links[linkIndex] = { ...links[linkIndex], label: value };
+                        columns[columnIndex] = { ...columns[columnIndex], links };
+                        return { ...current, footer: { ...current.footer, columns } };
+                      })} />
+                      <Input label="URL do link" value={link.href} onChange={(value) => setLayoutSettings((current) => {
+                        const columns = [...current.footer.columns];
+                        const links = [...columns[columnIndex].links];
+                        links[linkIndex] = { ...links[linkIndex], href: value };
+                        columns[columnIndex] = { ...columns[columnIndex], links };
+                        return { ...current, footer: { ...current.footer, columns } };
+                      })} />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'icons' ? (
+            <>
+            <AppearanceSectionTitle title="Ícones e Elementos Visuais" description="Seleciona ícones através de preview visual e reorganiza cartões quando aplicável." />
             <div className="grid gap-4 md:grid-cols-2">
               {layoutSettings.home.explore.links.slice(0, 6).map((link, index) => (
                 <div key={`${link.href}-${index}`} className="rounded-lg border border-stone-200 p-3">
+                  <div className="mb-3 flex gap-2">
+                    <button type="button" onClick={() => moveExploreLink(index, -1)} className="rounded border px-2 py-1 text-xs" disabled={index === 0}>Subir</button>
+                    <button type="button" onClick={() => moveExploreLink(index, 1)} className="rounded border px-2 py-1 text-xs" disabled={index === layoutSettings.home.explore.links.length - 1}>Descer</button>
+                  </div>
                   <Input label={`Explore ${index + 1} · Título`} value={link.title} onChange={(v) => setLayoutSettings((c) => {
                     const links = [...c.home.explore.links];
                     links[index] = { ...links[index], title: v };
@@ -1719,9 +2050,43 @@ export default function BackofficePage() {
                 </div>
               ))}
             </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'colors' ? (
+            <>
+            <AppearanceSectionTitle title="Cores e Identidade Visual" description="Define as cores base que alimentam as variáveis visuais globais do website." />
+            <div className="grid gap-3 md:grid-cols-2">
+              {Object.entries(layoutSettings.visualIdentity.colors).map(([key, value]) => (
+                <Input key={key} type="color" label={`Cor · ${key}`} value={value} onChange={(next) => updateVisualColor(key as keyof SiteLayoutSettings['visualIdentity']['colors'], next)} />
+              ))}
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'logos' ? (
+            <>
+            <AppearanceSectionTitle title="Logótipos" description="Regista os logótipos institucionais usados pelo website e materiais públicos." />
+            <div className="grid gap-3 md:grid-cols-2">
+              <Input label="Logótipo principal" value={layoutSettings.visualIdentity.logos.primary} onChange={(v) => updateLogo('primary', v)} />
+              <Input label="Logótipo do footer" value={layoutSettings.visualIdentity.logos.footer} onChange={(v) => updateLogo('footer', v)} />
+              <Input label="Logótipo institucional" value={layoutSettings.visualIdentity.logos.institutional} onChange={(v) => updateLogo('institutional', v)} />
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'seo' ? (
+            <>
+            <AppearanceSectionTitle title="SEO e Metadados" description="Campos centrais para título, descrição, palavras-chave e imagem social." />
+            <Input label="SEO · Título" value={layoutSettings.seo.title} onChange={(v) => updateSeo({ title: v })} />
+            <TextArea label="SEO · Descrição" value={layoutSettings.seo.description} onChange={(v) => updateSeo({ description: v })} />
+            <TextArea label="SEO · Palavras-chave" value={layoutSettings.seo.keywords} onChange={(v) => updateSeo({ keywords: v })} />
+            <Input label="SEO · Imagem Open Graph" value={layoutSettings.seo.ogImage} onChange={(v) => updateSeo({ ogImage: v })} />
+            </>
+            ) : null}
 
             <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-              {backofficePrimaryActionLabel(busy, 'Guardar layout')}
+              {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
             </button>
           </form>
           )}
@@ -1739,6 +2104,15 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
       {label}
       <textarea value={value} onChange={(event) => onChange(event.target.value)} className="min-h-24 rounded-lg border border-stone-300 px-3 py-2" />
     </label>
+  );
+}
+
+function AppearanceSectionTitle({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="border-b border-stone-200 pb-3">
+      <h3 className="text-lg font-semibold text-[#27441d]">{title}</h3>
+      <p className="mt-1 text-sm text-stone-600">{description}</p>
+    </div>
   );
 }
 
@@ -1978,11 +2352,27 @@ function GalleryGroup({
 }
 
 function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
+  if (!item.source && !item.thumbnail) {
+    return (
+      <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-stone-100 px-2 text-center text-xs text-stone-500">
+        Sem origem
+      </div>
+    );
+  }
+
   if (item.type === 'photo') {
-    return <img src={item.thumbnail || item.source} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />;
+    return <img src={item.thumbnail || item.source || '/placeholder.svg'} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />;
   }
 
   if (item.type === 'video') {
+    if (!item.source) {
+      return (
+        <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-stone-900 px-2 text-center text-xs text-white">
+          Sem vídeo
+        </div>
+      );
+    }
+
     return (
       <video
         src={item.source}
@@ -1998,7 +2388,7 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
   return (
     <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
       <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Preview áudio</div>
-      <audio controls preload="metadata" className="w-full" src={item.source} />
+      {item.source ? <audio controls preload="metadata" className="w-full" src={item.source} /> : <p className="text-sm text-stone-500">Sem áudio associado.</p>}
     </div>
   );
 }
