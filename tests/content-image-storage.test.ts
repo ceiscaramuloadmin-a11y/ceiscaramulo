@@ -9,16 +9,18 @@ const adminLayoutSource = readFileSync(resolve(process.cwd(), 'app/api/admin/lay
 const siteLayoutSource = readFileSync(resolve(process.cwd(), 'lib/site-layout.ts'), 'utf8');
 
 describe('content image storage', () => {
-  it('converts uploaded content images to base64 data URLs before persisting them', () => {
-    expect(cmsSource).toContain('const resolvedAsset = file ? await fileToDataUrl(file)');
+  it('stores uploaded content images as public upload files before persisting their URLs', () => {
+    expect(cmsSource).toContain('export async function storeUploadedFile');
+    expect(cmsSource).toContain("const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice'");
+    expect(cmsSource).toContain('const resolvedAsset = file ? await storeUploadedFile(file, section)');
     expect(cmsSource).toContain('image: resolvedAsset');
     expect(cmsSource).toContain('coverImage: resolvedAsset');
   });
 
-  it('converts uploaded layout hero images to base64 data URLs before saving settings', () => {
+  it('stores uploaded layout hero images as public upload files before saving settings', () => {
     expect(adminLayoutSource).toContain('normalizeHeroImageValue');
-    expect(adminLayoutSource).toContain("return normalized.startsWith('data:') ? normalized : '';");
-    expect(adminLayoutSource).toContain('merged.home.hero.imageUrl = await fileToDataUrl(heroImageFile);');
+    expect(adminLayoutSource).toContain("normalized.startsWith('/uploads/')");
+    expect(adminLayoutSource).toContain("merged.home.hero.imageUrl = await storeUploadedFile(heroImageFile, 'layout');");
   });
 
   it('does not keep a static project path as the default hero image source', () => {

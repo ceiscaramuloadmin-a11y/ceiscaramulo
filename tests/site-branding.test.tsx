@@ -199,7 +199,42 @@ describe('site branding', () => {
     expect(instagram).toHaveAttribute('target', '_blank');
   });
 
-  it('uses tighter homepage navbar tracking so the tabs read compactly', () => {
+  it('renders footer contact details from fetched layout settings', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        ...defaultSiteLayoutSettings,
+        footer: {
+          ...defaultSiteLayoutSettings.footer,
+          contactInfo: {
+            ...defaultSiteLayoutSettings.footer.contactInfo,
+            address: 'Rua Editada',
+            postalCode: '1000-001',
+            city: 'Tondela',
+            phone: '+351 211 222 333',
+            email: 'footer@ceiscaramulo.pt',
+            socialMedia: {
+              facebook: '',
+              instagram: 'https://instagram.example/ceis',
+              linkedin: '',
+              youtube: '',
+            },
+          },
+        },
+      }),
+    } as Response);
+
+    render(<Footer />);
+
+    await waitFor(() => expect(screen.getByText('Rua Editada, 1000-001, Tondela')).toBeInTheDocument());
+
+    expect(screen.getByRole('link', { name: '+351 211 222 333' })).toHaveAttribute('href', 'tel:+351211222333');
+    expect(screen.getByRole('link', { name: 'footer@ceiscaramulo.pt' })).toHaveAttribute('href', 'mailto:footer@ceiscaramulo.pt');
+    expect(screen.getByRole('link', { name: 'Instagram' })).toHaveAttribute('href', 'https://instagram.example/ceis');
+    expect(screen.queryByRole('link', { name: 'Facebook' })).not.toBeInTheDocument();
+  });
+
+  it('uses distributed homepage navbar spacing without underlining the logo link', () => {
     render(
       <HomeHero
         hero={{
@@ -219,19 +254,33 @@ describe('site branding', () => {
       />
     );
 
-    expect(screen.getAllByRole('link', { name: 'Sobre Nós' })[0]).toHaveClass('tracking-[0.03em]', '2xl:tracking-[0.06em]');
+    const homeLogoLink = screen.getByRole('link', { name: 'CEISCaramulo - Página inicial' });
+    const homepageNav = screen.getByRole('navigation', { name: 'Navegação principal da homepage' });
+
+    expect(homeLogoLink).not.toHaveClass('border-b', 'border-[#3e5c32]/60', 'active:border-[#27441d]');
+    expect(homeLogoLink).toHaveClass('focus-visible:ring-2', 'active:brightness-95');
+    expect(homepageNav).toHaveClass('flex-1', 'justify-between', 'gap-4', '2xl:gap-6');
+    expect(screen.getAllByRole('link', { name: 'Sobre Nós' })[0]).toHaveClass('px-2', '2xl:px-3', 'tracking-[0.03em]', '2xl:tracking-[0.06em]');
   });
 
   it('gives the expanded header more room for the full navbar and larger logo', () => {
     const { container } = render(<Header />);
 
     const logo = screen.getByRole('img', { name: 'CEISCaramulo' });
+    const headerNav = screen.getByRole('navigation', { name: 'Navegação principal' });
     const headerInner = Array.from(container.querySelectorAll('div')).find((element) =>
       element.className.includes('max-w-[96rem]')
     );
 
-    expect(headerInner).toHaveClass('max-w-[96rem]', 'h-24');
-    expect(logo).toHaveClass('h-14', 'sm:h-16');
-    expect(screen.getAllByRole('link', { name: 'Sobre Nós' })[0]).toHaveClass('text-[11px]', 'hover:text-[#0f4c36]');
+    expect(headerInner).toHaveClass('max-w-[96rem]', 'h-28', 'gap-8');
+    expect(headerNav).toHaveClass('flex-1', 'justify-between', 'gap-4');
+    expect(logo).toHaveClass('h-16', 'sm:h-20');
+    expect(screen.getAllByRole('link', { name: 'Sobre Nós' })[0]).toHaveClass('px-2', '2xl:px-3', 'text-[11px]', 'hover:text-[#0f4c36]');
+  });
+
+  it('uses a larger footer logo', () => {
+    render(<Footer />);
+
+    expect(screen.getByRole('img', { name: 'CEISCaramulo' })).toHaveClass('h-20', 'sm:h-24');
   });
 });

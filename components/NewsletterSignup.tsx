@@ -17,8 +17,8 @@ export default function NewsletterSignup() {
       setFeedback(null);
       const trimmed = email.trim();
 
-      if (!trimmed) {
-        setFeedback({ variant: 'err', text: 'Introduce um email para continuar.' });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        setFeedback({ variant: 'err', text: 'Introduce um email válido para subscrever.' });
         return;
       }
 
@@ -27,6 +27,7 @@ export default function NewsletterSignup() {
       try {
         const response = await fetch('/api/newsletter/subscribe', {
           method: 'POST',
+          cache: 'no-store',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: trimmed }),
         });
@@ -69,6 +70,8 @@ export default function NewsletterSignup() {
           placeholder="nome@servidor.pt"
           value={email}
           disabled={pending}
+          aria-invalid={feedback?.variant === 'err' ? 'true' : undefined}
+          aria-describedby={feedback ? 'newsletter-feedback' : undefined}
           onChange={(event) => setEmail(event.target.value)}
           className="min-h-11 flex-1 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-[#27441d]"
         />
@@ -84,6 +87,7 @@ export default function NewsletterSignup() {
 
       {feedback ? (
         <p
+          id="newsletter-feedback"
           className={`text-xs ${feedback.variant === 'ok' ? 'text-[#27441d]' : 'text-red-700'}`}
           role={feedback.variant === 'err' ? 'alert' : 'status'}
         >

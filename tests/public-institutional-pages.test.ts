@@ -7,14 +7,19 @@ import { describe, expect, it } from 'vitest';
 const sobreNosPageSource = readFileSync(resolve(process.cwd(), 'app/sobre-nos/page.tsx'), 'utf8');
 const serraPageSource = readFileSync(resolve(process.cwd(), 'app/serra-do-caramulo/page.tsx'), 'utf8');
 const backofficePageSource = readFileSync(resolve(process.cwd(), 'app/backoffice/page.tsx'), 'utf8');
+const escolaDosNossosAvosPageSource = readFileSync(resolve(process.cwd(), 'app/escola-dos-nossos-avos/page.tsx'), 'utf8');
+const ponDoJueusPageSource = readFileSync(resolve(process.cwd(), 'app/pon-do-jueus/page.tsx'), 'utf8');
+const contactosPageSource = readFileSync(resolve(process.cwd(), 'app/contactos/page.tsx'), 'utf8');
+const galeriaPageSource = readFileSync(resolve(process.cwd(), 'app/galeria/page.tsx'), 'utf8');
+const institutionalProgrammePageSource = readFileSync(resolve(process.cwd(), 'components/InstitutionalProgrammePage.tsx'), 'utf8');
 
 const requestedProgrammePages = [
-  ['Oficina do Burel', 'app/oficina-do-burel/page.tsx'],
-  ['PON do Jueus', 'app/pon-do-jueus/page.tsx'],
-  ['Escola dos Nossos Avós', 'app/escola-dos-nossos-avos/page.tsx'],
-  ['Biblioteca JRS', 'app/biblioteca-jrs/page.tsx'],
-  ['Oficinas de formação', 'app/oficinas-de-formacao/page.tsx'],
-  ['Publicações', 'app/publicacoes/page.tsx'],
+  ['oficinaDoBurel', 'app/oficina-do-burel/page.tsx'],
+  ['ponDoJueus', 'app/pon-do-jueus/page.tsx'],
+  ['escolaDosNossosAvos', 'app/escola-dos-nossos-avos/page.tsx'],
+  ['bibliotecaJrs', 'app/biblioteca-jrs/page.tsx'],
+  ['oficinasDeFormacao', 'app/oficinas-de-formacao/page.tsx'],
+  ['publicacoes', 'app/publicacoes/page.tsx'],
 ];
 
 describe('institutional pages', () => {
@@ -25,6 +30,8 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain('Direção');
     expect(sobreNosPageSource).toContain('Conselho Fiscal');
     expect(sobreNosPageSource).toContain('Luís Filipe Rodrigues da Costa');
+    expect(sobreNosPageSource).not.toContain('Desde {siteConfig.founded}');
+    expect(sobreNosPageSource).not.toContain('Um projeto dedicado a estudar, interpretar e valorizar a Serra do Caramulo.');
   });
 
   it('embeds only the GeologiaCaramulo pdf inside the Serra do Caramulo page container', () => {
@@ -41,11 +48,37 @@ describe('institutional pages', () => {
     expect(backofficePageSource).toContain("fetchAdminEndpoint<{ success: boolean }>('/api/admin/password'");
   });
 
-  it('provides pages for the new navbar programme links', () => {
-    requestedProgrammePages.forEach(([title, relativePath]) => {
+  it('provides editable pages for the new navbar programme links', () => {
+    requestedProgrammePages.forEach(([pageKey, relativePath]) => {
       const pagePath = resolve(process.cwd(), relativePath);
+      const pageSource = readFileSync(pagePath, 'utf8');
+
       expect(existsSync(pagePath)).toBe(true);
-      expect(readFileSync(pagePath, 'utf8')).toContain(`title="${title}"`);
+      expect(pageSource).toContain('getPublicSiteLayoutSettings');
+      expect(pageSource).toContain(`layout.pages.${pageKey}.title`);
+      expect(pageSource).toContain(`layout.pages.${pageKey}.description`);
     });
+  });
+
+  it('renders Escola dos Nossos Avos content from its backoffice gallery context', () => {
+    expect(escolaDosNossosAvosPageSource).toContain("listGalleryMedia('public', 'escola-dos-nossos-avos')");
+    expect(escolaDosNossosAvosPageSource).toContain('<GalleryTabs items={media} />');
+    expect(escolaDosNossosAvosPageSource).toContain('Conteúdos da Escola dos Nossos Avós');
+    expect(institutionalProgrammePageSource).toContain('children?: React.ReactNode');
+    expect(institutionalProgrammePageSource).toContain('{children}');
+  });
+
+  it('renders PON do Jueus content from its backoffice gallery context', () => {
+    expect(ponDoJueusPageSource).toContain("listGalleryMedia('public', 'pon-do-jueus')");
+    expect(ponDoJueusPageSource).toContain('<GalleryTabs items={media} />');
+    expect(ponDoJueusPageSource).toContain('Conteúdos do PON do Jueus');
+  });
+
+  it('renders contact, gallery and Serra intros from appearance settings', () => {
+    expect(contactosPageSource).toContain('layout.pages.contactos.title');
+    expect(contactosPageSource).toContain('layout.pages.contactos.description');
+    expect(galeriaPageSource).toContain('layout.pages.galeria.title');
+    expect(galeriaPageSource).toContain('layout.pages.galeria.description');
+    expect(serraPageSource).toContain('layout.pages.serra.description');
   });
 });

@@ -13,7 +13,8 @@ import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import prisma from '@/lib/prisma';
 import { getAssetUrl } from '@/lib/utils';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'CEISCaramulo — Centro de Estudos e Interpretação da Serra do Caramulo',

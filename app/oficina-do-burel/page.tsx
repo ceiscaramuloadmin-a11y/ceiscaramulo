@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Oficina do Burel | CEISCaramulo',
@@ -11,11 +13,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function OficinaDoBurelPage() {
+export default async function OficinaDoBurelPage() {
+  const layout = await getPublicSiteLayoutSettings();
+
   return (
     <InstitutionalProgrammePage
-      title="Oficina do Burel"
-      description="Espaço dedicado à valorização do burel, dos saberes tradicionais e das práticas ligadas à identidade da Serra do Caramulo."
+      title={layout.pages.oficinaDoBurel.title}
+      description={layout.pages.oficinaDoBurel.description}
     />
   );
 }

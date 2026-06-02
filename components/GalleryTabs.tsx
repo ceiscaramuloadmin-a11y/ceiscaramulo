@@ -26,6 +26,7 @@ export default function GalleryTabs({ items }: Props) {
   const audios = useMemo(() => items.filter((item) => item.type === 'audio'), [items]);
 
   const activePhoto = activePhotoIndex !== null ? photos[activePhotoIndex] : null;
+  const activePhotoSource = activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg';
 
   const resetViewer = () => {
     setZoom(1);
@@ -121,11 +122,17 @@ export default function GalleryTabs({ items }: Props) {
                   onClick={() => openPhoto(index)}
                   className="group overflow-hidden rounded-xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <img
-                    src={item.thumbnail || item.source}
-                    alt={item.title}
-                    className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                  {item.thumbnail || item.source ? (
+                    <img
+                      src={item.thumbnail || item.source}
+                      alt={item.title}
+                      className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-44 w-full items-center justify-center bg-stone-100 px-4 text-center text-sm text-stone-500">
+                      Sem imagem associada
+                    </div>
+                  )}
                   <div className="p-3">
                     <p className="truncate text-sm font-medium text-stone-800">{item.title}</p>
                   </div>
@@ -144,18 +151,24 @@ export default function GalleryTabs({ items }: Props) {
             videos.map((item) => (
               <article key={item.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <div className="aspect-video bg-black">
-                  <video
-                    ref={(node) => {
-                      videoRefs.current[item.id] = node;
-                    }}
-                    src={item.source}
-                    poster={item.thumbnail || undefined}
-                    className="h-full w-full bg-black object-cover"
-                    playsInline
-                    controls={false}
-                    onPlay={() => setPlayingVideos((current) => ({ ...current, [item.id]: true }))}
-                    onPause={() => setPlayingVideos((current) => ({ ...current, [item.id]: false }))}
-                  />
+                  {item.source ? (
+                    <video
+                      ref={(node) => {
+                        videoRefs.current[item.id] = node;
+                      }}
+                      src={item.source}
+                      poster={item.thumbnail || undefined}
+                      className="h-full w-full bg-black object-cover"
+                      playsInline
+                      controls={false}
+                      onPlay={() => setPlayingVideos((current) => ({ ...current, [item.id]: true }))}
+                      onPause={() => setPlayingVideos((current) => ({ ...current, [item.id]: false }))}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center px-4 text-center text-sm text-white/80">
+                      Sem vídeo associado
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-4 p-4">
                   <div>
@@ -166,6 +179,7 @@ export default function GalleryTabs({ items }: Props) {
                     <button
                       type="button"
                       onClick={() => void toggleVideoPlayback(item.id)}
+                      disabled={!item.source}
                       className="inline-flex items-center gap-2 rounded-lg bg-[#27441d] px-4 py-2 text-sm font-medium text-white"
                     >
                       {playingVideos[item.id] ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -174,6 +188,7 @@ export default function GalleryTabs({ items }: Props) {
                     <button
                       type="button"
                       onClick={() => void openVideoFullscreen(item.id)}
+                      disabled={!item.source}
                       className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
                     >
                       <Maximize2 className="h-4 w-4" />
@@ -205,7 +220,7 @@ export default function GalleryTabs({ items }: Props) {
                     </div>
                   </div>
                   <div className="w-full md:max-w-[420px]">
-                    <audio controls preload="metadata" className="w-full" src={item.source} />
+                    {item.source ? <audio controls preload="metadata" className="w-full" src={item.source} /> : <p className="rounded-lg bg-stone-50 px-4 py-3 text-sm text-stone-500">Sem áudio associado.</p>}
                   </div>
                 </div>
               </article>
@@ -266,7 +281,7 @@ export default function GalleryTabs({ items }: Props) {
             }}
           >
             <img
-              src={activePhoto.source}
+              src={activePhotoSource}
               alt={activePhoto.title}
               style={{
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,

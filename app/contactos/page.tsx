@@ -3,8 +3,10 @@ import { Mail, Phone, UserRound } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ContactForm from '@/components/ContactForm';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Contactos | CEISCaramulo',
@@ -20,7 +22,9 @@ const contactPageDetails = {
   email: 'ceiscaramulo@gmail.com',
 };
 
-export default function ContactosPage() {
+export default async function ContactosPage() {
+  const layout = await getPublicSiteLayoutSettings();
+
   return (
     <>
       <Header />
@@ -28,9 +32,9 @@ export default function ContactosPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <section className="rounded-[2rem] bg-[#27441d] px-6 py-10 text-white shadow-xl sm:px-10">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-100">Contactos</p>
-            <h1 className="mt-4 font-display text-4xl font-bold sm:text-5xl">Fale connosco.</h1>
+            <h1 className="mt-4 font-display text-4xl font-bold sm:text-5xl">{layout.pages.contactos.title}</h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-emerald-50/90 sm:text-lg">
-              Estamos disponíveis para esclarecer dúvidas, receber sugestões e acompanhar iniciativas ligadas ao CEISCaramulo.
+              {layout.pages.contactos.description}
             </p>
           </section>
 

@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
@@ -57,7 +59,10 @@ type SectionConfig = {
 };
 
 const MAX_AUDIT_LOGS = 500;
+export const AUDIT_LOG_RETENTION_DAYS = 15;
+const AUDIT_LOG_RETENTION_MS = AUDIT_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 const GALLERY_MEDIA_STORAGE_KEY = 'gallery_media_items';
+const DEFAULT_GALLERY_CONTEXT = 'global';
 const OLD_FOOTER_BRAND_DESCRIPTION =
   'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.';
 const REQUESTED_FOOTER_BRAND_DESCRIPTION =
@@ -124,6 +129,52 @@ export function isValidEmail(value: string) {
 // Resposta JSON de erro padronizada.
 export function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
+}
+
+const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice';
+const UPLOAD_DISK_ROOT = join(process.cwd(), 'public', 'uploads', 'backoffice');
+
+function sanitizeUploadSegment(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'general';
+}
+
+function extensionFromMimeType(mimeType: string) {
+  if (mimeType === 'image/jpeg') return '.jpg';
+  if (mimeType === 'image/png') return '.png';
+  if (mimeType === 'image/webp') return '.webp';
+  if (mimeType === 'image/gif') return '.gif';
+  if (mimeType === 'video/mp4') return '.mp4';
+  if (mimeType === 'audio/mpeg') return '.mp3';
+  if (mimeType === 'audio/mp4') return '.m4a';
+  if (mimeType === 'audio/wav') return '.wav';
+  if (mimeType === 'application/pdf') return '.pdf';
+  return '';
+}
+
+export async function storeUploadedFile(file: File, bucket = 'general') {
+  const mimeType = file.type || 'application/octet-stream';
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  if (!buffer.length) {
+    throw new Error('Não foi possível guardar o ficheiro enviado.');
+  }
+
+  const safeBucket = sanitizeUploadSegment(bucket);
+  const diskDirectory = join(UPLOAD_DISK_ROOT, safeBucket);
+  const originalExtension = extname(file.name || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
+  const extension = originalExtension || extensionFromMimeType(mimeType);
+  const filename = `${Date.now()}-${crypto.randomUUID()}${extension}`;
+
+  await mkdir(diskDirectory, { recursive: true });
+  await writeFile(join(diskDirectory, filename), buffer);
+
+  return `${UPLOAD_PUBLIC_ROOT}/${safeBucket}/${filename}`;
 }
 
 // Converte ficheiro recebido para Data URL (compatível com implementação atual).
@@ -675,10 +726,39 @@ function serializeForAudit(value: unknown) {
   }
 }
 
+export function getAuditLogRetentionCutoff(now = new Date()) {
+  return new Date(now.getTime() - AUDIT_LOG_RETENTION_MS);
+}
+
+// Mantém a auditoria leve: eventos com 15 dias ou mais deixam de ser úteis
+// para operação diária e são apagados antes de listar ou acrescentar histórico.
+export async function pruneExpiredAuditLogs(now = new Date()) {
+  const prismaAny = prisma as unknown as {
+    adminAuditLog?: {
+      deleteMany: (args: { where: { createdAt: { lte: Date } } }) => Promise<{ count: number }>;
+    };
+  };
+
+  if (!prismaAny.adminAuditLog) {
+    return 0;
+  }
+
+  const result = await prismaAny.adminAuditLog.deleteMany({
+    where: {
+      createdAt: {
+        lte: getAuditLogRetentionCutoff(now),
+      },
+    },
+  });
+
+  return result.count;
+}
+
 // Lista os eventos de auditoria por ordem decrescente de criação.
 export async function listAuditLogs() {
   const prismaAny = prisma as unknown as {
     adminAuditLog?: {
+      deleteMany: (args: { where: { createdAt: { lte: Date } } }) => Promise<{ count: number }>;
       findMany: (args: { orderBy: { createdAt: 'desc' }; take: number }) => Promise<
         Array<{
           id: string;
@@ -699,12 +779,23 @@ export async function listAuditLogs() {
   if (!prismaAny.adminAuditLog) {
     const storedValue = await getSiteSettingValue('admin_audit_logs');
     const parsed = safeJsonParse<unknown[]>(storedValue, []);
+    const cutoff = getAuditLogRetentionCutoff().getTime();
+    const activeLogs = parsed.filter((item) => {
+      const normalized = normalizeAuditLogRecord(item);
+      return normalized ? Date.parse(normalized.createdAt) > cutoff : false;
+    });
 
-    return parsed
+    if (activeLogs.length !== parsed.length) {
+      await setSiteSettingValue('admin_audit_logs', JSON.stringify(activeLogs.slice(0, MAX_AUDIT_LOGS)));
+    }
+
+    return activeLogs
       .map((item) => normalizeAuditLogRecord(item))
       .filter((item): item is AuditLogRecord => Boolean(item))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
+
+  await pruneExpiredAuditLogs();
 
   const logs = await prismaAny.adminAuditLog.findMany({
     orderBy: { createdAt: 'desc' },
@@ -760,6 +851,8 @@ export async function appendAuditLog(input: {
       }) => Promise<unknown>;
     };
   };
+
+  await pruneExpiredAuditLogs();
 
   if (!prismaAny.adminAuditLog) {
     const logs = await listAuditLogs();
@@ -824,7 +917,7 @@ export async function parseSectionFormData(
   const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
 
   const currentAsset = currentItem?.[config.uploadField] as string | null | undefined;
-  const resolvedAsset = file ? await fileToDataUrl(file) : removeImage ? null : (currentAsset ?? null);
+  const resolvedAsset = file ? await storeUploadedFile(file, section) : removeImage ? null : (currentAsset ?? null);
 
   if (section === 'news') {
     const published = booleanFromForm(formData.get('published'));
@@ -888,6 +981,11 @@ function normalizeGalleryType(value: unknown): GalleryMediaType {
   return 'photo';
 }
 
+function normalizeGalleryContext(value: unknown) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized.replace(/[^a-z0-9-]/g, '-') || DEFAULT_GALLERY_CONTEXT;
+}
+
 function normalizeGalleryRecord(value: unknown): GalleryMediaRecord | null {
   if (!value || typeof value !== 'object') {
     return null;
@@ -897,15 +995,12 @@ function normalizeGalleryRecord(value: unknown): GalleryMediaRecord | null {
   const now = new Date().toISOString();
   const source = String(candidate.source || '').trim();
 
-  if (!source) {
-    return null;
-  }
-
   return {
     id: String(candidate.id || crypto.randomUUID()),
     title: String(candidate.title || '').trim() || 'Sem título',
     description: candidate.description ? String(candidate.description) : null,
     type: normalizeGalleryType(candidate.type),
+    context: normalizeGalleryContext(candidate.context),
     source,
     thumbnail: candidate.thumbnail ? String(candidate.thumbnail) : null,
     mimeType: candidate.mimeType ? String(candidate.mimeType) : null,
@@ -938,6 +1033,7 @@ function getStaticGalleryFallback(): GalleryMediaRecord[] {
       title: item.title,
       description: item.category || null,
       type: item.type === 'foto' ? 'photo' : item.type === 'video' ? 'video' : 'audio',
+      context: DEFAULT_GALLERY_CONTEXT,
       source: item.url,
       thumbnail: item.type === 'foto' ? item.url : null,
       mimeType: null,
@@ -975,9 +1071,17 @@ async function retryGalleryQuery<T>(query: () => Promise<T>) {
   }
 }
 
-export async function listGalleryMedia(scope: 'public' | 'admin') {
+export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFAULT_GALLERY_CONTEXT) {
+  const galleryContext = normalizeGalleryContext(context);
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
+    const items = await listGalleryFromStorage();
+    const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
+    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+  }
+
   if (scope === 'public' && shouldSkipPublicDb()) {
-    return getStaticGalleryFallback();
+    return galleryContext === DEFAULT_GALLERY_CONTEXT ? getStaticGalleryFallback() : [];
   }
 
   const prismaAny = prisma as unknown as {
@@ -1004,7 +1108,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
 
   if (!prismaAny.galleryMedia) {
     const items = await listGalleryFromStorage();
-    return scope === 'admin' ? items : items.filter((item) => item.published);
+    const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
+    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
   }
 
   let items;
@@ -1025,7 +1130,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
     }
     try {
       const fallbackItems = await listGalleryFromStorage();
-      return scope === 'admin' ? fallbackItems : fallbackItems.filter((item) => item.published);
+      const contextItems = fallbackItems.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
+      return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
     } catch (storageError) {
       if (scope === 'public' && isPublicDbQuotaExceededError(storageError)) {
         markPublicDbQuotaExceeded('public gallery storage');
@@ -1033,7 +1139,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
         console.warn('Gallery storage fallback failed.');
       }
       if (scope === 'public') {
-        return getStaticGalleryFallback();
+        return galleryContext === DEFAULT_GALLERY_CONTEXT ? getStaticGalleryFallback() : [];
       }
       return [];
     }
@@ -1044,6 +1150,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
     title: item.title,
     description: item.description,
     type: item.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: item.source,
     thumbnail: item.thumbnail,
     mimeType: item.mimeType,
@@ -1101,7 +1208,14 @@ export async function getGalleryMediaById(id: string, scope: 'public' | 'admin')
   }
 
   if (!found) {
-    return null;
+    const items = await listGalleryFromStorage();
+    const storageFound = items.find((item) => item.id === id) ?? null;
+
+    if (!storageFound) {
+      return null;
+    }
+
+    return scope === 'admin' || storageFound.published ? storageFound : null;
   }
 
   if (scope !== 'admin' && !found.published) {
@@ -1113,6 +1227,7 @@ export async function getGalleryMediaById(id: string, scope: 'public' | 'admin')
     title: found.title,
     description: found.description,
     type: found.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: found.source,
     thumbnail: found.thumbnail,
     mimeType: found.mimeType,
@@ -1126,11 +1241,35 @@ export async function createGalleryMedia(input: {
   title: string;
   description?: string | null;
   type: GalleryMediaType;
+  context?: string | null;
   source: string;
   thumbnail?: string | null;
   mimeType?: string | null;
   published: boolean;
 }) {
+  const galleryContext = normalizeGalleryContext(input.context);
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
+    const now = new Date().toISOString();
+    const created: GalleryMediaRecord = {
+      id: crypto.randomUUID(),
+      title: input.title.trim() || 'Sem título',
+      description: input.description ?? null,
+      type: normalizeGalleryType(input.type),
+      context: galleryContext,
+      source: input.source,
+      thumbnail: input.thumbnail ?? null,
+      mimeType: input.mimeType ?? null,
+      published: input.published,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const items = await listGalleryFromStorage();
+    await saveGalleryToStorage([created, ...items]);
+    return created;
+  }
+
   const prismaAny = prisma as unknown as {
     galleryMedia?: {
       create: (args: {
@@ -1165,6 +1304,7 @@ export async function createGalleryMedia(input: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
       type: normalizeGalleryType(input.type),
+      context: DEFAULT_GALLERY_CONTEXT,
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1195,6 +1335,7 @@ export async function createGalleryMedia(input: {
     title: created.title,
     description: created.description,
     type: created.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: created.source,
     thumbnail: created.thumbnail,
     mimeType: created.mimeType,
@@ -1210,12 +1351,41 @@ export async function updateGalleryMedia(
     title: string;
     description?: string | null;
     type: GalleryMediaType;
+    context?: string | null;
     source: string;
     thumbnail?: string | null;
     mimeType?: string | null;
     published: boolean;
   }
 ) {
+  const galleryContext = normalizeGalleryContext(input.context);
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
+    const items = await listGalleryFromStorage();
+    const index = items.findIndex((item) => item.id === id);
+
+    if (index < 0) {
+      return null;
+    }
+
+    const updated: GalleryMediaRecord = {
+      ...items[index],
+      title: input.title.trim() || 'Sem título',
+      description: input.description ?? null,
+      type: normalizeGalleryType(input.type),
+      context: galleryContext,
+      source: input.source,
+      thumbnail: input.thumbnail ?? null,
+      mimeType: input.mimeType ?? null,
+      published: input.published,
+      updatedAt: new Date().toISOString(),
+    };
+
+    items[index] = updated;
+    await saveGalleryToStorage(items);
+    return updated;
+  }
+
   const prismaAny = prisma as unknown as {
     galleryMedia?: {
       update: (args: {
@@ -1257,6 +1427,7 @@ export async function updateGalleryMedia(
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
       type: normalizeGalleryType(input.type),
+      context: DEFAULT_GALLERY_CONTEXT,
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1287,6 +1458,7 @@ export async function updateGalleryMedia(
     title: updated.title,
     description: updated.description,
     type: updated.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: updated.source,
     thumbnail: updated.thumbnail,
     mimeType: updated.mimeType,
@@ -1297,6 +1469,14 @@ export async function updateGalleryMedia(
 }
 
 export async function deleteGalleryMedia(id: string) {
+  const storageItems = await listGalleryFromStorage();
+  const storageFiltered = storageItems.filter((item) => item.id !== id);
+
+  if (storageFiltered.length !== storageItems.length) {
+    await saveGalleryToStorage(storageFiltered);
+    return true;
+  }
+
   const prismaAny = prisma as unknown as {
     galleryMedia?: {
       delete: (args: { where: { id: string } }) => Promise<unknown>;

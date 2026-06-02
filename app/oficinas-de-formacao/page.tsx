@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Oficinas de formação | CEISCaramulo',
@@ -11,11 +13,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function OficinasDeFormacaoPage() {
+export default async function OficinasDeFormacaoPage() {
+  const layout = await getPublicSiteLayoutSettings();
+
   return (
     <InstitutionalProgrammePage
-      title="Oficinas de formação"
-      description="Informação sobre oficinas, ações formativas e momentos de aprendizagem promovidos pelo CEISCaramulo."
+      title={layout.pages.oficinasDeFormacao.title}
+      description={layout.pages.oficinasDeFormacao.description}
     />
   );
 }

@@ -5,7 +5,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'A Serra do Caramulo | CEISCaramulo',
@@ -52,7 +53,7 @@ export default async function SerraDoCaramuloPage() {
               {layout.pages.serra.title}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Consulte o documento geológico da Serra do Caramulo diretamente nesta página, com leitura integrada dentro da área de conteúdo.
+              {layout.pages.serra.description}
             </p>
           </div>
 

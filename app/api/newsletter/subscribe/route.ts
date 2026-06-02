@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   let parsed: z.infer<typeof bodySchema>;
   try {
-    const unknown = await request.json();
+    const unknown = await readNewsletterPayload(request);
     parsed = bodySchema.parse(unknown);
   } catch {
     return Response.json({ ok: false, message: 'Corpo inválido. Envia apenas { "email": "..." } com um email válido.' }, {
@@ -54,6 +54,17 @@ export async function POST(request: Request) {
     ok: true,
     message: 'Pedido registado com sucesso. Obrigado pelo interesse na newsletter.',
   });
+}
+
+async function readNewsletterPayload(request: Request) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+    const formData = await request.formData();
+    return { email: formData.get('email') || formData.get('newsletter-email') };
+  }
+
+  return request.json();
 }
 
 function isNewsletterPersistenceReady(): boolean {

@@ -62,21 +62,25 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
         <div
           className={cn(
-            'mx-auto max-w-[96rem] rounded-full border border-white/35 bg-white/90 px-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-8',
+            'mx-auto max-w-[96rem] rounded-full border border-white/35 bg-white/90 px-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-10',
             isShrunk ? 'py-3' : 'py-4'
           )}
         >
-          <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-10 sm:h-11' : 'h-14 sm:h-16')} />
+          <div className="flex items-center justify-between gap-8">
+            <Link
+              href="/"
+              className="flex items-center gap-3 text-foreground transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3e5c32]/35 active:filter active:brightness-95"
+              aria-label="CEISCaramulo - Página inicial"
+            >
+              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-12 sm:h-14' : 'h-16 sm:h-20')} />
             </Link>
 
-            <nav className="hidden min-w-0 items-center gap-2 xl:flex 2xl:gap-3" aria-label="Navegação principal da homepage">
+            <nav className="hidden min-w-0 flex-1 items-center justify-between gap-4 xl:flex 2xl:gap-6" aria-label="Navegação principal da homepage">
               {navigationItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.03em] text-foreground transition-colors hover:text-[#0f4c36] 2xl:text-[11px] 2xl:tracking-[0.06em]"
+                  className="whitespace-nowrap px-2 text-[10px] font-semibold uppercase tracking-[0.03em] text-foreground transition-colors hover:text-[#0f4c36] 2xl:px-3 2xl:text-[11px] 2xl:tracking-[0.06em]"
                 >
                   {item.label}
                 </Link>

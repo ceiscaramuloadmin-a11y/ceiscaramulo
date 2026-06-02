@@ -6,16 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Instagram, Youtube } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
 import NewsletterSignup from '@/components/NewsletterSignup';
-import { contactInfo } from '@/data/site';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
-
-const socialLinks = [
-  { label: 'Facebook', href: contactInfo.socialMedia.facebook },
-  { label: 'LinkedIn', href: contactInfo.socialMedia.linkedin },
-  { label: 'YouTube', href: contactInfo.socialMedia.youtube },
-  { label: 'Instagram', href: contactInfo.socialMedia.instagram },
-].filter((item): item is { label: string; href: string } => Boolean(item.href));
 
 const SocialIcon = ({ label }: { label: string }) => {
   if (label === 'Facebook') {
@@ -46,6 +38,14 @@ const Footer: React.FC = () => {
   const pathname = usePathname();
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
   const footerColumns = getPublicFooterColumns(layoutSettings);
+  const footerContact = layoutSettings.footer.contactInfo;
+  const socialLinks = [
+    { label: 'Facebook', href: footerContact.socialMedia.facebook },
+    { label: 'LinkedIn', href: footerContact.socialMedia.linkedin },
+    { label: 'YouTube', href: footerContact.socialMedia.youtube },
+    { label: 'Instagram', href: footerContact.socialMedia.instagram },
+  ].filter((item): item is { label: string; href: string } => Boolean(item.href));
+  const footerAddress = [footerContact.address, footerContact.postalCode, footerContact.city].filter(Boolean).join(', ');
 
   useEffect(() => {
     let mounted = true;
@@ -81,7 +81,7 @@ const Footer: React.FC = () => {
         <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-5">
           <div className="space-y-4">
             <Link href="/" className="inline-flex items-center" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName="h-14 w-auto" />
+              <SiteLogo imageClassName="h-20 w-auto sm:h-24" />
             </Link>
             <p className="max-w-xs text-sm leading-[1.7] text-stone-500">
               {layoutSettings.footer.brandDescription}
@@ -112,6 +112,19 @@ const Footer: React.FC = () => {
 
           <div>
             <h3 className="text-sm font-bold text-[#3e5c32]">{layoutSettings.footer.socialTitle}</h3>
+            <div className="mt-6 grid gap-3 text-sm text-stone-500">
+              {footerAddress ? <p>{footerAddress}</p> : null}
+              {footerContact.phone ? (
+                <a className="underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline" href={`tel:${footerContact.phone.replace(/\s+/g, '')}`}>
+                  {footerContact.phone}
+                </a>
+              ) : null}
+              {footerContact.email ? (
+                <a className="underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline" href={`mailto:${footerContact.email}`}>
+                  {footerContact.email}
+                </a>
+              ) : null}
+            </div>
             <div className="mt-6 flex flex-wrap gap-3">
               {socialLinks.map((item) => (
                 <a
