@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   appendAuditLog,
   deleteGalleryMedia,
+  fileToDataUrl,
   getGalleryMediaById,
   jsonError,
   requireAdminContextFromRequest,
@@ -13,6 +14,7 @@ import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@
 import type { GalleryMediaType } from '@/types';
 
 export const runtime = 'nodejs';
+const DEFAULT_GALLERY_CONTEXT = 'global';
 
 function normalizeType(value: unknown): GalleryMediaType {
   return value === 'video' || value === 'audio' ? value : 'photo';
@@ -93,9 +95,16 @@ export async function PUT(
       return jsonError(getInlineAudioUploadErrorMessage(), 413);
     }
 
-    const source = sourceFile ? await storeUploadedFile(sourceFile, `gallery-${galleryContext}`) : sourceUrl || current.source;
+    const storesInline = galleryContext !== DEFAULT_GALLERY_CONTEXT;
+    const source = sourceFile
+      ? storesInline
+        ? await fileToDataUrl(sourceFile)
+        : await storeUploadedFile(sourceFile, `gallery-${galleryContext}`)
+      : sourceUrl || current.source;
     const thumbnail = thumbnailFile
-      ? await storeUploadedFile(thumbnailFile, `gallery-${galleryContext}-thumbs`)
+      ? storesInline
+        ? await fileToDataUrl(thumbnailFile)
+        : await storeUploadedFile(thumbnailFile, `gallery-${galleryContext}-thumbs`)
       : thumbnailUrl || current.thumbnail || null;
 
     if (!title) {

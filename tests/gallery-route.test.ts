@@ -7,18 +7,24 @@ import { resolve } from 'node:path';
 const requireAdminContextFromRequest = vi.fn();
 const jsonError = vi.fn((message: string, status = 400) => Response.json({ message }, { status }));
 const storeUploadedFile = vi.fn();
+const fileToDataUrl = vi.fn();
 const createGalleryMedia = vi.fn();
+const getGalleryMediaById = vi.fn();
 const listGalleryMedia = vi.fn();
+const updateGalleryMedia = vi.fn();
 const cmsSource = readFileSync(resolve(process.cwd(), 'app/api/_lib/cms.ts'), 'utf8');
 
 vi.mock('@/app/api/_lib/cms', () => ({
   appendAuditLog: vi.fn(),
   createGalleryMedia,
+  fileToDataUrl,
+  getGalleryMediaById,
   jsonError,
   listGalleryMedia,
   requireAdminContextFromRequest,
   requireAdminFromRequest: vi.fn(),
   storeUploadedFile,
+  updateGalleryMedia,
 }));
 
 describe('gallery route', () => {
@@ -70,14 +76,14 @@ describe('gallery route', () => {
     expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus');
   });
 
-  it('stores new media in the submitted gallery context', async () => {
-    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png');
+  it('stores programme gallery uploads inline to avoid production filesystem errors', async () => {
+    fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,eA==');
     createGalleryMedia.mockResolvedValueOnce({
       id: 'media-1',
       title: 'Foto',
       type: 'photo',
       context: 'escola-dos-nossos-avos',
-      source: '/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png',
+      source: 'data:image/png;base64,eA==',
       published: true,
     });
 
@@ -100,9 +106,88 @@ describe('gallery route', () => {
       context: 'escola-dos-nossos-avos',
       title: 'Foto',
       type: 'photo',
-      source: '/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png',
+      source: 'data:image/png;base64,eA==',
     }));
-    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-escola-dos-nossos-avos');
+    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
+    expect(storeUploadedFile).not.toHaveBeenCalled();
+  });
+
+  it('stores global gallery uploads as public files', async () => {
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-global/foto.png');
+    createGalleryMedia.mockResolvedValueOnce({
+      id: 'media-global',
+      title: 'Foto global',
+      type: 'photo',
+      context: 'global',
+      source: '/uploads/backoffice/gallery-global/foto.png',
+      published: true,
+    });
+
+    const { POST } = await import('@/app/api/gallery/route');
+    const formData = new FormData();
+    formData.append('title', 'Foto global');
+    formData.append('type', 'photo');
+    formData.append('published', 'true');
+    formData.append('sourceFile', new File(['x'], 'foto.png', { type: 'image/png' }));
+
+    const request = new Request('http://localhost/api/gallery', {
+      method: 'POST',
+      body: formData,
+    });
+
+    await POST(request as never);
+
+    expect(createGalleryMedia).toHaveBeenCalledWith(expect.objectContaining({
+      context: 'global',
+      source: '/uploads/backoffice/gallery-global/foto.png',
+    }));
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-global');
+    expect(fileToDataUrl).not.toHaveBeenCalled();
+  });
+
+  it('stores programme gallery replacement uploads inline', async () => {
+    getGalleryMediaById.mockResolvedValueOnce({
+      id: 'pon-1',
+      title: 'Foto antiga',
+      description: null,
+      type: 'photo',
+      context: 'pon-do-jueus',
+      source: 'data:image/png;base64,old',
+      thumbnail: null,
+      mimeType: 'image/png',
+      published: true,
+    });
+    fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,new');
+    updateGalleryMedia.mockResolvedValueOnce({
+      id: 'pon-1',
+      title: 'Foto nova',
+      type: 'photo',
+      context: 'pon-do-jueus',
+      source: 'data:image/png;base64,new',
+      published: true,
+    });
+
+    const { PUT } = await import('@/app/api/gallery/[id]/route');
+    const formData = new FormData();
+    formData.append('title', 'Foto nova');
+    formData.append('type', 'photo');
+    formData.append('context', 'pon-do-jueus');
+    formData.append('published', 'true');
+    formData.append('sourceFile', new File(['x'], 'foto.png', { type: 'image/png' }));
+
+    const request = new Request('http://localhost/api/gallery/pon-1', {
+      method: 'PUT',
+      body: formData,
+    });
+
+    await PUT(request as never, { params: Promise.resolve({ id: 'pon-1' }) });
+
+    expect(updateGalleryMedia).toHaveBeenCalledWith('pon-1', expect.objectContaining({
+      context: 'pon-do-jueus',
+      source: 'data:image/png;base64,new',
+    }));
+    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
+    expect(storeUploadedFile).not.toHaveBeenCalled();
   });
 
   it('allows creating gallery media without a source URL or uploaded file', async () => {
