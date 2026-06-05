@@ -168,7 +168,7 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
             <Button asChild variant="ghost" className="mb-6">
               <Link href="/biblioteca" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                Voltar à Biblioteca
+                Voltar aos Recursos
               </Link>
             </Button>
 

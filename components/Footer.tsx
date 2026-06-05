@@ -83,9 +83,6 @@ const Footer: React.FC = () => {
             <Link href="/" className="inline-flex items-center" aria-label="CEISCaramulo - Página inicial">
               <SiteLogo imageClassName="h-20 w-auto sm:h-24" />
             </Link>
-            <p className="max-w-xs text-sm leading-[1.7] text-stone-500">
-              {layoutSettings.footer.brandDescription}
-            </p>
             <NewsletterSignup />
           </div>
 
@@ -111,7 +108,7 @@ const Footer: React.FC = () => {
           ))}
 
           <div>
-            <h3 className="text-sm font-bold text-[#3e5c32]">{layoutSettings.footer.socialTitle}</h3>
+            <h3 className="text-sm font-bold text-[#3e5c32]">Contactos</h3>
             <div className="mt-6 grid gap-3 text-sm text-stone-500">
               {footerAddress ? <p>{footerAddress}</p> : null}
               {footerContact.phone ? (
@@ -125,6 +122,10 @@ const Footer: React.FC = () => {
                 </a>
               ) : null}
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-[#3e5c32]">{layoutSettings.footer.socialTitle}</h3>
             <div className="mt-6 flex flex-wrap gap-3">
               {socialLinks.map((item) => (
                 <a

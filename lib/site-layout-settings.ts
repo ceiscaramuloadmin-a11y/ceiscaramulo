@@ -6,8 +6,7 @@ const SITE_LAYOUT_RETRY_DELAY_MS = 5 * 60 * 1000;
 export const PUBLIC_HERO_IMAGE_ROUTE = '/api/layout/hero-image';
 const OLD_FOOTER_BRAND_DESCRIPTION =
   'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.';
-const REQUESTED_FOOTER_BRAND_DESCRIPTION =
-  'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo';
+const REQUESTED_FOOTER_BRAND_DESCRIPTION = '';
 
 let siteLayoutRetryAfter = 0;
 

@@ -11,6 +11,12 @@ vi.mock('@/lib/auth0', () => ({
 }));
 
 describe('auth middleware', () => {
+  it('runs the Auth0 middleware on the Node.js runtime', async () => {
+    const middlewareModule = await import('@/middleware');
+
+    expect(middlewareModule.runtime).toBe('nodejs');
+  });
+
   it('forwards the request through the Auth0 middleware', async () => {
     const response = new Response(null, { status: 204 });
     middlewareMock.mockResolvedValue(response);

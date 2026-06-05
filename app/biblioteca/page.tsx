@@ -21,11 +21,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Biblioteca | CEISCaramulo',
+  title: 'Recursos | CEISCaramulo',
   description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
   keywords: ['biblioteca', 'CEISCaramulo', 'Serra do Caramulo', 'publicações', 'livros', 'artigos'],
   openGraph: {
-    title: 'Biblioteca | CEISCaramulo',
+    title: 'Recursos | CEISCaramulo',
     description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
     url: 'https://ceiscaramulo.pt/biblioteca',
     siteName: 'CEISCaramulo',
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
         url: '/og-image.svg',
         width: 1200,
         height: 630,
-        alt: 'Biblioteca - CEISCaramulo',
+        alt: 'Recursos - CEISCaramulo',
       },
     ],
     locale: 'pt_PT',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Biblioteca | CEISCaramulo',
+    title: 'Recursos | CEISCaramulo',
     description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
     images: ['/og-image.svg'],
   },

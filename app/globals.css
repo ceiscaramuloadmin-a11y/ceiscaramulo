@@ -195,3 +195,20 @@ h2,
 .rich-text-content blockquote {
   @apply border-l-4 border-primary/30 pl-4 italic text-muted-foreground;
 }
+
+.rich-text-editor ul,
+.rich-text-editor ol {
+  @apply my-3 pl-6;
+}
+
+.rich-text-editor ul {
+  @apply list-disc;
+}
+
+.rich-text-editor ol {
+  @apply list-decimal;
+}
+
+.rich-text-editor li {
+  @apply my-1;
+}

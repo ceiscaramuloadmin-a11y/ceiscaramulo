@@ -51,9 +51,9 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
   );
   const firstEntryDate = sortedEntries[0] ? getEntryDate(sortedEntries[0]) : new Date();
   const lastEntryDate = sortedEntries.at(-1) ? getEntryDate(sortedEntries.at(-1)!) : firstEntryDate;
-  const [visibleMonth, setVisibleMonth] = useState(
-    () => getMonthStart(firstEntryDate)
-  );
+  // O calendário abre sempre no mês real do visitante. As datas extremas
+  // continuam acessíveis pelos atalhos, sem fazer um evento antigo parecer atual.
+  const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(new Date()));
 
   const eventsByDay = useMemo(() => {
     const map = new Map<number, ActivityCalendarEntry[]>();

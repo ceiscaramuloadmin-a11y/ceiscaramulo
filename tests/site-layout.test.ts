@@ -22,9 +22,14 @@ describe('site-layout', () => {
     expect(footerLinks.map((link) => link.href)).not.toContain('/backoffice/login');
   });
 
-  it('uses the requested footer mission text by default', () => {
-    expect(defaultSiteLayoutSettings.footer.brandDescription).toBe(
-      'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo'
+  it('does not place a long administrative mission paragraph below the footer logo', () => {
+    expect(defaultSiteLayoutSettings.footer.brandDescription).toBe('');
+  });
+
+  it('labels the public resource area consistently', () => {
+    expect(defaultSiteLayoutSettings.pages.biblioteca.title).toBe('Recursos');
+    expect(defaultSiteLayoutSettings.home.explore.links).toContainEqual(
+      expect.objectContaining({ label: 'Recursos', href: '/biblioteca' })
     );
   });
 

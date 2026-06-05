@@ -43,7 +43,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
         { label: 'Sobre Nós', href: '/sobre-nos', title: 'Sobre Nós', description: 'Conheça a nossa missão e equipa', icon: 'Users' },
         { label: 'Atividades', href: '/atividades', title: 'Atividades', description: 'Caminhadas, workshops e eventos', icon: 'Calendar' },
         { label: 'Notícias', href: '/noticias', title: 'Notícias', description: 'Últimas novidades da associação', icon: 'Newspaper' },
-        { label: 'Conteúdos e Recursos', href: '/biblioteca', title: 'Conteúdos e Recursos', description: 'Biblioteca e documentos públicos', icon: 'BookOpen' },
+        { label: 'Recursos', href: '/biblioteca', title: 'Recursos', description: 'Publicações e documentos públicos', icon: 'BookOpen' },
         { label: 'Galeria', href: '/galeria', title: 'Galeria', description: 'Fotografias e vídeos', icon: 'Camera' },
       ],
     },
@@ -75,7 +75,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       emptyMessage: 'Nenhum projeto disponível no momento.',
     },
     biblioteca: {
-      title: 'Biblioteca',
+      title: 'Recursos',
       description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
       emptyMessage: 'Nenhuma publicação disponível no momento.',
     },
@@ -158,7 +158,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       'O território é caracterizado por uma mistura de florestas autóctones, pastagens e formações rochosas graníticas, proporcionando habitats únicos para diversas espécies de flora e fauna. A região tem sido historicamente importante para a conservação da natureza e a investigação científica.',
   },
   footer: {
-    brandDescription: 'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo',
+    brandDescription: '',
     contactInfo: {
       address: contactInfo.address,
       postalCode: contactInfo.postalCode,
@@ -174,12 +174,12 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     },
     columns: [
       {
-        title: 'Institucional',
+        title: 'Conhecer',
         links: [
           { label: 'Sobre Nós', href: '/sobre-nos' },
           { label: 'Atividades', href: '/atividades' },
           { label: 'Notícias', href: '/noticias' },
-          { label: 'Conteúdos e Recursos', href: '/biblioteca' },
+          { label: 'Recursos', href: '/biblioteca' },
         ],
       },
       {

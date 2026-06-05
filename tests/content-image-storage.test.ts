@@ -17,6 +17,12 @@ describe('content image storage', () => {
     expect(cmsSource).toContain('coverImage: resolvedAsset');
   });
 
+  it('stores uploaded publication PDFs and keeps using the downloadUrl contract', () => {
+    expect(cmsSource).toContain("rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'");
+    expect(cmsSource).toContain("storeUploadedFile(documentFile, 'publications-documents')");
+    expect(cmsSource).toContain('downloadUrl: resolvedDownloadUrl');
+  });
+
   it('stores uploaded layout hero images as public upload files before saving settings', () => {
     expect(adminLayoutSource).toContain('normalizeHeroImageValue');
     expect(adminLayoutSource).toContain("normalized.startsWith('/uploads/')");

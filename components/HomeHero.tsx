@@ -9,6 +9,13 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import SiteLogo from '@/components/SiteLogo';
 import heroImage from '@/src/assets/hero-imgs/hero-img.webp';
 import heroImage2 from '@/src/assets/hero-imgs/hero-img2.webp';
+import heroCeis7860 from '@/src/assets/hero-imgs/hero-ceis-7860.webp';
+import heroCeis7902 from '@/src/assets/hero-imgs/hero-ceis-7902.webp';
+import heroPonJueus1 from '@/src/assets/hero-imgs/hero-pon-jueus-1.webp';
+import heroPonJueus2 from '@/src/assets/hero-imgs/hero-pon-jueus-2.webp';
+import heroEscolaAvos1 from '@/src/assets/hero-imgs/hero-escola-avos-1.webp';
+import heroEscolaAvos2 from '@/src/assets/hero-imgs/hero-escola-avos-2.webp';
+import heroEscolaAvos3 from '@/src/assets/hero-imgs/hero-escola-avos-3.webp';
 import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
 import type { NavItem, SiteLayoutSettings } from '@/types';
@@ -26,7 +33,19 @@ const NAV_OUTER_CLASSES =
 
 const HERO_SWIPER_INTERVAL_MS = 6000;
 
-const localHeroImages = [heroImage, heroImage2];
+// O carrossel reúne paisagem, espaços do CEIS e memória local para apresentar
+// a diversidade do trabalho da associação logo na entrada do website.
+const localHeroImages = [
+  heroImage,
+  heroImage2,
+  heroCeis7860,
+  heroCeis7902,
+  heroPonJueus1,
+  heroPonJueus2,
+  heroEscolaAvos1,
+  heroEscolaAvos2,
+  heroEscolaAvos3,
+];
 
 export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -58,7 +77,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const parallaxOffset = prefersReducedMotion ? 0 : Math.min(scrollY * 0.22, 120);
 
   return (
-    <section className="relative min-h-[870px] overflow-hidden">
+    <section className="relative min-h-[680px] overflow-hidden">
       <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
         <div
           className={cn(
@@ -157,10 +176,10 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
         <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
-      <div className="relative z-20 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
+      <div className="relative z-20 mx-auto flex min-h-[680px] max-w-6xl flex-col items-center justify-center px-4 pb-16 pt-28 text-center sm:px-6">
         <h1
-          className={`font-hero mt-6 text-[clamp(3.8rem,8vw,5.25rem)] font-bold leading-[0.9] text-white sm:text-[clamp(4.4rem,8vw,5.8rem)] md:text-[84px] ${
-            singleLineHeroTitle ? 'max-w-[20ch]' : 'max-w-[11ch]'
+          className={`font-hero mt-4 text-[clamp(3rem,6.5vw,5.1rem)] font-bold leading-[0.96] text-white ${
+            singleLineHeroTitle ? 'max-w-[24ch]' : 'max-w-[16ch]'
           }`}
         >
           {singleLineHeroTitle ? (

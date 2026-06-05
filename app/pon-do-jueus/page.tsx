@@ -27,9 +27,6 @@ export default async function PonDoJueusPage() {
       <section className="mt-10">
         <div className="mb-6">
           <h2 className="font-display text-3xl font-bold text-foreground">Conteúdos do PON do Jueus</h2>
-          <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground">
-            Fotografias, vídeos e áudios publicados no backoffice para documentar iniciativas e materiais associados ao PON do Jueus.
-          </p>
         </div>
         <GalleryTabs items={media} />
       </section>

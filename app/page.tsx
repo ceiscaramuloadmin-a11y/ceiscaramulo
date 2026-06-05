@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Footer from '@/components/Footer';
 import HomeHero from '@/components/HomeHero';
-import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCalendar';
 import { activities as fallbackActivities, newsArticles as fallbackNewsArticles } from '@/data/content';
 import { navigationItems } from '@/data/navigation';
 import { getActivitySlug } from '@/lib/public-content-slugs';
@@ -137,8 +136,8 @@ async function getPublicActivities() {
   try {
     const activities = await prisma.activity.findMany({
       where: { published: true },
-      orderBy: { date: 'asc' },
-      take: 3,
+      orderBy: { createdAt: 'desc' },
+      take: 6,
     });
     return activities.map((activity) => withPublicContentAsset('activities', activity));
   } catch (error) {
@@ -159,11 +158,6 @@ export default async function HomePage() {
   const newsArticles = await getPublicNews();
   const activities = await getPublicActivities();
   const layout = await getPublicSiteLayoutSettings();
-  const calendarEntries = activities.map((activity) => ({
-    startMs: new Date(activity.date).getTime(),
-    href: `/atividades/${getActivitySlug(activity)}`,
-    title: activity.title,
-  }));
   const hero = {
     ...layout.home.hero,
     imageUrl: '/hero-imgs/hero-img.webp',
@@ -173,11 +167,10 @@ export default async function HomePage() {
     <div className="bg-white text-foreground">
       <HomeHero hero={hero} navigationItems={navigationItems} />
 
-      <section className="px-4 py-24 sm:px-6">
+      <section className="px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Próximas</p>
               <h2 className="mt-2 font-display text-[2.25rem] font-bold leading-tight text-[#1a1a1a]">
                 Atividades
               </h2>
@@ -190,27 +183,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          {calendarEntries.length > 0 ? (
-            <section
-              aria-label="Calendário de atividades na página inicial"
-              className="mt-12 border-y border-[#f1f3f5] py-10"
-            >
-              <div className="grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(20rem,1fr)] lg:items-start">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Agenda</p>
-                  <h3 className="mt-2 font-display text-[1.75rem] font-bold leading-tight text-[#1a1a1a]">
-                    Datas no calendário
-                  </h3>
-                  <p className="mt-4 max-w-md text-sm leading-[1.65] text-[#666]">
-                    Os dias destacados têm atividades publicadas e abrem diretamente a respetiva ficha.
-                  </p>
-                </div>
-                <ActivitiesMonthCalendar entries={calendarEntries} />
-              </div>
-            </section>
-          ) : null}
-
-          <div className="mt-12 grid gap-8 lg:grid-cols-3">
+          <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {activities.map((activity) => (
               <Link
                 key={activity.id}

@@ -79,9 +79,9 @@ describe('HomeHero image', () => {
 
     expect(screen.getByTestId('hero-swiper')).toBeInTheDocument();
     expect(screen.getByTestId('hero-swiper')).toHaveClass('z-0');
-    expect(screen.getAllByTestId('hero-swiper-slide')).toHaveLength(2);
+    expect(screen.getAllByTestId('hero-swiper-slide')).toHaveLength(9);
     expect(screen.queryByText('Texto')).toBeNull();
-    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(2);
+    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(9);
     expect(document.querySelectorAll('.z-10.bg-\\[\\#27441d\\]\\/35')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /imagem seguinte/i })).toBeNull();
@@ -98,7 +98,7 @@ describe('HomeHero image', () => {
     );
 
     expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
-    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(2);
+    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(9);
   });
 
   it('shrinks the sticky hero navigation after scrolling', async () => {

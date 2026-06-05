@@ -46,7 +46,7 @@ const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = 
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
-  { id: 'publications', label: 'Biblioteca' },
+  { id: 'publications', label: 'Recursos' },
   { id: 'contacts', label: 'Contactos' },
   { id: 'gallery', label: 'Galeria' },
   { id: 'layout', label: 'Layout' },
@@ -59,22 +59,16 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
-  { id: 'publications', label: 'Biblioteca' },
-  { id: 'contacts', label: 'Contactos' },
+  { id: 'publications', label: 'Recursos' },
   { id: 'gallery', label: 'Galeria' },
   { id: 'gallery-pon-do-jueus', label: 'PON do Jueus' },
   { id: 'gallery-escola-dos-nossos-avos', label: 'Escola dos Nossos Avós' },
   { id: 'gallery-oficinas-de-formacao', label: 'Oficinas de formação' },
-  { id: 'admins', label: 'Admins' },
-  { id: 'audit', label: 'Auditoria' },
   { id: 'layout', label: 'Aparência' },
+  { id: 'admins', label: 'Admins' },
+  { id: 'contacts', label: 'Contactos' },
+  { id: 'audit', label: 'Auditoria' },
 ];
-
-function sortBackofficeNavItems(items: Array<{ id: SectionId; label: string }>) {
-  return [...items].sort((a, b) =>
-    a.label.localeCompare(b.label, 'pt-PT', { sensitivity: 'base' })
-  );
-}
 
 const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
   { id: 'hero', label: 'Hero' },
@@ -88,7 +82,7 @@ const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
 
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
-  { id: 'biblioteca', label: 'Biblioteca', hasEmptyMessage: true },
+  { id: 'biblioteca', label: 'Recursos', hasEmptyMessage: true },
   { id: 'bibliotecaJrs', label: 'Biblioteca JRS' },
   { id: 'contactos', label: 'Contactos' },
   { id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' },
@@ -165,7 +159,7 @@ export default function BackofficePage() {
   const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null as File | null, removeImage: false });
   const [projectForm, setProjectForm] = useState({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null as File | null, removeImage: false });
-  const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null as File | null, removeImage: false });
+  const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null as File | null, published: true, coverImageFile: null as File | null, removeImage: false });
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
     title: '',
@@ -582,7 +576,7 @@ export default function BackofficePage() {
     if (activeSection === 'news') setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
     if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false });
     if (activeSection === 'projects') setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false });
-    if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false });
+    if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false });
   }
 
   async function saveSection(section: ContentSection, formData: FormData) {
@@ -1066,6 +1060,7 @@ export default function BackofficePage() {
     fd.append('published', String(publicationForm.published));
     fd.append('removeImage', String(publicationForm.removeImage));
     if (publicationForm.coverImageFile) fd.append('coverImage', publicationForm.coverImageFile);
+    if (publicationForm.documentFile) fd.append('document', publicationForm.documentFile);
     await saveSection('publications', fd);
   }
 
@@ -1087,7 +1082,7 @@ export default function BackofficePage() {
     }
     if (section === 'publications') {
       const v = item as Publication;
-      setPublicationForm({ title: v.title || '', author: v.author || '', year: String(v.year || new Date().getFullYear()), type: v.type || 'documento', description: v.description || '', downloadUrl: v.downloadUrl || '', published: v.published, coverImageFile: null, removeImage: false });
+      setPublicationForm({ title: v.title || '', author: v.author || '', year: String(v.year || new Date().getFullYear()), type: v.type || 'documento', description: v.description || '', downloadUrl: v.downloadUrl || '', documentFile: null, published: v.published, coverImageFile: null, removeImage: false });
     }
   }
 
@@ -1120,9 +1115,7 @@ export default function BackofficePage() {
         </div>
 
         <nav className="mt-6 grid gap-2" aria-label="Secções do backoffice">
-          {sortBackofficeNavItems(
-            BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id))
-          ).map((item) => (
+          {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id)).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -1184,7 +1177,7 @@ export default function BackofficePage() {
             <Card title="Notícias" value={stats.news} loading={isLoadingContent} />
             <Card title="Atividades" value={stats.activities} loading={isLoadingContent} />
             <Card title="Projetos" value={stats.projects} loading={isLoadingContent} />
-            <Card title="Biblioteca" value={stats.publications} loading={isLoadingContent} />
+            <Card title="Recursos" value={stats.publications} loading={isLoadingContent} />
             <Card title="Contactos" value={stats.contacts} loading={isLoadingContacts} />
             <Card title="Galeria" value={stats.gallery} loading={isLoadingGallery} />
           </div>
@@ -1278,14 +1271,14 @@ export default function BackofficePage() {
 
       {activeSection === 'publications' ? (
         <SectionLayout
-          title="Biblioteca"
+          title="Recursos"
           list={publications}
           loading={isLoadingContent}
           busy={busy}
-          onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false }); }}
+          onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar publicação')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 

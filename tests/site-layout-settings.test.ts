@@ -79,8 +79,6 @@ describe('public site layout settings', () => {
     const { getPublicSiteLayoutSettings } = await import('@/lib/site-layout-settings');
     const settings = await getPublicSiteLayoutSettings();
 
-    expect(settings.footer.brandDescription).toBe(
-      'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo'
-    );
+    expect(settings.footer.brandDescription).toBe('');
   });
 });

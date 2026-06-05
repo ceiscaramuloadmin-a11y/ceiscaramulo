@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 describe('ActivitiesMonthCalendar', () => {
-  it('renders the first activity month and opens the matching activity when its day is clicked', () => {
+  it('opens on the current month and can navigate to an activity month', () => {
     render(
       <ActivitiesMonthCalendar
         entries={[
@@ -29,6 +29,10 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
+    expect(
+      screen.getByText(new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }))
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/fevereiro de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /15: Caminhada no Caramulo/i }));
@@ -49,7 +53,7 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '10' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '10' })[0]);
 
     expect(push).not.toHaveBeenCalled();
   });
@@ -72,6 +76,10 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
+    expect(
+      screen.getByText(new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }))
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/janeiro de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Última data/i }));
@@ -99,6 +107,7 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
+    fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/fevereiro de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Mês anterior/i }));

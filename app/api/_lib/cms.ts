@@ -65,8 +65,7 @@ const GALLERY_MEDIA_STORAGE_KEY = 'gallery_media_items';
 const DEFAULT_GALLERY_CONTEXT = 'global';
 const OLD_FOOTER_BRAND_DESCRIPTION =
   'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.';
-const REQUESTED_FOOTER_BRAND_DESCRIPTION =
-  'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo';
+const REQUESTED_FOOTER_BRAND_DESCRIPTION = '';
 
 // Configuração transversal por secção.
 export const sectionConfig: Record<ContentSection, SectionConfig> = {
@@ -77,7 +76,7 @@ export const sectionConfig: Record<ContentSection, SectionConfig> = {
     uploadField: 'image',
   },
   activities: {
-    listOrder: { date: 'asc' },
+    listOrder: { createdAt: 'desc' },
     publicWhere: { published: true },
     findUnique: (identifier) => ({ id: identifier }),
     uploadField: 'image',
@@ -961,13 +960,26 @@ export async function parseSectionFormData(
     };
   }
 
+  const rawDocument = formData.get('document');
+  const documentFile =
+    rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'
+      ? rawDocument
+      : null;
+  const currentDownloadUrl = currentItem?.downloadUrl as string | null | undefined;
+
+  // Os PDFs usam o mesmo armazenamento público já utilizado pelas capas.
+  // Assim, o contrato existente de `downloadUrl` continua válido no frontend.
+  const resolvedDownloadUrl = documentFile
+    ? await storeUploadedFile(documentFile, 'publications-documents')
+    : emptyToNull(formData.get('downloadUrl')) ?? currentDownloadUrl ?? null;
+
   return {
     title: String(formData.get('title') || ''),
     author: String(formData.get('author') || ''),
     year: Number(formData.get('year')),
     type: String(formData.get('type') || ''),
     description: String(formData.get('description') || ''),
-    downloadUrl: emptyToNull(formData.get('downloadUrl')),
+    downloadUrl: resolvedDownloadUrl,
     published: booleanFromForm(formData.get('published')),
     coverImage: resolvedAsset,
   };
