@@ -45,9 +45,6 @@ export default function InstitutionalProgrammePage({
                   Contactar o CEISCaramulo
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link href="/biblioteca">Consultar biblioteca</Link>
-              </Button>
             </div>
           </div>
           {children}

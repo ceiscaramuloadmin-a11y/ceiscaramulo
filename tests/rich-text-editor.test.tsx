@@ -57,4 +57,56 @@ describe('RichTextEditor', () => {
 
     expect(execCommand).toHaveBeenCalledWith('createLink', false, 'https://ceiscaramulo.pt');
   });
+
+  it('falls back to semantic list html when the browser list command does not change the editor', () => {
+    const execCommand = vi.fn((command: string) => command === 'insertUnorderedList' || command === 'insertOrderedList');
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    render(<RichTextEditor label="Descrição" value="<p>Texto</p>" onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lista' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lista numerada' }));
+
+    const editor = document.querySelector('.rich-text-editor');
+
+    expect(execCommand).toHaveBeenCalledWith('insertUnorderedList', false, undefined);
+    expect(execCommand).toHaveBeenCalledWith('insertOrderedList', false, undefined);
+    expect(editor?.querySelector('ul > li')?.textContent).toBe('Novo item');
+    expect(editor?.querySelector('ol > li')?.textContent).toBe('Novo item');
+  });
+
+  it('keeps list buttons safe when execCommand is unavailable', () => {
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: undefined,
+    });
+
+    render(<RichTextEditor label="Descrição" value="<p>Texto</p>" onChange={vi.fn()} />);
+
+    expect(() => fireEvent.click(screen.getByRole('button', { name: 'Lista' }))).not.toThrow();
+    expect(() => fireEvent.click(screen.getByRole('button', { name: 'Lista numerada' }))).not.toThrow();
+
+    const editor = document.querySelector('.rich-text-editor');
+
+    expect(editor?.querySelector('ul > li')?.textContent).toBe('Novo item');
+    expect(editor?.querySelector('ol > li')?.textContent).toBe('Novo item');
+  });
+
+  it('keeps unordered and ordered lists visible inside the editable area', () => {
+    render(
+      <RichTextEditor
+        label="Descrição"
+        value="<ul><li>Ponto</li></ul><ol><li>Número</li></ol>"
+        onChange={vi.fn()}
+      />
+    );
+
+    const editor = document.querySelector('.rich-text-editor');
+
+    expect(editor?.querySelector('ul')).not.toBeNull();
+    expect(editor?.querySelector('ol')).not.toBeNull();
+  });
 });

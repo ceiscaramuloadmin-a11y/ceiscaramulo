@@ -36,12 +36,19 @@ describe('backoffice news and gallery guards', () => {
     expect(backofficePageSource).toContain('Marcar como não lida');
   });
 
-  it('sorts the backoffice navigation alphabetically for Portuguese labels', () => {
-    expect(backofficePageSource).toContain('function sortBackofficeNavItems');
-    expect(backofficePageSource).toContain("localeCompare(b.label, 'pt-PT'");
-    expect(backofficePageSource).toContain("sensitivity: 'base'");
-    expect(backofficePageSource).toContain('sortBackofficeNavItems(');
+  it('keeps the requested administrative menu order with contacts and audit last', () => {
+    expect(backofficePageSource).not.toContain('function sortBackofficeNavItems');
     expect(backofficePageSource).toContain('BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id))');
+    expect(backofficePageSource.indexOf("{ id: 'contacts', label: 'Contactos' }")).toBeLessThan(
+      backofficePageSource.indexOf("{ id: 'audit', label: 'Auditoria' }")
+    );
+    expect(backofficePageSource).toContain("{ id: 'publications', label: 'Recursos' }");
+  });
+
+  it('allows PDF attachments in the resources form', () => {
+    expect(backofficePageSource).toContain('label="Documento PDF"');
+    expect(backofficePageSource).toContain('accept="application/pdf"');
+    expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
   });
 
   it('keeps the news slug field hidden from the backoffice form flow', () => {

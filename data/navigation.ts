@@ -8,5 +8,5 @@ export const navigationItems: NavItem[] = [
   { label: 'Biblioteca JRS', href: '/biblioteca-jrs' },
   { label: 'Oficinas de formação', href: '/oficinas-de-formacao' },
   { label: 'Publicações', href: '/publicacoes' },
-  { label: 'Conteúdos e Recursos', href: '/biblioteca' },
+  { label: 'Recursos', href: '/biblioteca' },
 ];

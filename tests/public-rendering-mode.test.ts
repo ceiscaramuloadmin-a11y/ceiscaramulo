@@ -56,7 +56,15 @@ describe('public rendering mode', () => {
   it('keeps export mode out of development and clears stale chunks before next dev', () => {
     expect(nextConfigSource).toContain("process.env.NODE_ENV === 'production'");
     expect(nextConfigSource).toContain("process.env.NEXT_OUTPUT_MODE === 'export'");
-    expect(packageJson.scripts?.predev).toBe('rm -rf .next');
+    expect(packageJson.scripts?.predev).toContain("rmSync('.next',{recursive:true,force:true})");
     expect(packageJson.scripts?.dev).toBe('next dev');
+  });
+
+  it('keeps Auth0 middleware on the Node.js runtime', () => {
+    expect(readAppFile('middleware.ts')).toContain("export const runtime = 'nodejs';");
+  });
+
+  it('pins output tracing to this Next.js project root', () => {
+    expect(nextConfigSource).toContain('outputFileTracingRoot: __dirname');
   });
 });

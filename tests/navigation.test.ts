@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { navigationItems } from '@/data/navigation';
 
 describe('public navigation', () => {
-  it('removes the dedicated Serra navbar entry and merges library + gallery into Conteúdos e Recursos', () => {
+  it('labels the public resource area consistently', () => {
     const hrefs = navigationItems.map((item) => item.href);
     expect(hrefs).not.toContain('/serra-do-caramulo');
     expect(hrefs).not.toContain('/galeria');
-    expect(navigationItems.some((item) => item.label === 'Conteúdos e Recursos' && item.href === '/biblioteca')).toBe(true);
+    expect(navigationItems.some((item) => item.label === 'Recursos' && item.href === '/biblioteca')).toBe(true);
+    expect(navigationItems.some((item) => item.label === 'Conteúdos e Recursos')).toBe(false);
   });
 
   it('omits activities, news, and contacts from the navbar tabs', () => {

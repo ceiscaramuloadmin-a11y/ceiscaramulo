@@ -64,6 +64,7 @@ describe('institutional pages', () => {
     expect(escolaDosNossosAvosPageSource).toContain("listGalleryMedia('public', 'escola-dos-nossos-avos')");
     expect(escolaDosNossosAvosPageSource).toContain('<GalleryTabs items={media} />');
     expect(escolaDosNossosAvosPageSource).toContain('Conteúdos da Escola dos Nossos Avós');
+    expect(escolaDosNossosAvosPageSource).not.toContain('publicados no backoffice');
     expect(institutionalProgrammePageSource).toContain('children?: React.ReactNode');
     expect(institutionalProgrammePageSource).toContain('{children}');
   });

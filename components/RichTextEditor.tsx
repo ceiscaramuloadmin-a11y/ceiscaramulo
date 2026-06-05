@@ -83,7 +83,32 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
   const runCommand = (command: string, commandValue?: string) => {
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand(command, false, commandValue);
+    execEditorCommand(command, commandValue);
+    syncContent();
+  };
+
+  const runListCommand = (ordered: boolean) => {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const expectedTag = ordered ? 'OL' : 'UL';
+    const beforeHtml = editor.innerHTML;
+
+    editor.focus();
+    restoreSelection();
+    const command = ordered ? 'insertOrderedList' : 'insertUnorderedList';
+    execEditorCommand(command);
+
+    const listWasCreated = editor.innerHTML !== beforeHtml && !!editor.querySelector(expectedTag.toLowerCase());
+
+    if (!listWasCreated) {
+      const listHtml = buildListHtmlFromCurrentSelection(ordered);
+      insertListHtml(listHtml);
+    }
+
     syncContent();
   };
 
@@ -113,7 +138,7 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
 
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand('insertHTML', false, embedHtml);
+    execEditorCommand('insertHTML', embedHtml);
     syncContent();
   };
 
@@ -129,7 +154,7 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
 
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand('insertHTML', false, htmlByKind[kind]);
+    execEditorCommand('insertHTML', htmlByKind[kind]);
     syncContent();
   };
 
@@ -150,7 +175,7 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
 
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand('insertHTML', false, sanitized);
+    execEditorCommand('insertHTML', sanitized);
     syncContent();
   };
 
@@ -163,8 +188,8 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
           <ToolbarButton label="Negrito" onClick={() => runCommand('bold')}><Bold className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Itálico" onClick={() => runCommand('italic')}><Italic className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Sublinhado" onClick={() => runCommand('underline')}><Underline className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Lista" onClick={() => runCommand('insertUnorderedList')}><List className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Lista numerada" onClick={() => runCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Lista" onClick={() => runListCommand(false)}><List className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Lista numerada" onClick={() => runListCommand(true)}><ListOrdered className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Link" onClick={insertLink}><LinkIcon className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Incorporar URL" onClick={insertEmbed}><Globe className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Desfazer" onClick={() => runCommand('undo')}><Undo2 className="h-4 w-4" /></ToolbarButton>
@@ -239,6 +264,86 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
     if (editorRef.current?.contains(range.commonAncestorContainer)) {
       selectionRef.current = range.cloneRange();
     }
+  }
+
+  function execEditorCommand(command: string, commandValue?: string) {
+    // Alguns browsers/dev bundles falham com execCommand; esta guarda evita quebrar o editor inteiro.
+    if (typeof document.execCommand !== 'function') {
+      return false;
+    }
+
+    return document.execCommand(command, false, commandValue);
+  }
+
+  function getSelectedEditorBlock() {
+    const range = selectionRef.current;
+
+    if (!range) {
+      return null;
+    }
+
+    let node: Node | null = range.commonAncestorContainer;
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    while (node && node !== editorRef.current) {
+      if (node instanceof HTMLElement && ['P', 'DIV', 'LI'].includes(node.tagName)) {
+        return node;
+      }
+
+      node = node.parentNode;
+    }
+
+    return null;
+  }
+
+  function buildListHtmlFromCurrentSelection(ordered: boolean) {
+    const selection = window.getSelection()?.toString().trim();
+    const blockText = getSelectedEditorBlock()?.textContent?.trim();
+    const source = selection || blockText || 'Novo item';
+    const items = source
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join('');
+
+    return ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`;
+  }
+
+  function insertListHtml(listHtml: string) {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = listHtml;
+    const list = template.content.firstElementChild;
+
+    if (!list) {
+      return;
+    }
+
+    const block = getSelectedEditorBlock();
+
+    if (block && block !== editor) {
+      block.replaceWith(list);
+      return;
+    }
+
+    const range = selectionRef.current;
+
+    if (range && editor.contains(range.commonAncestorContainer)) {
+      range.deleteContents();
+      range.insertNode(list);
+      return;
+    }
+
+    editor.appendChild(list);
   }
 }
 
