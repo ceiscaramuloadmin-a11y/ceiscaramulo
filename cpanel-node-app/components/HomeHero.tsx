@@ -55,7 +55,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const parallaxOffset = Math.min(scrollY * 0.22, 120);
 
   return (
-    <section className="relative min-h-[870px] overflow-hidden">
+    <section className="relative min-h-[620px] overflow-hidden lg:min-h-[640px]">
       <div className="absolute inset-x-0 top-6 z-30 px-4">
         <div className="mx-auto max-w-7xl rounded-full border border-white/35 bg-white/90 px-4 py-3 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] backdrop-blur md:px-8">
           <div className="flex items-center justify-between gap-4">
@@ -131,17 +131,17 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
-        <h1 className="mt-6 max-w-[750px] font-display text-5xl font-bold leading-[0.92] text-white sm:text-6xl md:text-[84px]">
+      <div className="relative z-10 mx-auto flex min-h-[620px] max-w-6xl flex-col items-center justify-center px-4 pb-12 pt-24 text-center sm:px-6 lg:min-h-[640px]">
+        <h1 className="mt-2 max-w-[21ch] font-display text-[clamp(2.75rem,5.2vw,4.6rem)] font-bold leading-[1.02] text-white">
           <span className="block">{hero.titleLine1}</span>
           <span className="block text-[#9dc44d]">{hero.titleLine2}</span>
           <span className="block">{hero.titleLine3}</span>
           <span className="block">{hero.titleLine4}</span>
         </h1>
 
-        <p className="mt-6 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">{hero.description}</p>
+        <p className="mt-5 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">{hero.description}</p>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button
             asChild
             size="lg"

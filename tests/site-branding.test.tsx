@@ -117,6 +117,42 @@ describe('site branding', () => {
     expect(screen.getByText('Interpretação')).toHaveClass('text-white');
   });
 
+  it('keeps the full homepage title readable on laptop-sized viewports', () => {
+    const { container } = render(
+      <HomeHero
+        hero={{
+          titleLine1: 'Centro de Estudos e',
+          titleLine2: 'Interpretação',
+          titleLine3: 'da Serra',
+          titleLine4: 'do Caramulo',
+          description: 'Descrição',
+          primaryCtaLabel: 'Saber mais',
+          primaryCtaHref: '/sobre-nos',
+          secondaryCtaLabel: 'Ver atividades',
+          secondaryCtaHref: '/atividades',
+          imageUrl: '',
+          imageAlt: 'Paisagem',
+        }}
+        navigationItems={[]}
+      />
+    );
+
+    const heroSection = container.querySelector('section');
+    const heroContent = screen.getByRole('heading', {
+      level: 1,
+      name: /Centro de Estudos e Interpretação da Serra do Caramulo/i,
+    }).parentElement;
+    const title = screen.getByRole('heading', {
+      level: 1,
+      name: /Centro de Estudos e Interpretação da Serra do Caramulo/i,
+    });
+
+    expect(heroSection).toHaveClass('min-h-[620px]', 'lg:min-h-[640px]');
+    expect(heroContent).toHaveClass('min-h-[620px]', 'pb-12', 'pt-24');
+    expect(title).toHaveClass('max-w-[21ch]', 'text-[clamp(2.75rem,5.2vw,4.6rem)]', 'leading-[1.02]');
+    expect(title).not.toHaveClass('max-w-[16ch]', 'text-[clamp(3rem,6.5vw,5.1rem)]', 'leading-[0.96]');
+  });
+
   it('reserves intrinsic logo dimensions to avoid layout shift', () => {
     render(<SiteLogo />);
 

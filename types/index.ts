@@ -84,7 +84,7 @@ export interface ContentComment {
   createdAt: string;
 }
 
-export type GalleryMediaType = 'photo' | 'video' | 'audio';
+export type GalleryMediaType = 'photo' | 'video' | 'audio' | 'document';
 
 export interface GalleryMediaItem {
   id: string;

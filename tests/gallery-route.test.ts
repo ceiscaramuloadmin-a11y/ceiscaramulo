@@ -112,6 +112,43 @@ describe('gallery route', () => {
     expect(storeUploadedFile).not.toHaveBeenCalled();
   });
 
+  it('stores Biblioteca JRS document uploads with the dedicated context', async () => {
+    fileToDataUrl.mockResolvedValueOnce('data:application/pdf;base64,cGRm');
+    createGalleryMedia.mockResolvedValueOnce({
+      id: 'jrs-doc-1',
+      title: 'Catálogo JRS',
+      type: 'document',
+      context: 'biblioteca-jrs',
+      source: 'data:application/pdf;base64,cGRm',
+      published: true,
+    });
+
+    const { POST } = await import('@/app/api/gallery/route');
+    const formData = new FormData();
+    formData.append('title', 'Catálogo JRS');
+    formData.append('type', 'document');
+    formData.append('context', 'biblioteca-jrs');
+    formData.append('published', 'true');
+    formData.append('sourceFile', new File(['pdf'], 'catalogo.pdf', { type: 'application/pdf' }));
+
+    const request = new Request('http://localhost/api/gallery', {
+      method: 'POST',
+      body: formData,
+    });
+
+    await POST(request as never);
+
+    expect(createGalleryMedia).toHaveBeenCalledWith(expect.objectContaining({
+      context: 'biblioteca-jrs',
+      title: 'Catálogo JRS',
+      type: 'document',
+      source: 'data:application/pdf;base64,cGRm',
+      mimeType: 'application/pdf',
+    }));
+    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
+    expect(storeUploadedFile).not.toHaveBeenCalled();
+  });
+
   it('stores global gallery uploads inline to avoid production filesystem errors', async () => {
     fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,global');
     createGalleryMedia.mockResolvedValueOnce({
