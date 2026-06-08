@@ -8,6 +8,7 @@ type InstitutionalProgrammePageProps = {
   title: string;
   description: string;
   heroImage?: string;
+  heroTitleTone?: 'white' | 'green';
   children?: React.ReactNode;
 };
 
@@ -15,6 +16,7 @@ export default function InstitutionalProgrammePage({
   title,
   description,
   heroImage,
+  heroTitleTone = 'white',
   children,
 }: InstitutionalProgrammePageProps) {
   return (
@@ -37,7 +39,7 @@ export default function InstitutionalProgrammePage({
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">
               CEISCaramulo
             </p>
-            <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
+            <h1 className={heroTitleTone === 'green' ? 'mt-5 font-display text-4xl font-bold leading-tight !text-[#27441d] sm:text-6xl lg:text-7xl' : 'mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl'}>
               {title}
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
