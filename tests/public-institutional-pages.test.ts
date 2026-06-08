@@ -106,7 +106,12 @@ describe('institutional pages', () => {
     expect(bibliotecaPageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
     expect(bibliotecaPageSource).toContain('tracking-[0.22em] text-white');
     expect(bibliotecaPageSource).toContain('leading-relaxed text-white');
-    expect(bibliotecaPageSource).toContain('layout.pages.biblioteca.title');
+    const bibliotecaHeroTitleIndex = bibliotecaPageSource.indexOf('font-display text-4xl font-bold leading-tight !text-white');
+    const bibliotecaHeroTitleSource = bibliotecaPageSource.slice(bibliotecaHeroTitleIndex, bibliotecaHeroTitleIndex + 240);
+
+    expect(bibliotecaHeroTitleIndex).toBeGreaterThan(-1);
+    expect(bibliotecaHeroTitleSource).toContain('Recursos');
+    expect(bibliotecaHeroTitleSource).not.toContain('layout.pages.biblioteca.title');
     expect(bibliotecaPageSource).toContain('layout.pages.biblioteca.description');
   });
 

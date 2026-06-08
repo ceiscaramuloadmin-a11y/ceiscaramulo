@@ -114,7 +114,7 @@ export default async function BibliotecaPage({
           <div className="relative z-10 mx-auto max-w-4xl text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">CEISCaramulo</p>
             <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
-              {layout.pages.biblioteca.title}
+              Recursos
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
               {layout.pages.biblioteca.description}
