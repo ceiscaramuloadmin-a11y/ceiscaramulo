@@ -88,13 +88,13 @@ export default async function SobreNosPage() {
           }}
         >
           <div className="relative z-10 mx-auto max-w-4xl text-white">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/85">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">
               CEISCaramulo
             </p>
-            <h1 className="mt-5 font-display text-4xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
               {layout.pages.sobre.title}
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white/90">
+            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
               {layout.pages.sobre.description}
             </p>
           </div>
@@ -108,7 +108,7 @@ export default async function SobreNosPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Landmark className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold text-foreground">Quem Somos</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#27441d]">Quem Somos</h2>
                 </div>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   O CEISCaramulo é uma associação legalmente constituída, sem fins lucrativos, sediada na vila do Caramulo, no edifício do Turismo. A sua missão passa por promover o estudo e a investigação nos vários domínios ligados à Serra do Caramulo, desde o ambiente à geografia, da biologia à geologia, da história à etnografia e à gastronomia.
@@ -126,7 +126,7 @@ export default async function SobreNosPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Award className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold text-foreground">Como Nasceu</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#27441d]">Como Nasceu</h2>
                 </div>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   A ideia de criar o Centro de Estudos e Interpretação da Serra do Caramulo nasceu no âmbito do projeto “Conhecer o que é nosso, para preservar e valorizar”, apresentado pelo então Agrupamento de Escolas do Caramulo ao concurso promovido pela Fundação Montepio.
@@ -141,7 +141,7 @@ export default async function SobreNosPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Users2 className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold text-foreground">Fundadores</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#27441d]">Fundadores</h2>
                 </div>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   O grupo fundador que concretizou a Associação CEISCaramulo reuniu pessoal docente e não docente, encarregados de educação da Escola EB 2,3 do Caramulo e do Agrupamento de Escolas de Tondela Tomaz Ribeiro, as freguesias do território da Serra do Caramulo representadas pelas respetivas juntas e ainda o vereador do pelouro da Cultura e Educação da Câmara Municipal de Tondela.
@@ -151,11 +151,11 @@ export default async function SobreNosPage() {
 
             <div className="space-y-8">
               <section className="rounded-[28px] border border-[#d7decf] bg-[#e9efe3] p-8">
-                <h2 className="font-display text-3xl font-bold text-foreground">Corpos Sociais</h2>
+                <h2 className="font-display text-3xl font-bold !text-[#27441d]">Corpos Sociais</h2>
                 <div className="mt-6 space-y-5">
                   {socialBodies.map((group) => (
                     <article key={group.title} className="rounded-2xl border border-[#d7decf] bg-white/90 p-5">
-                      <h3 className="font-display text-xl font-bold text-foreground">{group.title}</h3>
+                      <h3 className="font-display text-xl font-bold !text-[#27441d]">{group.title}</h3>
                       <ul className="mt-4 space-y-2">
                         {group.members.map((member) => (
                           <li key={member} className="text-sm leading-6 text-muted-foreground">
@@ -172,7 +172,7 @@ export default async function SobreNosPage() {
           </div>
 
           <div className="mt-16 rounded-[28px] bg-[#27441d] p-8 text-white shadow-xl">
-            <h2 className="font-display text-3xl font-bold text-white">Contacte-nos</h2>
+            <h2 className="font-display text-3xl font-bold !text-white">Contacte-nos</h2>
             <p className="mt-4 text-lg leading-relaxed text-white/85">
               Tem questões ou quer saber mais sobre o nosso trabalho? Entre em contacto connosco.
             </p>
@@ -201,7 +201,7 @@ export default async function SobreNosPage() {
                 </div>
               </div>
             </div>
-            <Button asChild className="mt-6 bg-white text-[#27441d] hover:bg-[#eef4ec]">
+            <Button asChild className="mt-6 bg-white !text-[#27441d] hover:bg-[#eef4ec] hover:!text-[#27441d] [&_*]:!text-[#27441d]">
               <Link href="/contactos">Enviar mensagem</Link>
             </Button>
           </div>

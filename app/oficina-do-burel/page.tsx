@@ -27,7 +27,7 @@ export default async function OficinaDoBurelPage() {
     >
       <section className="mt-10">
         <div className="mb-6">
-          <h2 className="font-display text-3xl font-bold text-foreground">Conteúdos da Oficina do Burel</h2>
+          <h2 className="font-display text-3xl font-bold !text-[#27441d]">Conteúdos da Oficina do Burel</h2>
         </div>
         <GalleryTabs items={media} />
       </section>

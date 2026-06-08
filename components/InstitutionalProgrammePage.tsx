@@ -34,17 +34,17 @@ export default function InstitutionalProgrammePage({
           }
         >
           <div className="relative z-10 mx-auto max-w-4xl text-white">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/85">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">
               CEISCaramulo
             </p>
-            <h1 className="mt-5 font-display text-4xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
               {title}
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white/90">
+            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
               {description}
             </p>
             <div className="mt-9 flex justify-center">
-              <Button asChild className="rounded-full border-4 border-[#d9e4d1] bg-white px-8 text-[#27441d] hover:bg-[#eef4ec]">
+              <Button asChild className="rounded-full border-4 border-[#d9e4d1] bg-white px-8 !text-[#27441d] hover:bg-[#eef4ec] hover:!text-[#27441d] [&_*]:!text-[#27441d]">
                 <Link href="/contactos">
                   <Mail className="mr-2 h-4 w-4" />
                   Contactar

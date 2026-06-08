@@ -82,14 +82,42 @@ describe('institutional pages', () => {
     expect(institutionalProgrammePageSource).not.toContain('bg-[#27441d]/30');
     expect(institutionalProgrammePageSource).toContain('min-h-[520px] w-full');
     expect(institutionalProgrammePageSource).not.toContain('rounded-full bg-black/35');
-    expect(institutionalProgrammePageSource).toContain('font-display text-4xl font-bold leading-tight text-white');
+    expect(institutionalProgrammePageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
+    expect(institutionalProgrammePageSource).toContain('tracking-[0.22em] text-white');
+    expect(institutionalProgrammePageSource).toContain('leading-relaxed text-white');
+    expect(institutionalProgrammePageSource).toContain('hover:!text-[#27441d]');
+    expect(institutionalProgrammePageSource).toContain('[&_*]:!text-[#27441d]');
     expect(sobreNosPageSource).toContain('min-h-[520px] w-full');
     expect(sobreNosPageSource).not.toContain('linear-gradient');
     expect(sobreNosPageSource).not.toContain('bg-[#27441d]/30');
     expect(sobreNosPageSource).not.toContain('rounded-full bg-black/35');
-    expect(sobreNosPageSource).toContain('font-display text-4xl font-bold leading-tight text-white');
+    expect(sobreNosPageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
+    expect(sobreNosPageSource).toContain('tracking-[0.22em] text-white');
+    expect(sobreNosPageSource).toContain('leading-relaxed text-white');
     expect(sobreNosPageSource).toContain("bg-[#27441d]");
     expect(sobreNosPageSource).toContain("bg-[#f4f6ee]");
+  });
+
+  it('keeps the recently changed page section titles as plain green text', () => {
+    [
+      [oficinaDoBurelPageSource, 'Conteúdos da Oficina do Burel'],
+      [ponDoJueusPageSource, 'Conteúdos do PON do Jueus'],
+      [escolaDosNossosAvosPageSource, 'Conteúdos da Escola dos Nossos Avós'],
+      [sobreNosPageSource, 'Quem Somos'],
+      [sobreNosPageSource, 'Como Nasceu'],
+      [sobreNosPageSource, 'Fundadores'],
+      [sobreNosPageSource, 'Corpos Sociais'],
+    ].forEach(([source, title]) => {
+      const titleIndex = source.indexOf(title);
+      const titleOpeningTag = source.lastIndexOf('<h', titleIndex);
+      const titleSource = source.slice(titleOpeningTag, titleIndex);
+
+      expect(titleIndex).toBeGreaterThan(-1);
+      expect(titleSource).toContain('!text-[#27441d]');
+      expect(titleSource).not.toContain('text-foreground');
+      expect(titleSource).not.toContain('bg-[#27441d]');
+      expect(titleSource).not.toContain('rounded-');
+    });
   });
 
   it('renders Escola dos Nossos Avos content from its backoffice gallery context', () => {
