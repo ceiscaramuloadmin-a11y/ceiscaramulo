@@ -53,6 +53,8 @@ export const metadata: Metadata = {
   },
 };
 
+const bibliotecaHeroImage = '/internal-pages/biblioteca.jpg';
+
 async function getPublicPublications() {
   if (shouldSkipPublicDb()) {
     return fallbackPublications;
@@ -100,16 +102,27 @@ export default async function BibliotecaPage({
   return (
     <>
       <Header />
-      <main id="main-content" className="min-h-screen bg-white pt-20">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <h1 className="font-display text-4xl font-bold leading-tight text-foreground sm:text-5xl">
+      <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
+        <section
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#27441d] px-4 py-16 text-center"
+          style={{
+            backgroundImage: `url(${bibliotecaHeroImage})`,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="relative z-10 mx-auto max-w-4xl text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">CEISCaramulo</p>
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
               {layout.pages.biblioteca.title}
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
               {layout.pages.biblioteca.description}
             </p>
           </div>
+        </section>
+
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 
           {publicationsAll.length > 0 && (
             <div className="mb-10 flex flex-wrap gap-2" role="navigation" aria-label="Filtrar por tipo">
@@ -211,7 +224,7 @@ export default async function BibliotecaPage({
 
           <section className="mt-14">
             <div className="mb-6">
-              <h2 className="font-display text-3xl font-bold text-foreground">Conteúdos de Recursos</h2>
+              <h2 className="font-display text-3xl font-bold !text-[#27441d]">Conteúdos de Recursos</h2>
             </div>
             <GalleryTabs items={media} />
           </section>

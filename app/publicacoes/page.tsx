@@ -23,6 +23,7 @@ export default async function PublicacoesPage() {
     <InstitutionalProgrammePage
       title={layout.pages.publicacoes.title}
       description={layout.pages.publicacoes.description}
+      heroImage="/internal-pages/publicacoes.jpg"
     >
       <section className="mt-10">
         <div className="mb-6">

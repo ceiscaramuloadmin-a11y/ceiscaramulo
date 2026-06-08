@@ -71,6 +71,10 @@ describe('institutional pages', () => {
       ['public/internal-pages/oficina-do-burel.jpg', oficinaDoBurelPageSource, 'heroImage="/internal-pages/oficina-do-burel.jpg"'],
       ['public/internal-pages/pon-do-jueus.jpg', ponDoJueusPageSource, 'heroImage="/internal-pages/pon-do-jueus.jpg"'],
       ['public/internal-pages/sobre-nos.jpg', sobreNosPageSource, "const aboutHeroImage = '/internal-pages/sobre-nos.jpg'"],
+      ['public/internal-pages/biblioteca.jpg', bibliotecaPageSource, "const bibliotecaHeroImage = '/internal-pages/biblioteca.jpg'"],
+      ['public/internal-pages/biblioteca-jrs.jpg', bibliotecaJrsPageSource, 'heroImage="/internal-pages/biblioteca-jrs.jpg"'],
+      ['public/internal-pages/oficinas-de-formacao.jpg', oficinasDeFormacaoPageSource, 'heroImage="/internal-pages/oficinas-de-formacao.jpg"'],
+      ['public/internal-pages/publicacoes.jpg', publicacoesPageSource, 'heroImage="/internal-pages/publicacoes.jpg"'],
     ].forEach(([assetPath, pageSource, sourceNeedle]) => {
       expect(existsSync(resolve(process.cwd(), assetPath))).toBe(true);
       expect(pageSource).toContain(sourceNeedle);
@@ -97,10 +101,18 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain('leading-relaxed text-white');
     expect(sobreNosPageSource).toContain("bg-[#27441d]");
     expect(sobreNosPageSource).toContain("bg-[#f4f6ee]");
+    expect(bibliotecaPageSource).toContain('min-h-[520px] w-full');
+    expect(bibliotecaPageSource).toContain('backgroundImage');
+    expect(bibliotecaPageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
+    expect(bibliotecaPageSource).toContain('tracking-[0.22em] text-white');
+    expect(bibliotecaPageSource).toContain('leading-relaxed text-white');
+    expect(bibliotecaPageSource).toContain('layout.pages.biblioteca.title');
+    expect(bibliotecaPageSource).toContain('layout.pages.biblioteca.description');
   });
 
-  it('allows the PON do Jueus hero title to stay green', () => {
+  it('allows selected hero titles to stay green', () => {
     expect(ponDoJueusPageSource).toContain('heroTitleTone="green"');
+    expect(bibliotecaJrsPageSource).toContain('heroTitleTone="green"');
     expect(institutionalProgrammePageSource).toContain("heroTitleTone === 'green'");
     expect(institutionalProgrammePageSource).toContain('!text-[#27441d]');
   });
@@ -114,6 +126,7 @@ describe('institutional pages', () => {
       [sobreNosPageSource, 'Como Nasceu'],
       [sobreNosPageSource, 'Fundadores'],
       [sobreNosPageSource, 'Corpos Sociais'],
+      [bibliotecaPageSource, 'Conteúdos de Recursos'],
     ].forEach(([source, title]) => {
       const titleIndex = source.indexOf(title);
       const titleOpeningTag = source.lastIndexOf('<h', titleIndex);
