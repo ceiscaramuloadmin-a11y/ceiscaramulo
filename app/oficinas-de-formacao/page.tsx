@@ -23,6 +23,7 @@ export default async function OficinasDeFormacaoPage() {
     <InstitutionalProgrammePage
       title={layout.pages.oficinasDeFormacao.title}
       description={layout.pages.oficinasDeFormacao.description}
+      heroImage="/internal-pages/oficinas-de-formacao.jpg"
     >
       <section className="mt-10">
         <div className="mb-6">
