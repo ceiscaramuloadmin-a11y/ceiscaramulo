@@ -77,6 +77,7 @@ describe('institutional pages', () => {
     });
 
     expect(institutionalProgrammePageSource).toContain('heroImage?: string');
+    expect(institutionalProgrammePageSource).toContain("heroTitleTone?: 'white' | 'green'");
     expect(institutionalProgrammePageSource).toContain('backgroundImage');
     expect(institutionalProgrammePageSource).not.toContain('linear-gradient');
     expect(institutionalProgrammePageSource).not.toContain('bg-[#27441d]/30');
@@ -96,6 +97,12 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain('leading-relaxed text-white');
     expect(sobreNosPageSource).toContain("bg-[#27441d]");
     expect(sobreNosPageSource).toContain("bg-[#f4f6ee]");
+  });
+
+  it('allows the PON do Jueus hero title to stay green', () => {
+    expect(ponDoJueusPageSource).toContain('heroTitleTone="green"');
+    expect(institutionalProgrammePageSource).toContain("heroTitleTone === 'green'");
+    expect(institutionalProgrammePageSource).toContain('!text-[#27441d]');
   });
 
   it('keeps the recently changed page section titles as plain green text', () => {
