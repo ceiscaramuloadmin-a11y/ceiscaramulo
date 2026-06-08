@@ -70,26 +70,40 @@ const socialBodies = [
   },
 ];
 
+const aboutHeroImage = '/internal-pages/sobre-nos.jpg';
+
 export default async function SobreNosPage() {
   const layout = await getPublicSiteLayoutSettings();
 
   return (
     <>
       <Header />
-      <main id="main-content" className="min-h-screen bg-white pt-20">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <h1 className="font-display text-4xl font-bold leading-tight text-foreground sm:text-5xl">
+      <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
+        <section
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#27441d] px-4 py-16 text-center"
+          style={{
+            backgroundImage: `url(${aboutHeroImage})`,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="relative z-10 mx-auto max-w-4xl text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/85">
+              CEISCaramulo
+            </p>
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl">
               {layout.pages.sobre.title}
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white/90">
               {layout.pages.sobre.description}
             </p>
           </div>
+        </section>
 
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-8">
-              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+              <section className="rounded-[28px] border border-[#d7decf] bg-white/95 p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Landmark className="h-6 w-6 text-primary" />
@@ -107,7 +121,7 @@ export default async function SobreNosPage() {
                 </p>
               </section>
 
-              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+              <section className="rounded-[28px] border border-[#d7decf] bg-white/95 p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Award className="h-6 w-6 text-primary" />
@@ -122,7 +136,7 @@ export default async function SobreNosPage() {
                 </p>
               </section>
 
-              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+              <section className="rounded-[28px] border border-[#d7decf] bg-white/95 p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Users2 className="h-6 w-6 text-primary" />
@@ -136,11 +150,11 @@ export default async function SobreNosPage() {
             </div>
 
             <div className="space-y-8">
-              <section className="rounded-[28px] border border-border bg-muted p-8">
+              <section className="rounded-[28px] border border-[#d7decf] bg-[#e9efe3] p-8">
                 <h2 className="font-display text-3xl font-bold text-foreground">Corpos Sociais</h2>
                 <div className="mt-6 space-y-5">
                   {socialBodies.map((group) => (
-                    <article key={group.title} className="rounded-2xl border border-border bg-white p-5">
+                    <article key={group.title} className="rounded-2xl border border-[#d7decf] bg-white/90 p-5">
                       <h3 className="font-display text-xl font-bold text-foreground">{group.title}</h3>
                       <ul className="mt-4 space-y-2">
                         {group.members.map((member) => (
@@ -157,37 +171,37 @@ export default async function SobreNosPage() {
             </div>
           </div>
 
-          <div className="mt-16 rounded-lg bg-muted p-8">
-            <h2 className="font-display text-3xl font-bold text-foreground">Contacte-nos</h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+          <div className="mt-16 rounded-[28px] bg-[#27441d] p-8 text-white shadow-xl">
+            <h2 className="font-display text-3xl font-bold text-white">Contacte-nos</h2>
+            <p className="mt-4 text-lg leading-relaxed text-white/85">
               Tem questões ou quer saber mais sobre o nosso trabalho? Entre em contacto connosco.
             </p>
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <div className="flex items-start gap-3">
-                <MapPin className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <MapPin className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-foreground">Morada</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-white">Morada</p>
+                  <p className="text-sm text-white/75">
                     {contactInfo.address}, {contactInfo.postalCode} {contactInfo.city}
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Phone className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <Phone className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-foreground">Telefone</p>
-                  <p className="text-sm text-muted-foreground">{contactInfo.phone}</p>
+                  <p className="font-medium text-white">Telefone</p>
+                  <p className="text-sm text-white/75">{contactInfo.phone}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Mail className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <Mail className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-foreground">Email</p>
-                  <p className="text-sm text-muted-foreground">{contactInfo.email}</p>
+                  <p className="font-medium text-white">Email</p>
+                  <p className="text-sm text-white/75">{contactInfo.email}</p>
                 </div>
               </div>
             </div>
-            <Button asChild className="mt-6">
+            <Button asChild className="mt-6 bg-white text-[#27441d] hover:bg-[#eef4ec]">
               <Link href="/contactos">Enviar mensagem</Link>
             </Button>
           </div>

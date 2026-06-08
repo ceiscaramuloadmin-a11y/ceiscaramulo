@@ -14,4 +14,14 @@ describe('institutional programme page', () => {
     expect(source).not.toContain('Consultar biblioteca');
     expect(source).not.toContain('href="/biblioteca"');
   });
+
+  it('renders Biblioteca JRS files from its dedicated gallery context', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'app/biblioteca-jrs/page.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain("listGalleryMedia('public', 'biblioteca-jrs')");
+    expect(source).toContain('<GalleryTabs items={media} />');
+  });
 });

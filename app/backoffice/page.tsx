@@ -37,18 +37,33 @@ import type {
   SiteLayoutSettings,
 } from '@/types';
 
-type ProgrammeGallerySectionId = 'gallery-pon-do-jueus' | 'gallery-escola-dos-nossos-avos' | 'gallery-oficinas-de-formacao';
+type ProgrammeGallerySectionId =
+  | 'gallery-oficina-do-burel'
+  | 'gallery-pon-do-jueus'
+  | 'gallery-escola-dos-nossos-avos'
+  | 'gallery-biblioteca-jrs'
+  | 'gallery-oficinas-de-formacao'
+  | 'gallery-publicacoes'
+  | 'gallery-biblioteca';
 type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
 type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
 type AppearanceTab = 'hero' | 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
 type AppearancePageKey = keyof SiteLayoutSettings['pages'];
+type DashboardStats = {
+  news: number;
+  activities: number;
+  projects: number;
+  publications: number;
+  contacts: number;
+};
+
 const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = [
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
   { id: 'publications', label: 'Recursos' },
   { id: 'contacts', label: 'Contactos' },
-  { id: 'gallery', label: 'Galeria' },
+  { id: 'gallery', label: 'Media das páginas' },
   { id: 'layout', label: 'Layout' },
   { id: 'admins', label: 'Admins' },
   { id: 'audit', label: 'Auditoria' },
@@ -60,10 +75,13 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
   { id: 'publications', label: 'Recursos' },
-  { id: 'gallery', label: 'Galeria' },
+  { id: 'gallery-oficina-do-burel', label: 'Oficina do Burel' },
+  { id: 'gallery-biblioteca-jrs', label: 'Biblioteca JRS' },
   { id: 'gallery-pon-do-jueus', label: 'PON do Jueus' },
   { id: 'gallery-escola-dos-nossos-avos', label: 'Escola dos Nossos Avós' },
   { id: 'gallery-oficinas-de-formacao', label: 'Oficinas de formação' },
+  { id: 'gallery-publicacoes', label: 'Publicações' },
+  { id: 'gallery-biblioteca', label: 'Recursos' },
   { id: 'layout', label: 'Aparência' },
   { id: 'admins', label: 'Admins' },
   { id: 'contacts', label: 'Contactos' },
@@ -98,22 +116,56 @@ const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasE
 ];
 
 const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: string; context: string; description: string }> = {
+  'gallery-oficina-do-burel': {
+    label: 'Oficina do Burel',
+    context: 'oficina-do-burel',
+    description: 'PDFs, vídeos e outros media associados à página Oficina do Burel.',
+  },
+  'gallery-biblioteca-jrs': {
+    label: 'Biblioteca JRS',
+    context: 'biblioteca-jrs',
+    description: 'PDFs, vídeos e outros media associados à página Biblioteca JRS.',
+  },
   'gallery-pon-do-jueus': {
     label: 'PON do Jueus',
     context: 'pon-do-jueus',
-    description: 'Media associado à página PON do Jueus, com as mesmas ferramentas da galeria principal.',
+    description: 'PDFs, vídeos e outros media associados à página PON do Jueus.',
   },
   'gallery-escola-dos-nossos-avos': {
     label: 'Escola dos Nossos Avós',
     context: 'escola-dos-nossos-avos',
-    description: 'Media associado à página Escola dos Nossos Avós, com carregamento em massa, preview e seleção múltipla.',
+    description: 'PDFs, vídeos e outros media associados à página Escola dos Nossos Avós.',
   },
   'gallery-oficinas-de-formacao': {
     label: 'Oficinas de formação',
     context: 'oficinas-de-formacao',
-    description: 'Media associado à página Oficinas de formação, separado da galeria multimédia geral.',
+    description: 'PDFs, vídeos e outros media associados à página Oficinas de formação.',
+  },
+  'gallery-publicacoes': {
+    label: 'Publicações',
+    context: 'publicacoes',
+    description: 'PDFs, vídeos e outros media associados à página Publicações.',
+  },
+  'gallery-biblioteca': {
+    label: 'Recursos',
+    context: 'biblioteca',
+    description: 'PDFs, vídeos e outros media associados à página Recursos.',
   },
 };
+
+function galleryTypeLabel(type: GalleryMediaType) {
+  if (type === 'photo') return 'Foto';
+  if (type === 'video') return 'Vídeo';
+  if (type === 'audio') return 'Áudio';
+  return 'Documento';
+}
+
+function galleryAcceptForType(type: GalleryMediaType) {
+  if (type === 'photo') return 'image/*';
+  if (type === 'video') return 'video/*';
+  if (type === 'audio') return 'audio/*';
+  return 'application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
+}
 
 function isProgrammeGallerySection(value: SectionId): value is ProgrammeGallerySectionId {
   return value in PROGRAMME_GALLERY_SECTIONS;
@@ -127,6 +179,7 @@ export default function BackofficePage() {
   const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('hero');
   const [busy, setBusy] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isLoadingDashboardStats, setIsLoadingDashboardStats] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [isLoadingGovernance, setIsLoadingGovernance] = useState(true);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
@@ -142,6 +195,7 @@ export default function BackofficePage() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [currentAdmin, setCurrentAdmin] = useState<{ email: string; role: AdminRole; permissions: AdminPermission[] } | null>(null);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -187,20 +241,29 @@ export default function BackofficePage() {
 
   const stats = useMemo(
     () => ({
-      news: news.length,
-      activities: activities.length,
-      projects: projects.length,
-      publications: publications.length,
-      contacts: contactMessages.length,
-      gallery: galleryItems.length,
+      news: isLoadingContent && dashboardStats ? dashboardStats.news : news.length,
+      activities: isLoadingContent && dashboardStats ? dashboardStats.activities : activities.length,
+      projects: isLoadingContent && dashboardStats ? dashboardStats.projects : projects.length,
+      publications: isLoadingContent && dashboardStats ? dashboardStats.publications : publications.length,
+      contacts: isLoadingContacts && dashboardStats ? dashboardStats.contacts : contactMessages.length,
     }),
-    [news.length, activities.length, projects.length, publications.length, contactMessages.length, galleryItems.length]
+    [
+      activities.length,
+      contactMessages.length,
+      dashboardStats,
+      isLoadingContacts,
+      isLoadingContent,
+      news.length,
+      projects.length,
+      publications.length,
+    ]
   );
   const groupedGalleryItems = useMemo(
     () => ({
       photo: galleryItems.filter((item) => item.type === 'photo'),
       video: galleryItems.filter((item) => item.type === 'video'),
       audio: galleryItems.filter((item) => item.type === 'audio'),
+      document: galleryItems.filter((item) => item.type === 'document'),
     }),
     [galleryItems]
   );
@@ -244,7 +307,7 @@ export default function BackofficePage() {
 
     if (currentAdmin.role === 'owner' || permissionSet.has('contacts')) sections.push('contacts');
     if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) {
-      sections.push('gallery', ...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]));
+      sections.push(...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]));
     }
     if (currentAdmin.role === 'owner' || permissionSet.has('admins')) sections.push('admins');
     if (currentAdmin.role === 'owner' || permissionSet.has('audit')) sections.push('audit');
@@ -310,6 +373,13 @@ export default function BackofficePage() {
     },
     [authHeaders]
   );
+
+  const refreshDashboardStats = useCallback(async () => {
+    setIsLoadingDashboardStats(true);
+    const data = await fetchAdminEndpoint<DashboardStats>('/api/admin/stats').catch(() => null);
+    setDashboardStats(data);
+    setIsLoadingDashboardStats(false);
+  }, [fetchAdminEndpoint]);
 
   const refreshAll = useCallback(async () => {
     setIsLoadingContent(true);
@@ -389,6 +459,7 @@ export default function BackofficePage() {
         setIsCheckingSession(false);
 
         if (exportAuthMode) {
+          setIsLoadingDashboardStats(false);
           setIsLoadingContent(false);
           setIsLoadingGovernance(false);
           setIsLoadingContacts(false);
@@ -400,7 +471,7 @@ export default function BackofficePage() {
         const me = await fetchAdminEndpoint<{ email: string; role: AdminRole; permissions: AdminPermission[] }>('/api/admin/me');
         setCurrentAdmin(me);
 
-        await Promise.allSettled([refreshAll(), refreshGovernance(), refreshLayout(), refreshGallery(), refreshContactMessages()]);
+        await refreshDashboardStats();
       } catch (error) {
         if (error instanceof Error && (error.message.includes('Sessão administrativa expirada') || error.message.includes('401'))) {
           await adminAuthClient.adapter.signOut().catch(() => undefined);
@@ -410,6 +481,7 @@ export default function BackofficePage() {
 
         toast.error(error instanceof Error ? error.message : 'Falha ao carregar o backoffice.');
         setIsCheckingSession(false);
+        setIsLoadingDashboardStats(false);
         setIsLoadingContent(false);
         setIsLoadingGovernance(false);
         setIsLoadingContacts(false);
@@ -419,7 +491,7 @@ export default function BackofficePage() {
     };
 
     void bootstrap();
-  }, [exportAuthMode, fetchAdminEndpoint, refreshAll, refreshGovernance, refreshLayout, refreshGallery, refreshContactMessages, router]);
+  }, [exportAuthMode, fetchAdminEndpoint, refreshDashboardStats, router]);
 
   async function updateContactMessage(id: string, read: boolean) {
     setBusy(true);
@@ -445,10 +517,43 @@ export default function BackofficePage() {
   }, [activeSection, availableSections]);
 
   useEffect(() => {
-    if (!exportAuthMode && activeGalleryConfig) {
+    if (exportAuthMode) {
+      return;
+    }
+
+    if (['news', 'activities', 'projects', 'publications'].includes(activeSection)) {
+      void refreshAll();
+      return;
+    }
+
+    if (activeSection === 'contacts') {
+      void refreshContactMessages();
+      return;
+    }
+
+    if (activeSection === 'admins' || activeSection === 'audit') {
+      void refreshGovernance();
+      return;
+    }
+
+    if (activeSection === 'layout') {
+      void refreshLayout();
+      return;
+    }
+
+    if (activeGalleryConfig) {
       void refreshGallery();
     }
-  }, [activeGalleryConfig, exportAuthMode, refreshGallery]);
+  }, [
+    activeGalleryConfig,
+    activeSection,
+    exportAuthMode,
+    refreshAll,
+    refreshContactMessages,
+    refreshGallery,
+    refreshGovernance,
+    refreshLayout,
+  ]);
 
   async function saveLayoutSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -655,8 +760,12 @@ export default function BackofficePage() {
       return;
     }
 
-    const acceptedPrefix =
-      galleryBatchType === 'photo' ? 'image/' : galleryBatchType === 'video' ? 'video/' : 'audio/';
+    const acceptsFile = (file: File) => {
+      if (galleryBatchType === 'photo') return file.type.startsWith('image/');
+      if (galleryBatchType === 'video') return file.type.startsWith('video/');
+      if (galleryBatchType === 'audio') return file.type.startsWith('audio/');
+      return Boolean(file.type === 'application/pdf' || file.name.match(/\.(pdf|docx?|xlsx?|pptx?|txt)$/i));
+    };
 
     const rejectedLargeAudio = Array.from(files).some(
       (file) => galleryBatchType === 'audio' && file.type.startsWith('audio/') && file.size > MAX_INLINE_AUDIO_UPLOAD_BYTES
@@ -668,7 +777,7 @@ export default function BackofficePage() {
     }
 
     const nextItems = Array.from(files)
-      .filter((file) => file.type.startsWith(acceptedPrefix))
+      .filter(acceptsFile)
       .map((file) => ({
         id: crypto.randomUUID(),
         file,
@@ -680,6 +789,11 @@ export default function BackofficePage() {
       }));
 
     if (nextItems.length === 0) {
+      if (galleryBatchType === 'document') {
+        toast.error('Seleciona apenas PDFs ou documentos para este carregamento em massa.');
+        return;
+      }
+
       toast.error(
         galleryBatchType === 'photo'
           ? 'Seleciona apenas ficheiros de imagem para este carregamento em massa.'
@@ -1174,12 +1288,11 @@ export default function BackofficePage() {
       {activeSection === 'overview' ? (
         <section className="mt-8 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card title="Notícias" value={stats.news} loading={isLoadingContent} />
-            <Card title="Atividades" value={stats.activities} loading={isLoadingContent} />
-            <Card title="Projetos" value={stats.projects} loading={isLoadingContent} />
-            <Card title="Recursos" value={stats.publications} loading={isLoadingContent} />
-            <Card title="Contactos" value={stats.contacts} loading={isLoadingContacts} />
-            <Card title="Galeria" value={stats.gallery} loading={isLoadingGallery} />
+            <Card title="Notícias" value={stats.news} loading={isLoadingDashboardStats} />
+            <Card title="Atividades" value={stats.activities} loading={isLoadingDashboardStats} />
+            <Card title="Projetos" value={stats.projects} loading={isLoadingDashboardStats} />
+            <Card title="Recursos" value={stats.publications} loading={isLoadingDashboardStats} />
+            <Card title="Contactos" value={stats.contacts} loading={isLoadingDashboardStats} />
           </div>
 
           {!exportAuthMode ? (
@@ -1385,6 +1498,7 @@ export default function BackofficePage() {
               {isLoadingGallery ? (
                 <>
                   <GalleryGroupSkeleton title="Fotos" />
+                  <GalleryGroupSkeleton title="Documentos" />
                   <GalleryGroupSkeleton title="Vídeos" />
                   <GalleryGroupSkeleton title="Áudios" />
                 </>
@@ -1401,6 +1515,18 @@ export default function BackofficePage() {
                 onEdit={startEditGallery}
                 onDelete={(id) => void deleteGalleryItem(id)}
                 onDeleteSelected={() => void deleteSelectedGalleryItems('photo')}
+              />
+              <GalleryGroup
+                title="Documentos"
+                type="document"
+                items={groupedGalleryItems.document}
+                selectedIds={selectedGalleryIds}
+                busy={busy}
+                onToggleTypeSelection={toggleGalleryTypeSelection}
+                onToggleSelection={toggleGallerySelection}
+                onEdit={startEditGallery}
+                onDelete={(id) => void deleteGalleryItem(id)}
+                onDeleteSelected={() => void deleteSelectedGalleryItems('document')}
               />
               <GalleryGroup
                 title="Vídeos"
@@ -1451,6 +1577,7 @@ export default function BackofficePage() {
                     <option value="photo">Fotos</option>
                     <option value="video">Vídeos</option>
                     <option value="audio">Áudios</option>
+                    <option value="document">Documentos/PDFs</option>
                   </select>
                 </label>
 
@@ -1458,7 +1585,7 @@ export default function BackofficePage() {
                   Ficheiros
                   <input
                     type="file"
-                    accept={galleryBatchType === 'photo' ? 'image/*' : galleryBatchType === 'video' ? 'video/*' : 'audio/*'}
+                    accept={galleryAcceptForType(galleryBatchType)}
                     multiple
                     onChange={(event) => {
                       handleGalleryBatchFiles(event.target.files);
@@ -1493,9 +1620,14 @@ export default function BackofficePage() {
                               Áudio
                             </div>
                           ) : null}
+                          {item.type === 'document' ? (
+                            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-stone-100 px-2 text-center text-xs font-medium text-stone-600">
+                              Documento
+                            </div>
+                          ) : null}
                           <div className="min-w-0 flex-1 space-y-3">
                             <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
-                              {item.type === 'photo' ? 'Foto' : item.type === 'video' ? 'Vídeo' : 'Áudio'} {index + 1}
+                              {galleryTypeLabel(item.type)} {index + 1}
                             </p>
                             <Input
                               label="Título"
@@ -1572,6 +1704,7 @@ export default function BackofficePage() {
                     <option value="photo">Foto</option>
                     <option value="video">Vídeo</option>
                     <option value="audio">Áudio</option>
+                    <option value="document">Documento/PDF</option>
                   </select>
                 </label>
 
@@ -1579,7 +1712,7 @@ export default function BackofficePage() {
                 <FileInput
                   key={`source-${galleryFormResetKey}`}
                   label="Fonte ficheiro"
-                  accept={galleryForm.type === 'photo' ? 'image/*' : galleryForm.type === 'video' ? 'video/*' : 'audio/*'}
+                  accept={galleryAcceptForType(galleryForm.type)}
                   onFile={(file) => setGalleryForm((c) => ({ ...c, sourceFile: file }))}
                 />
 
@@ -2376,6 +2509,21 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
         playsInline
         controls
       />
+    );
+  }
+
+  if (item.type === 'document') {
+    return (
+      <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
+        <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Documento</div>
+        {item.source ? (
+          <a href={item.source} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#27441d] underline">
+            Abrir ficheiro
+          </a>
+        ) : (
+          <p className="text-sm text-stone-500">Sem ficheiro associado.</p>
+        )}
+      </div>
     );
   }
 

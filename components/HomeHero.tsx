@@ -77,7 +77,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const parallaxOffset = prefersReducedMotion ? 0 : Math.min(scrollY * 0.22, 120);
 
   return (
-    <section className="relative min-h-[680px] overflow-hidden">
+    <section className="relative min-h-[620px] overflow-hidden lg:min-h-[640px]">
       <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
         <div
           className={cn(
@@ -176,10 +176,10 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
         <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
-      <div className="relative z-20 mx-auto flex min-h-[680px] max-w-6xl flex-col items-center justify-center px-4 pb-16 pt-28 text-center sm:px-6">
+      <div className="relative z-20 mx-auto flex min-h-[620px] max-w-6xl flex-col items-center justify-center px-4 pb-12 pt-24 text-center sm:px-6 lg:min-h-[640px]">
         <h1
-          className={`font-hero mt-4 text-[clamp(3rem,6.5vw,5.1rem)] font-bold leading-[0.96] text-white ${
-            singleLineHeroTitle ? 'max-w-[24ch]' : 'max-w-[16ch]'
+          className={`font-hero mt-2 text-[clamp(2.75rem,5.2vw,4.6rem)] font-bold leading-[1.02] text-white ${
+            singleLineHeroTitle ? 'max-w-[24ch]' : 'max-w-[21ch]'
           }`}
         >
           {singleLineHeroTitle ? (

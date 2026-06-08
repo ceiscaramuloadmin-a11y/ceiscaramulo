@@ -16,7 +16,7 @@ import type { GalleryMediaType } from '@/types';
 export const runtime = 'nodejs';
 
 function normalizeType(value: unknown): GalleryMediaType {
-  return value === 'video' || value === 'audio' ? value : 'photo';
+  return value === 'video' || value === 'audio' || value === 'document' ? value : 'photo';
 }
 
 function normalizeBoolean(value: unknown) {

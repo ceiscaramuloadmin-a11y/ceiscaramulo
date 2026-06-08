@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import GalleryTabs from '@/components/GalleryTabs';
+import { listGalleryMedia } from '@/app/api/_lib/cms';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
@@ -15,11 +17,16 @@ export const metadata: Metadata = {
 
 export default async function BibliotecaJrsPage() {
   const layout = await getPublicSiteLayoutSettings();
+  const media = await listGalleryMedia('public', 'biblioteca-jrs');
 
   return (
     <InstitutionalProgrammePage
       title={layout.pages.bibliotecaJrs.title}
       description={layout.pages.bibliotecaJrs.description}
-    />
+    >
+      <div className="mt-10">
+        <GalleryTabs items={media} />
+      </div>
+    </InstitutionalProgrammePage>
   );
 }

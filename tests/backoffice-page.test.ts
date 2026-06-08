@@ -9,7 +9,7 @@ const backofficePageSource = readFileSync(
   'utf8'
 );
 
-describe('backoffice news and gallery guards', () => {
+describe('backoffice page guards', () => {
   it('uses a fixed collapsible sidebar for backoffice navigation', () => {
     expect(backofficePageSource).toContain('isSidebarCollapsed');
     expect(backofficePageSource).toContain('aria-label="Navegação do backoffice"');
@@ -100,57 +100,56 @@ describe('backoffice news and gallery guards', () => {
     expect(backofficePageSource).toContain("'oficinasDeFormacao'");
     expect(backofficePageSource).toContain("'ponDoJueus'");
     expect(backofficePageSource).toContain("'publicacoes'");
+    expect(backofficePageSource).toContain("{ id: 'biblioteca', label: 'Recursos'");
+    expect(backofficePageSource).toContain("{ id: 'bibliotecaJrs', label: 'Biblioteca JRS' }");
+    expect(backofficePageSource).toContain("{ id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' }");
+    expect(backofficePageSource).toContain("{ id: 'oficinaDoBurel', label: 'Oficina do Burel' }");
+    expect(backofficePageSource).toContain("{ id: 'oficinasDeFormacao', label: 'Oficinas de formação' }");
+    expect(backofficePageSource).toContain("{ id: 'ponDoJueus', label: 'PON do Jueus' }");
+    expect(backofficePageSource).toContain("{ id: 'publicacoes', label: 'Publicações' }");
     expect(backofficePageSource).toContain('updateAppearancePage');
     expect(backofficePageSource).toContain('Mensagem sem conteúdos');
   });
 
-  it('shows the audio upload size guidance in the batch gallery flow', () => {
-    expect(backofficePageSource).toContain('MAX_INLINE_AUDIO_UPLOAD_BYTES');
-    expect(backofficePageSource).toContain('getInlineAudioUploadErrorMessage()');
+  it('removes only the global gallery entry from the backoffice navigation and overview', () => {
+    const navigationBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS'),
+      backofficePageSource.indexOf('const APPEARANCE_TABS')
+    );
+
+    expect(navigationBlock).not.toContain("id: 'gallery'");
+    expect(navigationBlock).toContain("id: 'gallery-oficina-do-burel'");
+    expect(navigationBlock).toContain("id: 'gallery-biblioteca-jrs'");
+    expect(navigationBlock).toContain("id: 'gallery-pon-do-jueus'");
+    expect(navigationBlock).toContain("id: 'gallery-escola-dos-nossos-avos'");
+    expect(navigationBlock).toContain("id: 'gallery-oficinas-de-formacao'");
+    expect(navigationBlock).toContain("id: 'gallery-publicacoes'");
+    expect(navigationBlock).toContain("id: 'gallery-biblioteca'");
+    expect(backofficePageSource).not.toContain('<Card title="Galeria"');
   });
 
-  it('separates gallery media by type and supports multi-select deletion', () => {
-    expect(backofficePageSource).toContain('<GalleryGroup');
-    expect(backofficePageSource).toContain('title="Fotos"');
-    expect(backofficePageSource).toContain('title="Vídeos"');
-    expect(backofficePageSource).toContain('title="Áudios"');
-    expect(backofficePageSource).toContain('toggleGalleryTypeSelection');
-    expect(backofficePageSource).toContain('deleteSelectedGalleryItems');
-    expect(backofficePageSource).toContain('selectedVisibleGalleryIds');
-    expect(backofficePageSource).toContain('Promise.all(ids.map((id) => fetchAdminEndpoint<null>');
-    expect(backofficePageSource).toContain('window.confirm(');
-  });
-
-  it('resets gallery creation state when the new button is used', () => {
-    expect(backofficePageSource).toContain('function startNewGalleryItem');
-    expect(backofficePageSource).toContain('setSelectedGalleryIds([])');
-    expect(backofficePageSource).toContain('clearGalleryBatchItems()');
-    expect(backofficePageSource).toContain('galleryIndividualFormRef.current?.scrollIntoView');
-    expect(backofficePageSource).toContain('galleryFormResetKey');
-    expect(backofficePageSource).toContain('onClick={startNewGalleryItem}');
-  });
-
-  it('adds programme gallery sections for PON, Escola dos Nossos Avos and Oficinas de formacao', () => {
-    expect(backofficePageSource).toContain("'gallery-pon-do-jueus'");
-    expect(backofficePageSource).toContain("'gallery-escola-dos-nossos-avos'");
-    expect(backofficePageSource).toContain("'gallery-oficinas-de-formacao'");
-    expect(backofficePageSource).toContain('PROGRAMME_GALLERY_SECTIONS');
+  it('allows the recent page media sections to submit videos and PDFs', () => {
+    expect(backofficePageSource).toContain("context: 'oficina-do-burel'");
+    expect(backofficePageSource).toContain("context: 'pon-do-jueus'");
+    expect(backofficePageSource).toContain("context: 'escola-dos-nossos-avos'");
+    expect(backofficePageSource).toContain("context: 'biblioteca-jrs'");
+    expect(backofficePageSource).toContain("context: 'oficinas-de-formacao'");
+    expect(backofficePageSource).toContain("context: 'publicacoes'");
+    expect(backofficePageSource).toContain("context: 'biblioteca'");
+    expect(backofficePageSource).toContain('<option value="video">Vídeos</option>');
+    expect(backofficePageSource).toContain('<option value="document">Documentos/PDFs</option>');
+    expect(backofficePageSource).toContain('<option value="video">Vídeo</option>');
+    expect(backofficePageSource).toContain('<option value="document">Documento/PDF</option>');
+    expect(backofficePageSource).toContain("if (type === 'video') return 'video/*'");
+    expect(backofficePageSource).toContain("application/pdf,.pdf");
     expect(backofficePageSource).toContain("fd.append('context', activeGalleryConfig?.context || 'global')");
-    expect(backofficePageSource).toContain('/api/gallery?scope=admin&context=');
+    expect(backofficePageSource).toContain("fd.append('sourceFile', item.file)");
   });
 
-  it('uploads gallery batches with bounded parallel requests', () => {
-    expect(backofficePageSource).toContain('const uploadConcurrency = 3');
-    expect(backofficePageSource).toContain('Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne))');
-  });
-
-  it('renders dedicated previews for image, video and audio gallery items', () => {
-    expect(backofficePageSource).toContain('function GalleryItemPreview');
-    expect(backofficePageSource).toContain('Sem origem');
-    expect(backofficePageSource).toContain("if (item.type === 'photo')");
-    expect(backofficePageSource).toContain("if (item.type === 'video')");
-    expect(backofficePageSource).toContain('<audio controls preload="metadata"');
-    expect(backofficePageSource).toContain('<video');
-    expect(backofficePageSource).toContain("item.thumbnail || item.source || '/placeholder.svg'");
+  it('boots the backoffice with the lightweight stats endpoint instead of loading every module', () => {
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<DashboardStats>('/api/admin/stats')");
+    expect(backofficePageSource).toContain('await refreshDashboardStats();');
+    expect(backofficePageSource).not.toContain('await Promise.allSettled([refreshAll(), refreshGovernance(), refreshLayout(), refreshGallery(), refreshContactMessages()])');
+    expect(backofficePageSource).toContain('sections.push(...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]))');
   });
 });

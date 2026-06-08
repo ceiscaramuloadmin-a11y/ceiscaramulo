@@ -23,6 +23,7 @@ export default async function PonDoJueusPage() {
     <InstitutionalProgrammePage
       title={layout.pages.ponDoJueus.title}
       description={layout.pages.ponDoJueus.description}
+      heroImage="/internal-pages/pon-do-jueus.jpg"
     >
       <section className="mt-10">
         <div className="mb-6">

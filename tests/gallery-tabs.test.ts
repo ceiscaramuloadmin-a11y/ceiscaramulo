@@ -11,6 +11,10 @@ describe('GalleryTabs', () => {
     expect(galleryTabsSource).toContain('Sem imagem associada');
     expect(galleryTabsSource).toContain('Sem vídeo associado');
     expect(galleryTabsSource).toContain('Sem áudio associado.');
+    expect(galleryTabsSource).toContain("item.type === 'document'");
+    expect(galleryTabsSource).toContain('Documentos (${documents.length})');
+    expect(galleryTabsSource).toContain('Sem documentos publicados.');
+    expect(galleryTabsSource).toContain('Abrir ficheiro');
     expect(galleryTabsSource).toContain('disabled={!item.source}');
     expect(galleryTabsSource).toContain("activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg'");
   });

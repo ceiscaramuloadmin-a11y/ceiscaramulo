@@ -23,6 +23,7 @@ export default async function EscolaDosNossosAvosPage() {
     <InstitutionalProgrammePage
       title={layout.pages.escolaDosNossosAvos.title}
       description={layout.pages.escolaDosNossosAvos.description}
+      heroImage="/internal-pages/escola-dos-nossos-avos.jpg"
     >
       <section className="mt-10">
         <div className="mb-6">

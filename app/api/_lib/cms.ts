@@ -986,6 +986,14 @@ export async function parseSectionFormData(
 }
 
 function normalizeGalleryType(value: unknown): GalleryMediaType {
+  if (value === 'video' || value === 'audio' || value === 'document') {
+    return value;
+  }
+
+  return 'photo';
+}
+
+function normalizeDatabaseGalleryType(value: GalleryMediaType): 'photo' | 'video' | 'audio' {
   if (value === 'video' || value === 'audio') {
     return value;
   }
@@ -1261,7 +1269,7 @@ export async function createGalleryMedia(input: {
 }) {
   const galleryContext = normalizeGalleryContext(input.context);
 
-  if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT || input.type === 'document') {
     const now = new Date().toISOString();
     const created: GalleryMediaRecord = {
       id: crypto.randomUUID(),
@@ -1334,7 +1342,7 @@ export async function createGalleryMedia(input: {
     data: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
-      type: normalizeGalleryType(input.type),
+      type: normalizeDatabaseGalleryType(input.type),
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1372,7 +1380,7 @@ export async function updateGalleryMedia(
 ) {
   const galleryContext = normalizeGalleryContext(input.context);
 
-  if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT || input.type === 'document') {
     const items = await listGalleryFromStorage();
     const index = items.findIndex((item) => item.id === id);
 
@@ -1457,7 +1465,7 @@ export async function updateGalleryMedia(
     data: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
-      type: normalizeGalleryType(input.type),
+      type: normalizeDatabaseGalleryType(input.type),
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,

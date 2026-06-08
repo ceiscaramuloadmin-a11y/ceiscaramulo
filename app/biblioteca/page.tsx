@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Download, Tag, User } from 'lucide-react';
+import GalleryTabs from '@/components/GalleryTabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { listGalleryMedia } from '@/app/api/_lib/cms';
 import { publications as fallbackPublications } from '@/data/content';
 import {
   bibliotecaPublicationTypes,
@@ -85,6 +87,7 @@ export default async function BibliotecaPage({
   const tipo = parseBibliotecaTipoParam(tipoRaw, distinctTypes);
   const publications = filterBibliotecaByTipo(pubForFilter, tipo) as typeof publicationsAll;
   const layout = await getPublicSiteLayoutSettings();
+  const media = await listGalleryMedia('public', 'biblioteca');
 
   const typeLabels: Record<string, string> = {
     livro: 'Livro',
@@ -205,6 +208,13 @@ export default async function BibliotecaPage({
               ))}
             </div>
           )}
+
+          <section className="mt-14">
+            <div className="mb-6">
+              <h2 className="font-display text-3xl font-bold text-foreground">Conteúdos de Recursos</h2>
+            </div>
+            <GalleryTabs items={media} />
+          </section>
         </div>
       </main>
       <Footer />
