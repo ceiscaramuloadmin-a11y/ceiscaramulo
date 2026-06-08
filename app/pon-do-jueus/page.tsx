@@ -27,7 +27,7 @@ export default async function PonDoJueusPage() {
     >
       <section className="mt-10">
         <div className="mb-6">
-          <h2 className="font-display text-3xl font-bold text-foreground">Conteúdos do PON do Jueus</h2>
+          <h2 className="font-display text-3xl font-bold !text-[#27441d]">Conteúdos do PON do Jueus</h2>
         </div>
         <GalleryTabs items={media} />
       </section>
