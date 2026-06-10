@@ -9,6 +9,8 @@ import NewsletterSignup from '@/components/NewsletterSignup';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
 
+const FOOTER_LINKS_TO_REMOVE = new Set(['/noticias', '/serra-do-caramulo', '/contactos']);
+
 const SocialIcon = ({ label }: { label: string }) => {
   if (label === 'Facebook') {
     return <span className="text-[1.45rem] font-black leading-none tracking-normal">f</span>;
@@ -30,7 +32,7 @@ const getPublicFooterColumns = (settings: SiteLayoutSettings) =>
     .filter((column) => !column.title.toLowerCase().includes('restrita'))
     .map((column) => ({
       ...column,
-      links: column.links.filter((item) => !item.href.startsWith('/backoffice')),
+      links: column.links.filter((item) => !item.href.startsWith('/backoffice') && !FOOTER_LINKS_TO_REMOVE.has(item.href)),
     }))
     .filter((column) => column.links.length > 0);
 
@@ -110,6 +112,12 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-sm font-bold text-[#3e5c32]">Contactos</h3>
             <div className="mt-6 grid gap-3 text-sm text-stone-500">
+              <Link
+                href="/contactos"
+                className={pathname === '/contactos' ? 'font-semibold text-[#3e5c32] underline' : 'underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline'}
+              >
+                Como nos contactar
+              </Link>
               {footerAddress ? <p>{footerAddress}</p> : null}
               {footerContact.phone ? (
                 <a className="underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline" href={`tel:${footerContact.phone.replace(/\s+/g, '')}`}>

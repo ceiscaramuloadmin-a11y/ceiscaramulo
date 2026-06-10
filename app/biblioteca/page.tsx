@@ -111,6 +111,7 @@ export default async function BibliotecaPage({
             backgroundSize: 'cover',
           }}
         >
+          <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
           <div className="relative z-10 mx-auto max-w-4xl text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">CEISCaramulo</p>
             <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">

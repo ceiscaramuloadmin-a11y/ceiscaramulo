@@ -85,6 +85,7 @@ describe('institutional pages', () => {
     expect(institutionalProgrammePageSource).toContain('backgroundImage');
     expect(institutionalProgrammePageSource).not.toContain('linear-gradient');
     expect(institutionalProgrammePageSource).not.toContain('bg-[#27441d]/30');
+    expect(institutionalProgrammePageSource).toContain('absolute inset-0 z-0 bg-black/45');
     expect(institutionalProgrammePageSource).toContain('min-h-[520px] w-full');
     expect(institutionalProgrammePageSource).not.toContain('rounded-full bg-black/35');
     expect(institutionalProgrammePageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
@@ -95,6 +96,7 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain('min-h-[520px] w-full');
     expect(sobreNosPageSource).not.toContain('linear-gradient');
     expect(sobreNosPageSource).not.toContain('bg-[#27441d]/30');
+    expect(sobreNosPageSource).toContain('absolute inset-0 z-0 bg-black/45');
     expect(sobreNosPageSource).not.toContain('rounded-full bg-black/35');
     expect(sobreNosPageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
     expect(sobreNosPageSource).toContain('tracking-[0.22em] text-white');
@@ -103,6 +105,7 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain("bg-[#f4f6ee]");
     expect(bibliotecaPageSource).toContain('min-h-[520px] w-full');
     expect(bibliotecaPageSource).toContain('backgroundImage');
+    expect(bibliotecaPageSource).toContain('absolute inset-0 z-0 bg-black/45');
     expect(bibliotecaPageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
     expect(bibliotecaPageSource).toContain('tracking-[0.22em] text-white');
     expect(bibliotecaPageSource).toContain('leading-relaxed text-white');
@@ -115,11 +118,12 @@ describe('institutional pages', () => {
     expect(bibliotecaPageSource).toContain('layout.pages.biblioteca.description');
   });
 
-  it('allows selected hero titles to stay green', () => {
+  it('renders hero titles over the new black image overlay in white', () => {
     expect(ponDoJueusPageSource).toContain('heroTitleTone="green"');
     expect(bibliotecaJrsPageSource).toContain('heroTitleTone="green"');
-    expect(institutionalProgrammePageSource).toContain("heroTitleTone === 'green'");
-    expect(institutionalProgrammePageSource).toContain('!text-[#27441d]');
+    expect(institutionalProgrammePageSource).not.toContain("heroTitleTone === 'green'");
+    expect(institutionalProgrammePageSource).toContain('absolute inset-0 z-0 bg-black/45');
+    expect(institutionalProgrammePageSource).toContain('!text-white');
   });
 
   it('keeps the recently changed page section titles as plain green text', () => {

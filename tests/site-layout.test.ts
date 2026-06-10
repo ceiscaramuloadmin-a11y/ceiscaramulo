@@ -22,6 +22,17 @@ describe('site-layout', () => {
     expect(footerLinks.map((link) => link.href)).not.toContain('/backoffice/login');
   });
 
+  it('aligns footer navigation with institutional initiatives instead of repeated or misplaced links', () => {
+    const footerLinks = defaultSiteLayoutSettings.footer.columns.flatMap((column) => column.links);
+    const footerHrefs = footerLinks.map((link) => link.href);
+
+    expect(defaultSiteLayoutSettings.footer.columns.map((column) => column.title)).toContain('Iniciativas');
+    expect(footerHrefs).toEqual(expect.arrayContaining(['/oficina-do-burel', '/escola-dos-nossos-avos', '/pon-do-jueus']));
+    expect(footerHrefs).not.toContain('/noticias');
+    expect(footerHrefs).not.toContain('/serra-do-caramulo');
+    expect(footerHrefs).not.toContain('/contactos');
+  });
+
   it('does not place a long administrative mission paragraph below the footer logo', () => {
     expect(defaultSiteLayoutSettings.footer.brandDescription).toBe('');
   });
@@ -59,6 +70,28 @@ describe('site-layout', () => {
 
     expect(settings.footer.columns[0].title).toBe('Conhecer');
     expect(settings.footer.columns[1].title).toBe('Explorar');
+  });
+
+  it('removes old footer links that duplicated news, resources, or the contact column', () => {
+    const settings = normalizeSiteLayoutSettings({
+      ...defaultSiteLayoutSettings,
+      footer: {
+        ...defaultSiteLayoutSettings.footer,
+        columns: [
+          {
+            title: 'Antigos',
+            links: [
+              { label: 'Notícias', href: '/noticias' },
+              { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
+              { label: 'Contactos', href: '/contactos' },
+              { label: 'Recursos', href: '/biblioteca' },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(settings.footer.columns[0].links).toEqual([{ label: 'Recursos', href: '/biblioteca' }]);
   });
 
   it('defines editable visual identity and SEO defaults for the appearance CMS', () => {

@@ -87,6 +87,7 @@ export default async function SobreNosPage() {
             backgroundSize: 'cover',
           }}
         >
+          <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
           <div className="relative z-10 mx-auto max-w-4xl text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">
               CEISCaramulo

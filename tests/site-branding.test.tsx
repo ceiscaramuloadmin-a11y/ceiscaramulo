@@ -202,7 +202,7 @@ describe('site branding', () => {
             {
               title: 'Misto',
               links: [
-                { label: 'Ligacao publica', href: '/contactos' },
+                { label: 'Ligacao publica', href: '/galeria' },
                 { label: 'Backoffice direto', href: '/backoffice' },
               ],
             },
@@ -219,6 +219,51 @@ describe('site branding', () => {
     expect(screen.queryByRole('link', { name: 'Backoffice' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Login Administrativo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Backoffice direto' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the footer navigation focused on initiatives and moves the contact page link into contacts', () => {
+    render(<Footer />);
+
+    expect(screen.getByRole('heading', { name: 'Iniciativas' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Oficina do Burel' })).toHaveAttribute('href', '/oficina-do-burel');
+    expect(screen.getByRole('link', { name: 'Escola dos Nossos Avós' })).toHaveAttribute('href', '/escola-dos-nossos-avos');
+    expect(screen.getByRole('link', { name: 'PON do Jueus' })).toHaveAttribute('href', '/pon-do-jueus');
+    expect(screen.getByRole('link', { name: 'Como nos contactar' })).toHaveAttribute('href', '/contactos');
+    expect(screen.queryByRole('link', { name: 'Notícias' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'A Serra do Caramulo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
+  });
+
+  it('filters outdated fetched footer links that the contact column now owns', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        ...defaultSiteLayoutSettings,
+        footer: {
+          ...defaultSiteLayoutSettings.footer,
+          columns: [
+            {
+              title: 'Antigos',
+              links: [
+                { label: 'Notícias', href: '/noticias' },
+                { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
+                { label: 'Contactos', href: '/contactos' },
+                { label: 'Recursos', href: '/biblioteca' },
+              ],
+            },
+          ],
+        },
+      }),
+    } as Response);
+
+    render(<Footer />);
+
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Recursos' })).toBeInTheDocument());
+
+    expect(screen.queryByRole('link', { name: 'Notícias' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'A Serra do Caramulo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Como nos contactar' })).toHaveAttribute('href', '/contactos');
   });
 
   it('renders footer social links as green standalone icons', () => {
