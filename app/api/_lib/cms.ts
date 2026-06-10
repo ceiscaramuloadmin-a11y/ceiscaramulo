@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
-import { defaultSiteLayoutSettings, deepMergeSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
+import { defaultSiteLayoutSettings, deepMergeSettings, normalizeSiteLayoutSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
 import { getAdminAuthSession } from '@/lib/admin-auth-server';
 import type { AdminPermission, GalleryMediaItem, GalleryMediaType, SiteLayoutSettings } from '@/types';
 
@@ -287,7 +287,7 @@ export async function getSiteLayoutSettings(): Promise<SiteLayoutSettings> {
   const parsed = safeJsonParse<unknown>(stored ? JSON.stringify(stored.value) : fallbackRaw, {});
   const settings = deepMergeSettings(defaultSiteLayoutSettings, parsed);
 
-  return {
+  return normalizeSiteLayoutSettings({
     ...settings,
     footer: {
       ...settings.footer,
@@ -296,7 +296,7 @@ export async function getSiteLayoutSettings(): Promise<SiteLayoutSettings> {
           ? REQUESTED_FOOTER_BRAND_DESCRIPTION
           : settings.footer.brandDescription,
     },
-  };
+  });
 }
 
 // Persiste as definições completas de layout do site.

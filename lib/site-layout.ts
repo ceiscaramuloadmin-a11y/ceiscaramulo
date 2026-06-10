@@ -2,6 +2,7 @@ import type { LayoutIconName, SiteLayoutSettings } from '@/types';
 import { contactInfo } from '@/data/site';
 
 export const SITE_LAYOUT_SETTINGS_KEY = 'site_layout_settings';
+const PLACEHOLDER_FOOTER_COLUMN_TITLE = 'teste';
 
 export const layoutIconOptions: LayoutIconName[] = [
   'Mountain',
@@ -217,6 +218,22 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     ogImage: '/og-image.svg',
   },
 };
+
+export function normalizeSiteLayoutSettings(settings: SiteLayoutSettings): SiteLayoutSettings {
+  return {
+    ...settings,
+    footer: {
+      ...settings.footer,
+      columns: settings.footer.columns.map((column, index) => ({
+        ...column,
+        title:
+          column.title.trim().toLowerCase() === PLACEHOLDER_FOOTER_COLUMN_TITLE
+            ? defaultSiteLayoutSettings.footer.columns[index]?.title ?? column.title
+            : column.title,
+      })),
+    },
+  };
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
