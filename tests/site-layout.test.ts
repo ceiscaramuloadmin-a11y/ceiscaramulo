@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deepMergeSettings, defaultSiteLayoutSettings } from '@/lib/site-layout';
+import { deepMergeSettings, defaultSiteLayoutSettings, normalizeSiteLayoutSettings } from '@/lib/site-layout';
 
 describe('site-layout', () => {
   it('uses the requested homepage hero phrase by default', () => {
@@ -37,6 +37,28 @@ describe('site-layout', () => {
     expect(defaultSiteLayoutSettings.footer.contactInfo.email).toBe('ceiscaramulo@gmail.com');
     expect(defaultSiteLayoutSettings.footer.contactInfo.phone).toBe('+351 966 717 360');
     expect(defaultSiteLayoutSettings.footer.contactInfo.socialMedia.instagram).toBe('https://www.instagram.com/ceiscaramulo_/');
+  });
+
+  it('replaces placeholder footer column titles with the public defaults', () => {
+    const settings = normalizeSiteLayoutSettings({
+      ...defaultSiteLayoutSettings,
+      footer: {
+        ...defaultSiteLayoutSettings.footer,
+        columns: [
+          {
+            ...defaultSiteLayoutSettings.footer.columns[0],
+            title: 'Teste',
+          },
+          {
+            ...defaultSiteLayoutSettings.footer.columns[1],
+            title: 'Explorar',
+          },
+        ],
+      },
+    });
+
+    expect(settings.footer.columns[0].title).toBe('Conhecer');
+    expect(settings.footer.columns[1].title).toBe('Explorar');
   });
 
   it('defines editable visual identity and SEO defaults for the appearance CMS', () => {
