@@ -3,6 +3,7 @@ import { contactInfo } from '@/data/site';
 
 export const SITE_LAYOUT_SETTINGS_KEY = 'site_layout_settings';
 const PLACEHOLDER_FOOTER_COLUMN_TITLE = 'teste';
+const FOOTER_LINKS_TO_REMOVE = new Set(['/noticias', '/serra-do-caramulo', '/contactos']);
 
 export const layoutIconOptions: LayoutIconName[] = [
   'Mountain',
@@ -179,16 +180,16 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
         links: [
           { label: 'Sobre Nós', href: '/sobre-nos' },
           { label: 'Atividades', href: '/atividades' },
-          { label: 'Notícias', href: '/noticias' },
           { label: 'Recursos', href: '/biblioteca' },
         ],
       },
       {
-        title: 'Explorar',
+        title: 'Iniciativas',
         links: [
           { label: 'Galeria Multimédia', href: '/galeria' },
-          { label: 'A Serra do Caramulo', href: '/serra-do-caramulo' },
-          { label: 'Contactos', href: '/contactos' },
+          { label: 'Oficina do Burel', href: '/oficina-do-burel' },
+          { label: 'Escola dos Nossos Avós', href: '/escola-dos-nossos-avos' },
+          { label: 'PON do Jueus', href: '/pon-do-jueus' },
         ],
       },
     ],
@@ -230,6 +231,7 @@ export function normalizeSiteLayoutSettings(settings: SiteLayoutSettings): SiteL
           column.title.trim().toLowerCase() === PLACEHOLDER_FOOTER_COLUMN_TITLE
             ? defaultSiteLayoutSettings.footer.columns[index]?.title ?? column.title
             : column.title,
+        links: column.links.filter((link) => !FOOTER_LINKS_TO_REMOVE.has(link.href)),
       })),
     },
   };
