@@ -31,18 +31,26 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'contacts', label: 'Contactos' }");
     expect(backofficePageSource).toContain('availableSections.includes(item.id)');
     expect(backofficePageSource).toContain('setActiveSection(item.id)');
+    expect(backofficePageSource).toContain('mt-6 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1');
     expect(backofficePageSource).toContain('Mensagens de contacto');
     expect(backofficePageSource).toContain('Marcar como lida');
     expect(backofficePageSource).toContain('Marcar como não lida');
   });
 
-  it('keeps the requested administrative menu order with contacts and audit last', () => {
+  it('keeps the requested administrative menu order with contacts and history last', () => {
     expect(backofficePageSource).not.toContain('function sortBackofficeNavItems');
     expect(backofficePageSource).toContain('BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id))');
     expect(backofficePageSource.indexOf("{ id: 'contacts', label: 'Contactos' }")).toBeLessThan(
-      backofficePageSource.indexOf("{ id: 'audit', label: 'Auditoria' }")
+      backofficePageSource.indexOf("{ id: 'audit', label: 'Histórico' }")
     );
     expect(backofficePageSource).toContain("{ id: 'publications', label: 'Recursos' }");
+  });
+
+  it('shows the backoffice change history with the 15 day cleanup policy', () => {
+    expect(backofficePageSource).toContain("{ id: 'audit', label: 'Histórico' }");
+    expect(backofficePageSource).toContain('Histórico de alterações');
+    expect(backofficePageSource).toContain('Os eventos com mais de 15 dias são apagados automaticamente');
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<AuditLogEntry[]>('/api/admin/audit')");
   });
 
   it('allows PDF attachments in the resources form', () => {
@@ -91,6 +99,11 @@ describe('backoffice page guards', () => {
   });
 
   it('adds all public frontend pages to the appearance page editor', () => {
+    const pagesEditorBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("appearanceTab === 'pages'"),
+      backofficePageSource.indexOf("appearanceTab === 'footer'")
+    );
+
     expect(backofficePageSource).toContain('APPEARANCE_PAGE_FIELDS');
     expect(backofficePageSource).toContain("'bibliotecaJrs'");
     expect(backofficePageSource).toContain("'contactos'");
@@ -109,6 +122,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'publicacoes', label: 'Publicações' }");
     expect(backofficePageSource).toContain('updateAppearancePage');
     expect(backofficePageSource).toContain('Mensagem sem conteúdos');
+    expect(pagesEditorBlock).toContain('max-h-[70vh] gap-3 overflow-y-auto pr-2 md:grid-cols-2');
   });
 
   it('removes only the global gallery entry from the backoffice navigation and overview', () => {
