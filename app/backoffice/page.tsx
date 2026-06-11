@@ -66,7 +66,7 @@ const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = 
   { id: 'gallery', label: 'Media das páginas' },
   { id: 'layout', label: 'Layout' },
   { id: 'admins', label: 'Admins' },
-  { id: 'audit', label: 'Auditoria' },
+  { id: 'audit', label: 'Histórico' },
 ];
 
 const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
@@ -85,7 +85,7 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'layout', label: 'Aparência' },
   { id: 'admins', label: 'Admins' },
   { id: 'contacts', label: 'Contactos' },
-  { id: 'audit', label: 'Auditoria' },
+  { id: 'audit', label: 'Histórico' },
 ];
 
 const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
@@ -1228,7 +1228,7 @@ export default function BackofficePage() {
           </button>
         </div>
 
-        <nav className="mt-6 grid gap-2" aria-label="Secções do backoffice">
+        <nav className="mt-6 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1" aria-label="Secções do backoffice">
           {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id)).map((item) => (
             <button
               key={item.id}
@@ -1951,8 +1951,10 @@ export default function BackofficePage() {
 
       {activeSection === 'audit' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Registo de auditoria</h2>
-          <p className="mt-1 text-sm text-stone-600">Histórico de alterações administrativas com ator, ação e timestamp.</p>
+          <h2 className="text-xl font-semibold text-[#27441d]">Histórico de alterações</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            Registo das alterações feitas no backoffice, com autor, ação e data. Os eventos com mais de 15 dias são apagados automaticamente para não encher a base de dados.
+          </p>
 
           <div className="mt-4 space-y-3">
             {isLoadingGovernance ? <AuditListSkeleton /> : null}
@@ -1969,7 +1971,7 @@ export default function BackofficePage() {
               </article>
             ))}
 
-            {!isLoadingGovernance && auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos de auditoria.</p> : null}
+            {!isLoadingGovernance && auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos no histórico.</p> : null}
           </div>
         </section>
       ) : null}
@@ -2047,7 +2049,7 @@ export default function BackofficePage() {
             {appearanceTab === 'pages' ? (
             <>
             <AppearanceSectionTitle title="Conteúdo das Páginas" description="Edita títulos, descrições e mensagens públicas das páginas principais." />
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid max-h-[70vh] gap-3 overflow-y-auto pr-2 md:grid-cols-2">
               {APPEARANCE_PAGE_FIELDS.map((page) => {
                 const pageSettings = layoutSettings.pages[page.id];
 

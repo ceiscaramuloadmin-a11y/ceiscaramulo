@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!context || !hasAdminPermission(context, 'audit')) {
-    return jsonError('Sem permissão para ver a auditoria.', 403);
+    return jsonError('Sem permissão para ver o histórico.', 403);
   }
 
   const logs = await listAuditLogs();
