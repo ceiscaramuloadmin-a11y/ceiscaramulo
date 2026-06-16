@@ -27,6 +27,17 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain('Layout CMS');
   });
 
+  it('exposes a dedicated Sobre Nos backoffice editor backed by layout settings', () => {
+    expect(backofficePageSource).toContain("{ id: 'about', label: 'Sobre Nós' }");
+    expect(backofficePageSource).toContain("activeSection === 'about'");
+    expect(backofficePageSource).toContain('Editar página Sobre Nós');
+    expect(backofficePageSource).toContain('layoutSettings.aboutPage');
+    expect(backofficePageSource).toContain('updateAboutPage');
+    expect(backofficePageSource).toContain('updateAboutParagraphs');
+    expect(backofficePageSource).toContain('updateAboutSocialBodies');
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout'");
+  });
+
   it('exposes a dedicated contacts section in the backoffice with read-state actions', () => {
     expect(backofficePageSource).toContain("{ id: 'contacts', label: 'Contactos' }");
     expect(backofficePageSource).toContain('availableSections.includes(item.id)');

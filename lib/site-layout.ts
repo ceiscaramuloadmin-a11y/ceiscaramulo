@@ -118,6 +118,54 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       description: 'Área dedicada às publicações, documentos e materiais produzidos ou divulgados pelo CEISCaramulo.',
     },
   },
+  aboutPage: {
+    whoWeAreTitle: 'Quem Somos',
+    whoWeAreParagraphs: [
+      'O CEISCaramulo é uma associação legalmente constituída, sem fins lucrativos, sediada na vila do Caramulo, no edifício do Turismo. A sua missão passa por promover o estudo e a investigação nos vários domínios ligados à Serra do Caramulo, desde o ambiente à geografia, da biologia à geologia, da história à etnografia e à gastronomia.',
+      'Este trabalho é pensado com um olhar simultaneamente científico, cultural e económico, valorizando o património material e imaterial da região e promovendo o empreendedorismo local como parte de uma estratégia de desenvolvimento sustentável.',
+      'Conhecer aquilo que distingue a Serra do Caramulo é, para o CEISCaramulo, a base para projetar o futuro e valorizar o que já existe.',
+    ],
+    originTitle: 'Como Nasceu',
+    originParagraphs: [
+      'A ideia de criar o Centro de Estudos e Interpretação da Serra do Caramulo nasceu no âmbito do projeto "Conhecer o que é nosso, para preservar e valorizar", apresentado pelo então Agrupamento de Escolas do Caramulo ao concurso promovido pela Fundação Montepio.',
+      'Esse projeto recebeu o Prémio Escolar Montepio 2011, no valor de 25 mil euros, e foi esse impulso que ajudou a transformar a visão inicial numa associação ativa e enraizada no território.',
+    ],
+    foundersTitle: 'Fundadores',
+    foundersParagraphs: [
+      'O grupo fundador que concretizou a Associação CEISCaramulo reuniu pessoal docente e não docente, encarregados de educação da Escola EB 2,3 do Caramulo e do Agrupamento de Escolas de Tondela Tomaz Ribeiro, as freguesias do território da Serra do Caramulo representadas pelas respetivas juntas e ainda o vereador do pelouro da Cultura e Educação da Câmara Municipal de Tondela.',
+    ],
+    socialBodiesTitle: 'Corpos Sociais',
+    socialBodies: [
+      {
+        title: 'Mesa da Assembleia Geral',
+        members: [
+          'Presidente: Maria Nazaré Gonçalves Gouveia',
+          '1.º Secretário: Rosa Maria Pereira Loureiro Soares',
+          '2.º Secretário: Maria Dolores da Veiga Gonçalves',
+        ],
+      },
+      {
+        title: 'Direção',
+        members: [
+          'Presidente: Luís Filipe Rodrigues da Costa',
+          'Vice-Presidente: Fernanda Marques Ferreira Martins',
+          '1.º Vogal: Maria Celeste Bastos Monteiro',
+          '2.º Vogal: Rosa Maria Marques Coimbra Fernandes',
+          '3.º Vogal: Pedro Luís Silva Pereira',
+        ],
+      },
+      {
+        title: 'Conselho Fiscal',
+        members: [
+          'Presidente: António Augusto Ferreira',
+          '1.º Vogal: António Dias',
+          '2.º Vogal: Fernanda Maria Amaral Rodrigues Pereira',
+        ],
+      },
+    ],
+    contactTitle: 'Contacte-nos',
+    contactDescription: 'Tem questões ou quer saber mais sobre o nosso trabalho? Entre em contacto connosco.',
+  },
   serra: {
     sections: [
       {

@@ -46,7 +46,7 @@ type ProgrammeGallerySectionId =
   | 'gallery-publicacoes'
   | 'gallery-biblioteca';
 type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
-type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
+type SectionId = 'overview' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
 type AppearanceTab = 'hero' | 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
 type AppearancePageKey = keyof SiteLayoutSettings['pages'];
 type DashboardStats = {
@@ -71,6 +71,7 @@ const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = 
 
 const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'overview', label: 'Visão geral' },
+  { id: 'about', label: 'Sobre Nós' },
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
@@ -311,7 +312,10 @@ export default function BackofficePage() {
     }
     if (currentAdmin.role === 'owner' || permissionSet.has('admins')) sections.push('admins');
     if (currentAdmin.role === 'owner' || permissionSet.has('audit')) sections.push('audit');
-    if (currentAdmin.role === 'owner' || permissionSet.has('layout')) sections.push('layout');
+    if (currentAdmin.role === 'owner' || permissionSet.has('layout')) {
+      sections.push('about');
+      sections.push('layout');
+    }
 
     return sections;
   }, [currentAdmin, exportAuthMode]);
@@ -536,7 +540,7 @@ export default function BackofficePage() {
       return;
     }
 
-    if (activeSection === 'layout') {
+    if (activeSection === 'layout' || activeSection === 'about') {
       void refreshLayout();
       return;
     }
@@ -664,6 +668,52 @@ export default function BackofficePage() {
         },
       },
     }));
+  }
+
+  function textToEditableLines(value: string) {
+    return value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  function updateAboutPage(updates: Partial<SiteLayoutSettings['aboutPage']>) {
+    // Esta seccao guarda o corpo da pagina "Sobre Nos" dentro do mesmo objeto
+    // de layout que ja e auditado pelo backoffice. Assim evitamos criar outro
+    // endpoint ou outra tabela so para uma pagina institucional pequena.
+    setLayoutSettings((current) => ({
+      ...current,
+      aboutPage: {
+        ...current.aboutPage,
+        ...updates,
+      },
+    }));
+  }
+
+  function updateAboutParagraphs(key: 'whoWeAreParagraphs' | 'originParagraphs' | 'foundersParagraphs', value: string) {
+    updateAboutPage({ [key]: textToEditableLines(value) } as Partial<SiteLayoutSettings['aboutPage']>);
+  }
+
+  function updateAboutSocialBodies(value: string) {
+    // Formato editorial simples:
+    // - uma linha sem ":" abre um grupo, por exemplo "Direcao";
+    // - as linhas seguintes com cargos ficam como membros ate ao proximo grupo.
+    // Isto permite editar corpos sociais num textarea sem uma UI pesada.
+    const groups: SiteLayoutSettings['aboutPage']['socialBodies'] = [];
+
+    for (const line of textToEditableLines(value)) {
+      if (!line.includes(':')) {
+        groups.push({ title: line, members: [] });
+        continue;
+      }
+
+      const lastGroup = groups.at(-1);
+      if (lastGroup) {
+        lastGroup.members.push(line);
+      }
+    }
+
+    updateAboutPage({ socialBodies: groups });
   }
 
   function moveExploreLink(index: number, direction: -1 | 1) {
@@ -1973,6 +2023,59 @@ export default function BackofficePage() {
 
             {!isLoadingGovernance && auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos no histórico.</p> : null}
           </div>
+        </section>
+      ) : null}
+
+      {activeSection === 'about' ? (
+        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
+          <h2 className="text-xl font-semibold text-[#27441d]">Editar página Sobre Nós</h2>
+          <p className="mt-1 text-sm text-stone-600">Atualiza o conteúdo institucional publicado em /sobre-nos.</p>
+
+          {isLoadingLayout ? (
+            <div className="mt-5">
+              <LayoutFormSkeleton />
+            </div>
+          ) : (
+            <form className="mt-5 grid gap-5" onSubmit={(event) => void saveLayoutSettings(event)}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input label="Hero · Título" value={layoutSettings.pages.sobre.title} onChange={(value) => updateAppearancePage('sobre', { title: value })} />
+                <TextArea label="Hero · Subtítulo" value={layoutSettings.pages.sobre.description} onChange={(value) => updateAppearancePage('sobre', { description: value })} />
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <Input label="Secção · Quem Somos" value={layoutSettings.aboutPage.whoWeAreTitle} onChange={(value) => updateAboutPage({ whoWeAreTitle: value })} />
+                  <TextArea label="Parágrafos · Quem Somos" value={layoutSettings.aboutPage.whoWeAreParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('whoWeAreParagraphs', value)} />
+                </div>
+                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <Input label="Secção · Como Nasceu" value={layoutSettings.aboutPage.originTitle} onChange={(value) => updateAboutPage({ originTitle: value })} />
+                  <TextArea label="Parágrafos · Como Nasceu" value={layoutSettings.aboutPage.originParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('originParagraphs', value)} />
+                </div>
+                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <Input label="Secção · Fundadores" value={layoutSettings.aboutPage.foundersTitle} onChange={(value) => updateAboutPage({ foundersTitle: value })} />
+                  <TextArea label="Parágrafos · Fundadores" value={layoutSettings.aboutPage.foundersParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('foundersParagraphs', value)} />
+                </div>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                <Input label="Secção · Corpos Sociais" value={layoutSettings.aboutPage.socialBodiesTitle} onChange={(value) => updateAboutPage({ socialBodiesTitle: value })} />
+                <TextArea
+                  label="Corpos sociais · Uma linha para o grupo, depois membros com cargo: nome"
+                  value={layoutSettings.aboutPage.socialBodies.map((group) => [group.title, ...group.members].join('\n')).join('\n\n')}
+                  onChange={updateAboutSocialBodies}
+                />
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-stone-200 p-3 md:grid-cols-2">
+                <Input label="CTA contacto · Título" value={layoutSettings.aboutPage.contactTitle} onChange={(value) => updateAboutPage({ contactTitle: value })} />
+                <TextArea label="CTA contacto · Descrição" value={layoutSettings.aboutPage.contactDescription} onChange={(value) => updateAboutPage({ contactDescription: value })} />
+              </div>
+
+              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
+              </button>
+            </form>
+          )}
         </section>
       ) : null}
 
