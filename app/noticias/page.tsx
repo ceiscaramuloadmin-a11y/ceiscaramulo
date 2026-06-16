@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Tag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import MotionReveal from '@/components/MotionReveal';
 import { newsArticles as fallbackNewsArticles } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { withPublicContentAsset } from '@/lib/public-content-assets';
@@ -109,41 +109,44 @@ export default async function NoticiasPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {newsArticles.map((article) => (
-                <Link
-                  key={article.id}
-                  href={`/noticias/${article.slug}`}
-                  className="group rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div className="mb-4 overflow-hidden rounded-lg">
-                    <img
-                      src={getAssetUrl(article.image)}
-                      alt={article.title}
-                      className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {formatDate(article.publishedAt || article.createdAt || '')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Tag className="h-4 w-4" />
-                      {article.category}
-                    </span>
-                  </div>
-                  <h2 className="mt-4 font-display text-xl font-bold leading-tight text-foreground group-hover:text-primary">
-                    {article.title}
-                  </h2>
-                  <p className="mt-2 overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
-                    {article.excerpt}
-                  </p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-medium text-primary">
-                    Ler mais
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </div>
-                </Link>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-5 lg:gap-6">
+              {newsArticles.map((article, index) => (
+                <MotionReveal key={article.id} className="h-full" delayMs={index * 80}>
+                  <Link
+                    href={`/noticias/${article.slug}`}
+                    className="group flex h-full flex-col rounded-lg border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-muted">
+                      <img
+                        src={getAssetUrl(article.image)}
+                        alt={article.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {formatDate(article.publishedAt || article.createdAt || '')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3.5 w-3.5" />
+                        {article.category}
+                      </span>
+                    </div>
+                    <h2 className="mt-3 overflow-hidden font-display text-lg font-bold leading-snug text-foreground group-hover:text-primary [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                      {article.title}
+                    </h2>
+                    <p className="mt-2 overflow-hidden text-sm leading-relaxed text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
+                      {article.excerpt}
+                    </p>
+                    <div className="mt-auto flex items-center gap-1 pt-4 text-sm font-medium text-primary">
+                      Ler mais
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                </MotionReveal>
               ))}
             </div>
           )}

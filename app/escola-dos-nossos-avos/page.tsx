@@ -27,7 +27,7 @@ export default async function EscolaDosNossosAvosPage() {
     >
       <section className="mt-10">
         <div className="mb-6">
-          <h2 className="font-display text-3xl font-bold !text-[#27441d]">Conteúdos da Escola dos Nossos Avós</h2>
+          <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">Conteúdos da Escola dos Nossos Avós</h2>
         </div>
         <GalleryTabs items={media} />
       </section>

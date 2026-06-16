@@ -102,7 +102,7 @@ export default function GalleryTabs({ items }: Props) {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 'rounded-lg px-4 py-2 text-sm transition-colors',
-                activeTab === tab.id ? 'bg-[#27441d] text-white' : 'bg-transparent text-stone-700 hover:bg-stone-100'
+                activeTab === tab.id ? 'bg-[#0f4c36] text-white' : 'bg-transparent text-stone-700 hover:bg-stone-100'
               )}
             >
               {tab.label}
@@ -182,7 +182,7 @@ export default function GalleryTabs({ items }: Props) {
                       type="button"
                       onClick={() => void toggleVideoPlayback(item.id)}
                       disabled={!item.source}
-                      className="inline-flex items-center gap-2 rounded-lg bg-[#27441d] px-4 py-2 text-sm font-medium text-white"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white"
                     >
                       {playingVideos[item.id] ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                       {playingVideos[item.id] ? 'Pausar' : 'Reproduzir'}
@@ -213,7 +213,7 @@ export default function GalleryTabs({ items }: Props) {
               <article key={item.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4ec] text-[#27441d]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4ec] text-[#0f4c36]">
                       <Volume2 className="h-5 w-5" />
                     </div>
                     <div>
@@ -240,7 +240,7 @@ export default function GalleryTabs({ items }: Props) {
               <article key={item.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4ec] text-[#27441d]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef4ec] text-[#0f4c36]">
                       <FileText className="h-5 w-5" />
                     </div>
                     <div>
@@ -253,7 +253,7 @@ export default function GalleryTabs({ items }: Props) {
                       href={item.source}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center justify-center rounded-lg bg-[#27441d] px-4 py-2 text-sm font-medium text-white"
+                      className="inline-flex items-center justify-center rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white"
                     >
                       Abrir ficheiro
                     </a>

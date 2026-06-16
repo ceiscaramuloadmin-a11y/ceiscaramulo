@@ -2,10 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { CSSProperties, useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { Autoplay, EffectFade } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import SiteLogo from '@/components/SiteLogo';
 import heroImage from '@/src/assets/hero-imgs/hero-img.webp';
 import heroImage2 from '@/src/assets/hero-imgs/hero-img2.webp';
@@ -51,6 +49,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const isShrunk = scrollY > 8;
 
   const trimmedTitleLines = [hero.titleLine1, hero.titleLine2, hero.titleLine3, hero.titleLine4].map((line) =>
@@ -74,11 +73,24 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (prefersReducedMotion || localHeroImages.length <= 1) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setActiveHeroIndex((current) => (current + 1) % localHeroImages.length);
+    }, HERO_SWIPER_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [prefersReducedMotion]);
+
   const parallaxOffset = prefersReducedMotion ? 0 : Math.min(scrollY * 0.22, 120);
+  const activeHeroImage = localHeroImages[activeHeroIndex] ?? localHeroImages[0];
 
   return (
     <section className="relative min-h-[620px] overflow-hidden lg:min-h-[640px]">
-      <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
+      <div className={cn(NAV_OUTER_CLASSES, 'ceis-hero-nav-motion', navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
         <div
           className={cn(
             'mx-auto max-w-[96rem] rounded-full border border-white/35 bg-white/90 px-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-10',
@@ -88,7 +100,7 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
           <div className="flex items-center justify-between gap-8">
             <Link
               href="/"
-              className="flex items-center gap-3 text-foreground transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3e5c32]/35 active:filter active:brightness-95"
+              className="flex items-center gap-3 text-foreground transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f4c36]/35 active:filter active:brightness-95"
               aria-label="CEISCaramulo - Página inicial"
             >
               <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-12 sm:h-14' : 'h-16 sm:h-20')} />
@@ -141,38 +153,23 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       </div>
 
       <div className="absolute inset-0">
-        <Swiper
-          modules={[Autoplay, EffectFade]}
-          className="absolute inset-0 z-0 h-full w-full"
-          slidesPerView={1}
-          effect="fade"
-          fadeEffect={{ crossFade: true }}
-          loop={localHeroImages.length > 1}
-          allowTouchMove={false}
-          autoplay={
-            !prefersReducedMotion && localHeroImages.length > 1
-              ? { delay: HERO_SWIPER_INTERVAL_MS, disableOnInteraction: false }
-              : false
-          }
-        >
-          {localHeroImages.map((imageSrc, index) => (
-            <SwiperSlide key={`${imageSrc.src}-${index}`} className="h-full w-full">
-              <Image
-                src={imageSrc}
-                alt={hero.imageAlt}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                className="h-full w-full object-cover"
-                style={{
-                  transform: `translateY(${parallaxOffset}px) scale(1.08)`,
-                }}
-              />
-            </SwiperSlide>
-          ))}
-        </Swiper>
+        <div className="absolute inset-0 z-0 h-full w-full overflow-hidden" data-testid="hero-carousel">
+          <div key={activeHeroImage.src} className="ceis-hero-slide-motion absolute inset-0">
+            <Image
+              src={activeHeroImage}
+              alt={hero.imageAlt}
+              fill
+              priority={activeHeroIndex === 0}
+              sizes="100vw"
+              className="h-full w-full object-cover"
+              style={{
+                transform: `translateY(${parallaxOffset}px) scale(1.08)`,
+              }}
+            />
+          </div>
+        </div>
 
-        <div className="pointer-events-none absolute inset-0 z-10 bg-[#27441d]/35" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[#0f4c36]/35" />
         <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
@@ -183,17 +180,17 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
           }`}
         >
           {singleLineHeroTitle ? (
-            <span className="block text-[#9dc44d]">{heroTitlePieces[0] || hero.titleLine1}</span>
+            <span className="ceis-hero-title-line block text-[#9dc44d]" style={{ '--motion-delay': '240ms' } as CSSProperties}>{heroTitlePieces[0] || hero.titleLine1}</span>
           ) : (
             <>
-              <span className="block">{hero.titleLine1}</span>
-              <span className="block text-white">{hero.titleLine2}</span>
+              <span className="ceis-hero-title-line block" style={{ '--motion-delay': '180ms' } as CSSProperties}>{hero.titleLine1}</span>
+              <span className="ceis-hero-title-line block text-white" style={{ '--motion-delay': '300ms' } as CSSProperties}>{hero.titleLine2}</span>
               {hero.titleLine3 === 'da Serra' ? (
-                <span className="block"><span className="text-white">da</span> <span className="text-[#9dc44d]">Serra</span></span>
+                <span className="ceis-hero-title-line block" style={{ '--motion-delay': '420ms' } as CSSProperties}><span className="text-white">da</span> <span className="text-[#9dc44d]">Serra</span></span>
               ) : (
-                <span className="block text-[#9dc44d]">{hero.titleLine3}</span>
+                <span className="ceis-hero-title-line block text-[#9dc44d]" style={{ '--motion-delay': '420ms' } as CSSProperties}>{hero.titleLine3}</span>
               )}
-              <span className="block text-[#9dc44d]">{hero.titleLine4}</span>
+              <span className="ceis-hero-title-line block text-[#9dc44d]" style={{ '--motion-delay': '540ms' } as CSSProperties}>{hero.titleLine4}</span>
             </>
           )}
         </h1>

@@ -95,11 +95,32 @@ describe('site-layout', () => {
   });
 
   it('defines editable visual identity and SEO defaults for the appearance CMS', () => {
-    expect(defaultSiteLayoutSettings.visualIdentity.colors.primary).toBe('#27441d');
-    expect(defaultSiteLayoutSettings.visualIdentity.colors.buttons).toBe('#27441d');
+    expect(defaultSiteLayoutSettings.visualIdentity.colors.primary).toBe('#0f4c36');
+    expect(defaultSiteLayoutSettings.visualIdentity.colors.buttons).toBe('#0f4c36');
+    expect(defaultSiteLayoutSettings.visualIdentity.colors.links).toBe('#0f4c36');
+    expect(defaultSiteLayoutSettings.visualIdentity.colors.titles).toBe('#0f4c36');
     expect(defaultSiteLayoutSettings.visualIdentity.logos.primary).toBe('/ceiscaramulo-logo.svg');
     expect(defaultSiteLayoutSettings.seo.title).toContain('CEISCaramulo');
     expect(defaultSiteLayoutSettings.seo.ogImage).toBe('/og-image.svg');
+  });
+
+  it('normalizes old stored green tones to the logo green', () => {
+    const settings = normalizeSiteLayoutSettings({
+      ...defaultSiteLayoutSettings,
+      visualIdentity: {
+        ...defaultSiteLayoutSettings.visualIdentity,
+        colors: {
+          ...defaultSiteLayoutSettings.visualIdentity.colors,
+          primary: '#27441d',
+          buttons: '#3e5c32',
+          titles: '#9dc44d',
+        },
+      },
+    });
+
+    expect(settings.visualIdentity.colors.primary).toBe('#0f4c36');
+    expect(settings.visualIdentity.colors.buttons).toBe('#0f4c36');
+    expect(settings.visualIdentity.colors.titles).toBe('#0f4c36');
   });
 
   it('defines editable page intros for the public frontend pages', () => {

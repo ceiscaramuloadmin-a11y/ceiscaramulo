@@ -2,7 +2,10 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const upsert = vi.fn();
+const { upsert, sendNewsletterSubscriptionConfirmation } = vi.hoisted(() => ({
+  upsert: vi.fn(),
+  sendNewsletterSubscriptionConfirmation: vi.fn(),
+}));
 
 vi.mock('@/lib/prisma', () => ({
   default: {
@@ -10,14 +13,20 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+vi.mock('@/lib/newsletter-on-publish', () => ({
+  sendNewsletterSubscriptionConfirmation,
+}));
+
 describe('newsletter subscribe route', () => {
   afterEach(() => {
     vi.resetModules();
     upsert.mockReset();
+    sendNewsletterSubscriptionConfirmation.mockReset();
   });
 
   it('stores the normalized email successfully', async () => {
     upsert.mockResolvedValue({ id: 'sub_1' });
+    sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: true });
 
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
 
@@ -36,10 +45,12 @@ describe('newsletter subscribe route', () => {
       create: { email: 'maria@test.pt' },
       update: {},
     });
+    expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('maria@test.pt');
   });
 
   it('accepts form submissions from the newsletter button', async () => {
     upsert.mockResolvedValue({ id: 'sub_2' });
+    sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: true });
 
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
     const formData = new FormData();
@@ -57,6 +68,26 @@ describe('newsletter subscribe route', () => {
       where: { email: 'joao@example.pt' },
       create: { email: 'joao@example.pt' },
       update: {},
+    });
+    expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('joao@example.pt');
+  });
+
+  it('still confirms the subscription on screen when the confirmation email cannot be sent', async () => {
+    upsert.mockResolvedValue({ id: 'sub_3' });
+    sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: false, reason: 'missing_api_key' });
+
+    const { POST } = await import('@/app/api/newsletter/subscribe/route');
+    const response = await POST(
+      new Request('http://localhost/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'ana@site.pt' }),
+      })
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      message: expect.stringContaining('Subscrição confirmada'),
     });
   });
 

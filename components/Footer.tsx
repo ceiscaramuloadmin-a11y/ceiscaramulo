@@ -90,7 +90,7 @@ const Footer: React.FC = () => {
 
           {footerColumns.map((column) => (
             <div key={column.title}>
-              <h3 className="text-sm font-bold text-[#3e5c32]">{column.title}</h3>
+              <h3 className="text-sm font-bold text-[#0f4c36]">{column.title}</h3>
               <div className="mt-6 grid gap-4">
                 {column.links.map((item) => {
                   const isActive = pathname === item.href;
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={isActive ? 'text-sm font-semibold text-[#3e5c32] underline' : 'text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline'}
+                      className={isActive ? 'text-sm font-semibold text-[#0f4c36] underline' : 'text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'}
                     >
                       {item.label}
                     </Link>
@@ -110,22 +110,22 @@ const Footer: React.FC = () => {
           ))}
 
           <div>
-            <h3 className="text-sm font-bold text-[#3e5c32]">Contactos</h3>
+            <h3 className="text-sm font-bold text-[#0f4c36]">Contactos</h3>
             <div className="mt-6 grid gap-3 text-sm text-stone-500">
               <Link
                 href="/contactos"
-                className={pathname === '/contactos' ? 'font-semibold text-[#3e5c32] underline' : 'underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline'}
+                className={pathname === '/contactos' ? 'font-semibold text-[#0f4c36] underline' : 'underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'}
               >
                 Como nos contactar
               </Link>
               {footerAddress ? <p>{footerAddress}</p> : null}
               {footerContact.phone ? (
-                <a className="underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline" href={`tel:${footerContact.phone.replace(/\s+/g, '')}`}>
+                <a className="underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline" href={`tel:${footerContact.phone.replace(/\s+/g, '')}`}>
                   {footerContact.phone}
                 </a>
               ) : null}
               {footerContact.email ? (
-                <a className="underline-offset-4 transition-colors hover:text-[#3e5c32] hover:underline" href={`mailto:${footerContact.email}`}>
+                <a className="underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline" href={`mailto:${footerContact.email}`}>
                   {footerContact.email}
                 </a>
               ) : null}
@@ -133,7 +133,7 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-[#3e5c32]">{layoutSettings.footer.socialTitle}</h3>
+            <h3 className="text-sm font-bold text-[#0f4c36]">{layoutSettings.footer.socialTitle}</h3>
             <div className="mt-6 flex flex-wrap gap-3">
               {socialLinks.map((item) => (
                 <a
@@ -142,7 +142,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={item.label}
-                  className="inline-flex h-8 w-8 items-center justify-center text-[#3e5c32] transition-colors hover:text-[#6f8f3a]"
+                  className="inline-flex h-8 w-8 items-center justify-center text-[#0f4c36] transition-colors hover:text-[#0b3d2b]"
                 >
                   <SocialIcon label={item.label} />
                   <span className="sr-only">{item.label}</span>

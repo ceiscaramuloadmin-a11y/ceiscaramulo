@@ -85,7 +85,7 @@ export default async function SobreNosPage() {
       <Header />
       <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
         <section
-          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#27441d] px-4 py-16 text-center"
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
           style={{
             backgroundImage: `url(${aboutHeroImage})`,
             backgroundPosition: 'center',
@@ -114,7 +114,7 @@ export default async function SobreNosPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Landmark className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold !text-[#27441d]">{about.whoWeAreTitle}</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{about.whoWeAreTitle}</h2>
                 </div>
                 {layout.aboutPage.whoWeAreParagraphs.map((paragraph, index) => (
                   <p key={paragraph} className={index === 0 ? 'mt-5 text-lg leading-relaxed text-muted-foreground' : 'mt-4 text-lg leading-relaxed text-muted-foreground'}>
@@ -128,7 +128,7 @@ export default async function SobreNosPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Award className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold !text-[#27441d]">{about.originTitle}</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{about.originTitle}</h2>
                 </div>
                 {layout.aboutPage.originParagraphs.map((paragraph, index) => (
                   <p key={paragraph} className={index === 0 ? 'mt-5 text-lg leading-relaxed text-muted-foreground' : 'mt-4 text-lg leading-relaxed text-muted-foreground'}>
@@ -142,7 +142,7 @@ export default async function SobreNosPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Users2 className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold !text-[#27441d]">{about.foundersTitle}</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{about.foundersTitle}</h2>
                 </div>
                 {layout.aboutPage.foundersParagraphs.map((paragraph, index) => (
                   <p key={paragraph} className={index === 0 ? 'mt-5 text-lg leading-relaxed text-muted-foreground' : 'mt-4 text-lg leading-relaxed text-muted-foreground'}>
@@ -154,11 +154,11 @@ export default async function SobreNosPage() {
 
             <div className="space-y-8">
               <section className="rounded-[28px] border border-[#d7decf] bg-[#e9efe3] p-8">
-                <h2 className="font-display text-3xl font-bold !text-[#27441d]">{layout.aboutPage.socialBodiesTitle}</h2>
+                <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{layout.aboutPage.socialBodiesTitle}</h2>
                 <div className="mt-6 space-y-5">
                   {socialBodies.map((group) => (
                     <article key={group.title} className="rounded-2xl border border-[#d7decf] bg-white/90 p-5">
-                      <h3 className="font-display text-xl font-bold !text-[#27441d]">{group.title}</h3>
+                      <h3 className="font-display text-xl font-bold !text-[#0f4c36]">{group.title}</h3>
                       <ul className="mt-4 space-y-2">
                         {group.members.map((member) => (
                           <li key={member} className="text-sm leading-6 text-muted-foreground">
@@ -174,7 +174,7 @@ export default async function SobreNosPage() {
             </div>
           </div>
 
-          <div className="mt-16 rounded-[28px] bg-[#27441d] p-8 text-white shadow-xl">
+          <div className="mt-16 rounded-[28px] bg-[#0f4c36] p-8 text-white shadow-xl">
             <h2 className="font-display text-3xl font-bold !text-white">{about.contactTitle}</h2>
             <p className="mt-4 text-lg leading-relaxed text-white/85">
               {about.contactDescription}
@@ -204,7 +204,7 @@ export default async function SobreNosPage() {
                 </div>
               </div>
             </div>
-            <Button asChild className="mt-6 bg-white !text-[#27441d] hover:bg-[#eef4ec] hover:!text-[#27441d] [&_*]:!text-[#27441d]">
+            <Button asChild className="mt-6 bg-white !text-[#0f4c36] hover:bg-[#eef4ec] hover:!text-[#0f4c36] [&_*]:!text-[#0f4c36]">
               <Link href="/contactos">Enviar mensagem</Link>
             </Button>
           </div>

@@ -357,7 +357,7 @@ function ToolbarButton({ label, onClick, children }: { label: string; onClick: (
       type="button"
       title={label}
       aria-label={label}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-[#3e5c32] hover:text-[#27441d]"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-[#0f4c36] hover:text-[#0f4c36]"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >

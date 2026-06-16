@@ -4,6 +4,8 @@ import { contactInfo } from '@/data/site';
 export const SITE_LAYOUT_SETTINGS_KEY = 'site_layout_settings';
 const PLACEHOLDER_FOOTER_COLUMN_TITLE = 'teste';
 const FOOTER_LINKS_TO_REMOVE = new Set(['/noticias', '/serra-do-caramulo', '/contactos']);
+const LOGO_GREEN = '#0f4c36';
+const LEGACY_GREEN_VALUES = new Set(['#27441d', '#3e5c32', '#9dc44d']);
 
 export const layoutIconOptions: LayoutIconName[] = [
   'Mountain',
@@ -247,12 +249,12 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
   },
   visualIdentity: {
     colors: {
-      primary: '#27441d',
-      secondary: '#3e5c32',
-      accent: '#6f8f3a',
-      buttons: '#27441d',
-      links: '#3e5c32',
-      titles: '#27441d',
+      primary: '#0f4c36',
+      secondary: '#176b4d',
+      accent: '#5f9a7a',
+      buttons: '#0f4c36',
+      links: '#0f4c36',
+      titles: '#0f4c36',
     },
     logos: {
       primary: '/ceiscaramulo-logo.svg',
@@ -269,6 +271,13 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
 };
 
 export function normalizeSiteLayoutSettings(settings: SiteLayoutSettings): SiteLayoutSettings {
+  const normalizedVisualColors = Object.fromEntries(
+    Object.entries(settings.visualIdentity.colors).map(([key, value]) => [
+      key,
+      LEGACY_GREEN_VALUES.has(value.trim().toLowerCase()) ? LOGO_GREEN : value,
+    ])
+  ) as SiteLayoutSettings['visualIdentity']['colors'];
+
   return {
     ...settings,
     footer: {
@@ -281,6 +290,10 @@ export function normalizeSiteLayoutSettings(settings: SiteLayoutSettings): SiteL
             : column.title,
         links: column.links.filter((link) => !FOOTER_LINKS_TO_REMOVE.has(link.href)),
       })),
+    },
+    visualIdentity: {
+      ...settings.visualIdentity,
+      colors: normalizedVisualColors,
     },
   };
 }

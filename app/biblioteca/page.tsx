@@ -104,7 +104,7 @@ export default async function BibliotecaPage({
       <Header />
       <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
         <section
-          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#27441d] px-4 py-16 text-center"
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
           style={{
             backgroundImage: `url(${bibliotecaHeroImage})`,
             backgroundPosition: 'center',
@@ -225,7 +225,7 @@ export default async function BibliotecaPage({
 
           <section className="mt-14">
             <div className="mb-6">
-              <h2 className="font-display text-3xl font-bold !text-[#27441d]">Conteúdos de Recursos</h2>
+              <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">Conteúdos de Recursos</h2>
             </div>
             <GalleryTabs items={media} />
           </section>

@@ -82,7 +82,6 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'gallery-escola-dos-nossos-avos', label: 'Escola dos Nossos Avós' },
   { id: 'gallery-oficinas-de-formacao', label: 'Oficinas de formação' },
   { id: 'gallery-publicacoes', label: 'Publicações' },
-  { id: 'gallery-biblioteca', label: 'Recursos' },
   { id: 'layout', label: 'Aparência' },
   { id: 'admins', label: 'Admins' },
   { id: 'contacts', label: 'Contactos' },
@@ -1285,7 +1284,7 @@ export default function BackofficePage() {
         aria-label="Navegação do backoffice"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className={cn('text-sm font-semibold uppercase tracking-[0.16em] text-[#27441d]', isSidebarCollapsed && 'sr-only')}>
+          <span className={cn('text-sm font-semibold uppercase tracking-[0.16em] text-[#0f4c36]', isSidebarCollapsed && 'sr-only')}>
             Backoffice
           </span>
           <button
@@ -1308,7 +1307,7 @@ export default function BackofficePage() {
               title={item.label}
               className={sidebarNavClass(activeSection === item.id, isSidebarCollapsed)}
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-stone-100 text-xs font-semibold text-[#27441d]">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-stone-100 text-xs font-semibold text-[#0f4c36]">
                 {item.label.charAt(0)}
               </span>
               <span className={cn(isSidebarCollapsed && 'sr-only')}>{item.label}</span>
@@ -1326,7 +1325,7 @@ export default function BackofficePage() {
         <div className="mx-auto w-full max-w-7xl">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-4xl text-[#27441d]">Backoffice CEISCaramulo</h1>
+              <h1 className="font-display text-4xl text-[#0f4c36]">Backoffice CEISCaramulo</h1>
               <p className="mt-2 text-sm text-stone-600">
                 {exportAuthMode
                   ? 'Modo export: sessão local para aceder ao painel estático.'
@@ -1368,7 +1367,7 @@ export default function BackofficePage() {
 
           {!exportAuthMode ? (
             <div className="max-w-2xl rounded-xl border border-stone-200 bg-white p-5">
-              <h2 className="text-xl font-semibold text-[#27441d]">Segurança da conta</h2>
+              <h2 className="text-xl font-semibold text-[#0f4c36]">Segurança da conta</h2>
               <p className="mt-1 text-sm text-stone-600">
                 Altere a sua palavra-passe sempre que precisar.
               </p>
@@ -1389,7 +1388,7 @@ export default function BackofficePage() {
                   required
                 />
                 <button
-                  className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+                  className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white"
                   disabled={busy}
                 >
                   {backofficePrimaryActionLabel(busy, 'Atualizar palavra-passe')}
@@ -1419,7 +1418,7 @@ export default function BackofficePage() {
               <FileInput label="Imagem" onFile={(file) => setNewsForm((c) => ({ ...c, imageFile: file }))} />
               <Check label="Remover imagem atual" checked={newsForm.removeImage} onChange={(checked) => setNewsForm((c) => ({ ...c, removeImage: checked }))} />
               <Check label="Publicado" checked={newsForm.published} onChange={(checked) => setNewsForm((c) => ({ ...c, published: checked }))} />
-              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+              <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                 {backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar notícia')}
               </button>
             </form>
@@ -1436,7 +1435,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
         />
       ) : null}
 
@@ -1449,7 +1448,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('projects', item as Project)}
           onDelete={(id) => void deleteSectionItem('projects', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleProjectSubmit(event)}><Input label="Título" value={projectForm.title} onChange={(v) => setProjectForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={projectForm.description} onChange={(v) => setProjectForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('projects', file, kind)} /><Input label="Estado" value={projectForm.status} onChange={(v) => setProjectForm((c) => ({ ...c, status: v }))} required /><Input label="Data início" type="date" value={projectForm.startDate} onChange={(v) => setProjectForm((c) => ({ ...c, startDate: v }))} required /><Input label="Data fim" type="date" value={projectForm.endDate} onChange={(v) => setProjectForm((c) => ({ ...c, endDate: v }))} /><Input label="Parceiros (separados por vírgula)" value={projectForm.partners} onChange={(v) => setProjectForm((c) => ({ ...c, partners: v }))} /><FileInput label="Imagem" onFile={(file) => setProjectForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={projectForm.removeImage} onChange={(checked) => setProjectForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={projectForm.published} onChange={(checked) => setProjectForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar projeto')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleProjectSubmit(event)}><Input label="Título" value={projectForm.title} onChange={(v) => setProjectForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={projectForm.description} onChange={(v) => setProjectForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('projects', file, kind)} /><Input label="Estado" value={projectForm.status} onChange={(v) => setProjectForm((c) => ({ ...c, status: v }))} required /><Input label="Data início" type="date" value={projectForm.startDate} onChange={(v) => setProjectForm((c) => ({ ...c, startDate: v }))} required /><Input label="Data fim" type="date" value={projectForm.endDate} onChange={(v) => setProjectForm((c) => ({ ...c, endDate: v }))} /><Input label="Parceiros (separados por vírgula)" value={projectForm.partners} onChange={(v) => setProjectForm((c) => ({ ...c, partners: v }))} /><FileInput label="Imagem" onFile={(file) => setProjectForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={projectForm.removeImage} onChange={(checked) => setProjectForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={projectForm.published} onChange={(checked) => setProjectForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar projeto')}</button></form>}
         />
       ) : null}
 
@@ -1462,7 +1461,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 
@@ -1471,7 +1470,7 @@ export default function BackofficePage() {
           <div className="rounded-xl border border-stone-200 bg-white p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-[#27441d]">Mensagens de contacto</h2>
+                <h2 className="text-xl font-semibold text-[#0f4c36]">Mensagens de contacto</h2>
                 <p className="mt-1 text-sm text-stone-600">
                   Mensagens enviadas pelo formulário público de contactos.
                 </p>
@@ -1492,7 +1491,7 @@ export default function BackofficePage() {
                 <article key={message.id} className="rounded-2xl border border-stone-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-lg font-semibold text-[#27441d]">{message.subject}</p>
+                      <p className="text-lg font-semibold text-[#0f4c36]">{message.subject}</p>
                       <p className="mt-1 text-sm text-stone-600">
                         {message.name} · {message.email}
                       </p>
@@ -1525,7 +1524,7 @@ export default function BackofficePage() {
                     <button
                       type="button"
                       onClick={() => void updateContactMessage(message.id, !message.read)}
-                      className="rounded-lg bg-[#27441d] px-3 py-2 text-sm text-white"
+                      className="rounded-lg bg-[#0f4c36] px-3 py-2 text-sm text-white"
                       disabled={busy}
                     >
                       {message.read ? 'Marcar como não lida' : 'Marcar como lida'}
@@ -1549,7 +1548,7 @@ export default function BackofficePage() {
           <div className="rounded-xl border border-stone-200 bg-white p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-[#27441d]">{activeGalleryConfig.label}</h2>
+                <h2 className="text-xl font-semibold text-[#0f4c36]">{activeGalleryConfig.label}</h2>
                 <p className="mt-1 text-sm text-stone-600">{activeGalleryConfig.description}</p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1632,7 +1631,7 @@ export default function BackofficePage() {
               <div className="space-y-6">
               <form className="space-y-4 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryBatch(event)}>
                 <div>
-                  <h3 className="text-base font-semibold text-[#27441d]">Carregamento em massa</h3>
+                  <h3 className="text-base font-semibold text-[#0f4c36]">Carregamento em massa</h3>
                   <p className="mt-1 text-sm text-stone-600">
                     Escolhe o tipo no dropdown, seleciona vários ficheiros e ajusta os dados de cada um antes de gravar.
                   </p>
@@ -1738,7 +1737,7 @@ export default function BackofficePage() {
 
                 <div className="flex gap-3">
                   <button
-                    className="flex-1 rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+                    className="flex-1 rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white"
                     disabled={busy || galleryBatchItems.length === 0}
                   >
                     {backofficePrimaryActionLabel(busy, 'Guardar lote')}
@@ -1756,7 +1755,7 @@ export default function BackofficePage() {
 
               <form ref={galleryIndividualFormRef} className="space-y-3 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryItem(event)}>
                 <div>
-                  <h3 className="text-base font-semibold text-[#27441d]">Media individual</h3>
+                  <h3 className="text-base font-semibold text-[#0f4c36]">Media individual</h3>
                   <p className="mt-1 text-sm text-stone-600">
                     Continua disponível para criar ou editar um item específico da galeria.
                   </p>
@@ -1791,7 +1790,7 @@ export default function BackofficePage() {
                 <FileInput key={`thumbnail-${galleryFormResetKey}`} label="Thumbnail ficheiro (opcional)" accept="image/*" onFile={(file) => setGalleryForm((c) => ({ ...c, thumbnailFile: file }))} />
                 <Check label="Publicado" checked={galleryForm.published} onChange={(checked) => setGalleryForm((c) => ({ ...c, published: checked }))} />
 
-                <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                   {backofficePrimaryActionLabel(busy, galleryEditingId ? 'Guardar alterações' : 'Criar media')}
                 </button>
               </form>
@@ -1804,7 +1803,7 @@ export default function BackofficePage() {
       {activeSection === 'admins' ? (
         <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_1fr]">
           <div className="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 className="text-xl font-semibold text-[#27441d]">Gestão de utilizadores admin</h2>
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Gestão de utilizadores admin</h2>
             <p className="mt-1 text-sm text-stone-600">Controla quem pode aceder ao backoffice e com que papel.</p>
 
             {currentAdmin?.role === 'owner' ? (
@@ -1828,14 +1827,14 @@ export default function BackofficePage() {
                       <button
                         type="button"
                         onClick={() => setNewAdminPasswordMode('generated')}
-                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'generated' ? 'bg-[#27441d] text-white' : 'text-stone-700'}`}
+                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'generated' ? 'bg-[#0f4c36] text-white' : 'text-stone-700'}`}
                       >
                         Gerar automaticamente
                       </button>
                       <button
                         type="button"
                         onClick={() => setNewAdminPasswordMode('manual')}
-                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'manual' ? 'bg-[#27441d] text-white' : 'text-stone-700'}`}
+                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'manual' ? 'bg-[#0f4c36] text-white' : 'text-stone-700'}`}
                       >
                         Definir manualmente
                       </button>
@@ -1854,7 +1853,7 @@ export default function BackofficePage() {
                       O sistema vai gerar uma palavra-passe segura aleatória e mostrá-la após a criação da conta.
                     </p>
                   )}
-                  <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                  <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                     {backofficePrimaryActionLabel(busy, 'Adicionar admin')}
                   </button>
                 </form>
@@ -1883,13 +1882,13 @@ export default function BackofficePage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 className="text-xl font-semibold text-[#27441d]">Admins existentes</h2>
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Admins existentes</h2>
 
             <div className="mt-4 space-y-3">
               {isLoadingGovernance ? <AdminListSkeleton /> : null}
               {admins.map((admin) => (
                 <article key={admin.id} className="rounded-lg border border-stone-200 p-3">
-                  <p className="font-medium text-[#27441d]">{admin.email}</p>
+                  <p className="font-medium text-[#0f4c36]">{admin.email}</p>
                   <p className="mt-1 text-xs text-stone-500">
                     Papel: {admin.role} · Estado: {admin.active ? 'ativo' : 'inativo'}
                   </p>
@@ -1956,7 +1955,7 @@ export default function BackofficePage() {
           {selectedAdmin ? (
             <div className="space-y-4">
               <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
-                <p className="font-medium text-[#27441d]">{selectedAdmin.email}</p>
+                <p className="font-medium text-[#0f4c36]">{selectedAdmin.email}</p>
                 <p className="mt-1">Papel atual: {selectedAdmin.role}</p>
               </div>
 
@@ -2011,7 +2010,7 @@ export default function BackofficePage() {
             <button
               type="button"
               onClick={() => void saveSelectedAdminPermissions()}
-              className="rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+              className="rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white"
               disabled={busy || !selectedAdmin || selectedAdmin.role === 'owner'}
             >
               {backofficePrimaryActionLabel(busy, 'Guardar permissões')}
@@ -2022,7 +2021,7 @@ export default function BackofficePage() {
 
       {activeSection === 'audit' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Histórico de alterações</h2>
+          <h2 className="text-xl font-semibold text-[#0f4c36]">Histórico de alterações</h2>
           <p className="mt-1 text-sm text-stone-600">
             Registo das alterações feitas no backoffice, com autor, ação e data. Os eventos com mais de 15 dias são apagados automaticamente para não encher a base de dados.
           </p>
@@ -2031,7 +2030,7 @@ export default function BackofficePage() {
             {isLoadingGovernance ? <AuditListSkeleton /> : null}
             {auditLogs.map((entry) => (
               <article key={entry.id} className="rounded-lg border border-stone-200 p-3">
-                <p className="text-sm font-medium text-[#27441d]">{entry.summary}</p>
+                <p className="text-sm font-medium text-[#0f4c36]">{entry.summary}</p>
                 <p className="mt-1 text-xs text-stone-500">
                   {new Date(entry.createdAt).toLocaleString('pt-PT')} · {entry.actorEmail} ({entry.actorRole})
                 </p>
@@ -2049,7 +2048,7 @@ export default function BackofficePage() {
 
       {activeSection === 'about' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Editar página Sobre Nós</h2>
+          <h2 className="text-xl font-semibold text-[#0f4c36]">Editar página Sobre Nós</h2>
           <p className="mt-1 text-sm text-stone-600">Atualiza o conteúdo institucional publicado em /sobre-nos.</p>
 
           {isLoadingLayout ? (
@@ -2092,7 +2091,7 @@ export default function BackofficePage() {
                 <TextArea label="CTA contacto · Descrição" value={layoutSettings.aboutPage.contactDescription} onChange={(value) => updateAboutPage({ contactDescription: value })} />
               </div>
 
-              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+              <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                 {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
               </button>
             </form>
@@ -2102,7 +2101,7 @@ export default function BackofficePage() {
 
       {activeSection === 'layout' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Aparência</h2>
+          <h2 className="text-xl font-semibold text-[#0f4c36]">Aparência</h2>
           <p className="mt-1 text-sm text-stone-600">Edita hero, footer, textos de páginas e ícones visuais.</p>
 
           {isLoadingLayout ? (
@@ -2120,14 +2119,14 @@ export default function BackofficePage() {
                     role="tab"
                     aria-selected={appearanceTab === tab.id}
                     onClick={() => setAppearanceTab(tab.id)}
-                    className={appearanceTab === tab.id ? 'rounded-lg bg-[#27441d] px-3 py-2 text-sm text-white' : 'rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700'}
+                    className={appearanceTab === tab.id ? 'rounded-lg bg-[#0f4c36] px-3 py-2 text-sm text-white' : 'rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700'}
                   >
                     {tab.label}
                   </button>
                 ))}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button className="rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                <button className="rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                   {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
                 </button>
               </div>
@@ -2137,16 +2136,16 @@ export default function BackofficePage() {
             <>
             <AppearanceSectionTitle title="Hero da Página Inicial" description="Gere o título, subtítulo, botões, imagem e pré-visualização do primeiro ecrã." />
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#27441d]">Pré-visualização</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0f4c36]">Pré-visualização</p>
               <div className="mt-3 overflow-hidden rounded-xl border border-stone-200 bg-white">
                 <div className="grid gap-4 p-5 md:grid-cols-[1fr_220px]">
                   <div>
                     <p className="text-xs uppercase tracking-[0.16em] text-stone-500">{layoutSettings.home.hero.eyebrow}</p>
-                    <h3 className="mt-2 font-display text-3xl font-bold text-[#27441d]">
+                    <h3 className="mt-2 font-display text-3xl font-bold text-[#0f4c36]">
                       {[layoutSettings.home.hero.titleLine1, layoutSettings.home.hero.titleLine2, layoutSettings.home.hero.titleLine3, layoutSettings.home.hero.titleLine4].filter(Boolean).join(' ')}
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-stone-600">{layoutSettings.home.hero.description}</p>
-                    <span className="mt-4 inline-flex rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white">{layoutSettings.home.hero.primaryCtaLabel}</span>
+                    <span className="mt-4 inline-flex rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white">{layoutSettings.home.hero.primaryCtaLabel}</span>
                   </div>
                   <div className="min-h-40 rounded-lg bg-stone-200 bg-cover bg-center" style={{ backgroundImage: `url("${layoutSettings.home.hero.imageUrl.split('|')[0] || '/placeholder.svg'}")` }} />
                 </div>
@@ -2213,7 +2212,7 @@ export default function BackofficePage() {
             <Input label="Footer · Linha legal" value={layoutSettings.footer.legalLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, legalLine: v } }))} />
 
             <div className="rounded-lg border border-stone-200 p-3">
-              <h3 className="text-sm font-semibold text-[#27441d]">Footer · Contactos</h3>
+              <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Contactos</h3>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <Input label="Footer · Morada" value={layoutSettings.footer.contactInfo.address} onChange={(v) => updateFooterContact({ address: v })} />
                 <Input label="Footer · Código postal" value={layoutSettings.footer.contactInfo.postalCode} onChange={(v) => updateFooterContact({ postalCode: v })} />
@@ -2338,7 +2337,7 @@ export default function BackofficePage() {
             </>
             ) : null}
 
-            <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+            <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
               {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
             </button>
           </form>
@@ -2363,7 +2362,7 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
 function AppearanceSectionTitle({ title, description }: { title: string; description: string }) {
   return (
     <div className="border-b border-stone-200 pb-3">
-      <h3 className="text-lg font-semibold text-[#27441d]">{title}</h3>
+      <h3 className="text-lg font-semibold text-[#0f4c36]">{title}</h3>
       <p className="mt-1 text-sm text-stone-600">{description}</p>
     </div>
   );
@@ -2383,7 +2382,7 @@ function IconPicker({ label, value, onChange }: { label: string; value: LayoutIc
               key={name}
               type="button"
               onClick={() => onChange(iconName)}
-              className={selected ? 'rounded-md border border-[#27441d] bg-[#eef4ec] p-2 text-[#27441d]' : 'rounded-md border border-stone-200 p-2 text-stone-600'}
+              className={selected ? 'rounded-md border border-[#0f4c36] bg-[#eef4ec] p-2 text-[#0f4c36]' : 'rounded-md border border-stone-200 p-2 text-stone-600'}
               aria-label={name}
             >
               <Icon className="mx-auto h-4 w-4" />
@@ -2430,7 +2429,7 @@ function sidebarNavClass(active: boolean, collapsed: boolean) {
     'flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors',
     collapsed && 'justify-center px-2',
     active
-      ? 'bg-[#27441d] font-medium text-white [&_span:first-child]:bg-white/15 [&_span:first-child]:text-white'
+      ? 'bg-[#0f4c36] font-medium text-white [&_span:first-child]:bg-white/15 [&_span:first-child]:text-white'
       : 'text-stone-700 hover:bg-stone-100'
   );
 }
@@ -2439,7 +2438,7 @@ function Card({ title, value, loading = false }: { title: string; value: number 
   return (
     <article className="rounded-xl border border-stone-200 bg-white p-5">
       <p className="text-sm text-stone-500">{title}</p>
-      {loading ? <Skeleton className="mt-3 h-9 w-20" /> : <p className="mt-2 text-3xl font-semibold text-[#27441d]">{value ?? '—'}</p>}
+      {loading ? <Skeleton className="mt-3 h-9 w-20" /> : <p className="mt-2 text-3xl font-semibold text-[#0f4c36]">{value ?? '—'}</p>}
     </article>
   );
 }
@@ -2467,7 +2466,7 @@ function SectionLayout({
     <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div className="rounded-xl border border-stone-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-[#27441d]">{title}</h2>
+          <h2 className="text-xl font-semibold text-[#0f4c36]">{title}</h2>
           <button type="button" onClick={onNew} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
             Novo
           </button>
@@ -2476,7 +2475,7 @@ function SectionLayout({
           {loading ? <SectionListSkeleton /> : null}
           {list.map((item) => (
             <article key={item.id} className="rounded-lg border border-stone-200 p-3">
-              <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
+              <p className="font-medium text-[#0f4c36]">{item.title || item.id}</p>
               <div className="mt-2 flex gap-2">
                 <button type="button" onClick={() => onEdit(item)} disabled={busy} className="rounded border px-2 py-1 text-xs disabled:opacity-50">
                   Editar
@@ -2534,7 +2533,7 @@ function GalleryGroup({
     <section className="rounded-xl border border-stone-200 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-[#27441d]">{title}</h3>
+          <h3 className="text-base font-semibold text-[#0f4c36]">{title}</h3>
           <p className="text-sm text-stone-500">{items.length} item(ns)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -2572,7 +2571,7 @@ function GalleryGroup({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
+                      <p className="font-medium text-[#0f4c36]">{item.title || item.id}</p>
                       <p className="mt-1 text-xs text-stone-500">
                         {item.published ? 'Publicado' : 'Rascunho'} · {new Date(item.updatedAt).toLocaleDateString('pt-PT')}
                       </p>
@@ -2643,7 +2642,7 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
       <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
         <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Documento</div>
         {item.source ? (
-          <a href={item.source} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#27441d] underline">
+          <a href={item.source} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#0f4c36] underline">
             Abrir ficheiro
           </a>
         ) : (
@@ -2733,7 +2732,7 @@ function GalleryGroupSkeleton({ title }: { title: string }) {
     <section className="rounded-xl border border-stone-200 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-2">
-          <h3 className="text-base font-semibold text-[#27441d]">{title}</h3>
+          <h3 className="text-base font-semibold text-[#0f4c36]">{title}</h3>
           <Skeleton className="h-4 w-20" />
         </div>
         <div className="flex gap-2">

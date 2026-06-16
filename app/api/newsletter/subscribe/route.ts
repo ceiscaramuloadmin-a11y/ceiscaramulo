@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { sendNewsletterSubscriptionConfirmation } from '@/lib/newsletter-on-publish';
 
 const bodySchema = z.object({
   email: z.string().trim().email('Email inválido.').max(320),
@@ -50,9 +51,17 @@ export async function POST(request: Request) {
     );
   }
 
+  const confirmation = await sendNewsletterSubscriptionConfirmation(normalized);
+
+  if (!confirmation.ok) {
+    console.warn('Subscrição guardada, mas email de confirmação não enviado:', confirmation.reason);
+  }
+
   return Response.json({
     ok: true,
-    message: 'Pedido registado com sucesso. Obrigado pelo interesse na newsletter.',
+    message: confirmation.ok
+      ? 'Subscrição confirmada. Enviámos um email de confirmação para a tua caixa de correio.'
+      : 'Subscrição confirmada. Obrigado pelo interesse na newsletter.',
   });
 }
 

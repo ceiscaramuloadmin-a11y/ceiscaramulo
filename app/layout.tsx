@@ -25,7 +25,7 @@ const coolvetica = localFont({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#27441d',
+  themeColor: '#0f4c36',
 };
 
 export const metadata: Metadata = {

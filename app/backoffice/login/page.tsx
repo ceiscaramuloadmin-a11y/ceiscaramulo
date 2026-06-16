@@ -49,7 +49,7 @@ export default function BackofficeLoginPage() {
 
   return (
     <main className="mx-auto min-h-[70vh] w-full max-w-md px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="font-display text-4xl text-[#27441d]">Login do Backoffice</h1>
+      <h1 className="font-display text-4xl text-[#0f4c36]">Login do Backoffice</h1>
       <p className="mt-3 text-sm text-stone-600">
         {exportAuthMode
           ? 'Use as credenciais configuradas para o modo export estático.'
@@ -87,7 +87,7 @@ export default function BackofficeLoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex w-full justify-center rounded-lg bg-[#27441d] px-4 py-2 text-sm font-medium text-white hover:bg-[#2f5224] disabled:opacity-70"
+            className="inline-flex w-full justify-center rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b3d2b] disabled:opacity-70"
           >
             {isSubmitting ? 'A autenticar…' : 'Entrar'}
           </button>
@@ -99,7 +99,7 @@ export default function BackofficeLoginPage() {
           </p>
           <a
             href={AUTH0_ADMIN_LOGIN_PATH}
-            className="inline-flex w-full justify-center rounded-lg bg-[#27441d] px-4 py-2 text-sm font-medium text-white hover:bg-[#2f5224]"
+            className="inline-flex w-full justify-center rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b3d2b]"
           >
             Entrar com Auth0
           </a>

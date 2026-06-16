@@ -23,7 +23,7 @@ export default function InstitutionalProgrammePage({
       <Header />
       <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
         <section
-          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#27441d] px-4 py-16 text-center"
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
           style={
             heroImage
               ? {
@@ -46,7 +46,7 @@ export default function InstitutionalProgrammePage({
               {description}
             </p>
             <div className="mt-9 flex justify-center">
-              <Button asChild className="rounded-full border-4 border-[#d9e4d1] bg-white px-8 !text-[#27441d] hover:bg-[#eef4ec] hover:!text-[#27441d] [&_*]:!text-[#27441d]">
+              <Button asChild className="rounded-full border-4 border-[#d9e4d1] bg-white px-8 !text-[#0f4c36] hover:bg-[#eef4ec] hover:!text-[#0f4c36] [&_*]:!text-[#0f4c36]">
                 <Link href="/contactos">
                   <Mail className="mr-2 h-4 w-4" />
                   Contactar
@@ -59,7 +59,7 @@ export default function InstitutionalProgrammePage({
         <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#27441d] transition-colors hover:text-[#3e5c32]"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#0f4c36] transition-colors hover:text-[#0f4c36]"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar a pagina inicial
