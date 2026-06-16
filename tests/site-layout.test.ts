@@ -113,6 +113,20 @@ describe('site-layout', () => {
     expect(defaultSiteLayoutSettings.pages.publicacoes.title).toBe('Publicações');
   });
 
+  it('defines editable Sobre Nos body defaults for the dedicated backoffice page', () => {
+    expect(defaultSiteLayoutSettings.aboutPage.whoWeAreTitle).toBe('Quem Somos');
+    expect(defaultSiteLayoutSettings.aboutPage.whoWeAreParagraphs.join('\n')).toContain('associação legalmente constituída');
+    expect(defaultSiteLayoutSettings.aboutPage.originParagraphs.join('\n')).toContain('Prémio Escolar Montepio 2011');
+    expect(defaultSiteLayoutSettings.aboutPage.foundersTitle).toBe('Fundadores');
+    expect(defaultSiteLayoutSettings.aboutPage.socialBodiesTitle).toBe('Corpos Sociais');
+    expect(defaultSiteLayoutSettings.aboutPage.socialBodies).toContainEqual(
+      expect.objectContaining({
+        title: 'Direção',
+        members: expect.arrayContaining(['Presidente: Luís Filipe Rodrigues da Costa']),
+      })
+    );
+  });
+
   it('deep merges object branches and replaces arrays', () => {
     const merged = deepMergeSettings(defaultSiteLayoutSettings, {
       home: {

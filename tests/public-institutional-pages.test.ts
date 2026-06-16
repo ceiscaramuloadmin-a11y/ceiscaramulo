@@ -29,12 +29,11 @@ const requestedProgrammePages = [
 
 describe('institutional pages', () => {
   it('renders the updated CEISCaramulo institutional history and social bodies on sobre nós', () => {
-    expect(sobreNosPageSource).toContain('associação legalmente constituída');
-    expect(sobreNosPageSource).toContain('Prémio Escolar Montepio 2011');
-    expect(sobreNosPageSource).toContain('Mesa da Assembleia Geral');
-    expect(sobreNosPageSource).toContain('Direção');
-    expect(sobreNosPageSource).toContain('Conselho Fiscal');
-    expect(sobreNosPageSource).toContain('Luís Filipe Rodrigues da Costa');
+    expect(sobreNosPageSource).toContain('layout.aboutPage.whoWeAreParagraphs.map');
+    expect(sobreNosPageSource).toContain('layout.aboutPage.originParagraphs.map');
+    expect(sobreNosPageSource).toContain('layout.aboutPage.foundersParagraphs.map');
+    expect(sobreNosPageSource).toContain('socialBodies.map');
+    expect(sobreNosPageSource).toContain('layout.aboutPage.socialBodiesTitle');
     expect(sobreNosPageSource).not.toContain('Desde {siteConfig.founded}');
     expect(sobreNosPageSource).not.toContain('Um projeto dedicado a estudar, interpretar e valorizar a Serra do Caramulo.');
   });
@@ -131,10 +130,10 @@ describe('institutional pages', () => {
       [oficinaDoBurelPageSource, 'Conteúdos da Oficina do Burel'],
       [ponDoJueusPageSource, 'Conteúdos do PON do Jueus'],
       [escolaDosNossosAvosPageSource, 'Conteúdos da Escola dos Nossos Avós'],
-      [sobreNosPageSource, 'Quem Somos'],
-      [sobreNosPageSource, 'Como Nasceu'],
-      [sobreNosPageSource, 'Fundadores'],
-      [sobreNosPageSource, 'Corpos Sociais'],
+      [sobreNosPageSource, 'about.whoWeAreTitle'],
+      [sobreNosPageSource, 'about.originTitle'],
+      [sobreNosPageSource, 'about.foundersTitle'],
+      [sobreNosPageSource, 'layout.aboutPage.socialBodiesTitle'],
       [bibliotecaPageSource, 'Conteúdos de Recursos'],
     ].forEach(([source, title]) => {
       const titleIndex = source.indexOf(title);

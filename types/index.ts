@@ -268,6 +268,19 @@ export interface SitePageIntroSettings {
   emptyMessage?: string;
 }
 
+export interface SiteAboutPageSettings {
+  whoWeAreTitle: string;
+  whoWeAreParagraphs: string[];
+  originTitle: string;
+  originParagraphs: string[];
+  foundersTitle: string;
+  foundersParagraphs: string[];
+  socialBodiesTitle: string;
+  socialBodies: Array<{ title: string; members: string[] }>;
+  contactTitle: string;
+  contactDescription: string;
+}
+
 export interface SiteLayoutSettings {
   home: {
     hero: {
@@ -313,6 +326,7 @@ export interface SiteLayoutSettings {
     oficinasDeFormacao: SitePageIntroSettings;
     publicacoes: SitePageIntroSettings;
   };
+  aboutPage: SiteAboutPageSettings;
   serra: {
     sections: Array<{
       id: string;
