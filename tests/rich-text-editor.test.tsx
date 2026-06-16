@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import RichTextEditor from '@/components/RichTextEditor';
 
@@ -108,5 +108,30 @@ describe('RichTextEditor', () => {
 
     expect(editor?.querySelector('ul')).not.toBeNull();
     expect(editor?.querySelector('ol')).not.toBeNull();
+  });
+
+  it('uploads audio media and inserts the stored URL instead of an inline data URL', async () => {
+    const execCommand = vi.fn();
+    const uploadMedia = vi.fn().mockResolvedValue('/uploads/backoffice/rich-text-news-audio/audio.mp3');
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    render(<RichTextEditor label="Conteúdo" value="<p>Texto</p>" onChange={vi.fn()} onUploadMedia={uploadMedia} />);
+
+    const input = document.querySelector('input[accept="audio/*"]') as HTMLInputElement;
+    const file = new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(uploadMedia).toHaveBeenCalledWith(file, 'audio');
+      expect(execCommand).toHaveBeenCalledWith(
+        'insertHTML',
+        false,
+        '<figure><audio controls src="/uploads/backoffice/rich-text-news-audio/audio.mp3"></audio><figcaption>audio.mp3</figcaption></figure>'
+      );
+    });
   });
 });
