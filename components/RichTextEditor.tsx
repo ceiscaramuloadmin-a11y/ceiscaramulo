@@ -20,11 +20,12 @@ type RichTextEditorProps = {
   label?: string;
   value: string;
   onChange: (value: string) => void;
+  onUploadMedia?: (file: File, kind: MediaKind) => Promise<string>;
 };
 
 type MediaKind = 'image' | 'audio' | 'video';
 
-export default function RichTextEditor({ label, value, onChange }: RichTextEditorProps) {
+export default function RichTextEditor({ label, value, onChange, onUploadMedia }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
@@ -143,13 +144,16 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
   };
 
   const insertMedia = async (file: File, kind: MediaKind) => {
-    const dataUrl = await fileToDataUrl(file);
+    // Ficheiros de audio/video ficam demasiado grandes quando entram como
+    // data URL no HTML da noticia. Quando o backoffice fornece uma funcao de
+    // upload, guardamos o ficheiro em /uploads e inserimos apenas esse URL.
+    const sourceUrl = onUploadMedia ? await onUploadMedia(file, kind) : await fileToDataUrl(file);
     const escapedName = escapeHtml(file.name || kind);
 
     const htmlByKind = {
-      image: `<figure><img src="${dataUrl}" alt="${escapedName}" /><figcaption>${escapedName}</figcaption></figure>`,
-      audio: `<figure><audio controls src="${dataUrl}"></audio><figcaption>${escapedName}</figcaption></figure>`,
-      video: `<figure><video controls src="${dataUrl}"></video><figcaption>${escapedName}</figcaption></figure>`,
+      image: `<figure><img src="${sourceUrl}" alt="${escapedName}" /><figcaption>${escapedName}</figcaption></figure>`,
+      audio: `<figure><audio controls src="${sourceUrl}"></audio><figcaption>${escapedName}</figcaption></figure>`,
+      video: `<figure><video controls src="${sourceUrl}"></video><figcaption>${escapedName}</figcaption></figure>`,
     };
 
     editorRef.current?.focus();
@@ -401,8 +405,13 @@ async function handleFileChange(
     return;
   }
 
-  await insertMedia(file, kind);
-  input.value = '';
+  try {
+    await insertMedia(file, kind);
+  } catch (error) {
+    window.alert(error instanceof Error ? error.message : 'Não foi possível inserir o ficheiro.');
+  } finally {
+    input.value = '';
+  }
 }
 
 function fileToDataUrl(file: File) {

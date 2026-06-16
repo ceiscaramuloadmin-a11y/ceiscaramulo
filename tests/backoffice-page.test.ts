@@ -171,6 +171,12 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("fd.append('sourceFile', item.file)");
   });
 
+  it('uploads rich text media before saving news content so audio is not persisted inline', () => {
+    expect(backofficePageSource).toContain('uploadRichTextMedia');
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<{ url: string }>('/api/content-assets/rich-text'");
+    expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)}");
+  });
+
   it('boots the backoffice with the lightweight stats endpoint instead of loading every module', () => {
     expect(backofficePageSource).toContain("fetchAdminEndpoint<DashboardStats>('/api/admin/stats')");
     expect(backofficePageSource).toContain('await refreshDashboardStats();');
