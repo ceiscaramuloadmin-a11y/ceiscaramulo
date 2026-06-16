@@ -21,21 +21,21 @@ import * as newsletter from '@/lib/newsletter-on-publish';
 import * as mailResend from '@/lib/mail-resend';
 
 describe('shouldAnnounceNewsEmail', () => {
-  it('não dispara quando a notícia fica não publicada', () => {
+  it('does not announce unpublished news', () => {
     expect(newsletter.shouldAnnounceNewsEmail(null, false)).toBe(false);
     expect(newsletter.shouldAnnounceNewsEmail(true, false)).toBe(false);
     expect(newsletter.shouldAnnounceNewsEmail(false, false)).toBe(false);
   });
 
-  it('dispara na primeira guarda já publicada (criação)', () => {
+  it('announces a new item that is already published', () => {
     expect(newsletter.shouldAnnounceNewsEmail(null, true)).toBe(true);
   });
 
-  it('dispara na transição rascunho → publicado', () => {
+  it('announces the draft to published transition', () => {
     expect(newsletter.shouldAnnounceNewsEmail(false, true)).toBe(true);
   });
 
-  it('não dispara quando já estava publicada', () => {
+  it('does not announce when the item was already published', () => {
     expect(newsletter.shouldAnnounceNewsEmail(true, true)).toBe(false);
   });
 });
@@ -56,15 +56,16 @@ describe('notifySubscribersAboutPublishedArticle', () => {
     delete process.env.NEXT_PUBLIC_SITE_URL;
   });
 
-  it('envia um email por subscritor com link público esperado', async () => {
+  it('sends one email per subscriber with the expected public link', async () => {
     findMany.mockResolvedValue([{ email: 'a@test.pt' }, { email: 'b@test.pt' }]);
 
-    await newsletter.notifySubscribersAboutPublishedArticle({
+    const result = await newsletter.notifySubscribersAboutPublishedArticle({
       slug: 'minha-slug',
-      title: 'Título',
-      excerpt: '<p>Olá mundo</p>',
+      title: 'Titulo',
+      excerpt: '<p>Ola mundo</p>',
     });
 
+    expect(result).toEqual({ attempted: true, sent: 2, failed: 0 });
     expect(findMany).toHaveBeenCalledTimes(1);
     expect(mailResend.sendEmailViaResend).toHaveBeenCalledTimes(2);
 
@@ -72,35 +73,37 @@ describe('notifySubscribersAboutPublishedArticle', () => {
     expect(firstPayload).toMatchObject({
       from: 'Boletim <noreply@test.pt>',
       to: 'a@test.pt',
-      subject: 'Nova notícia: Título',
+      subject: 'Nova notícia: Titulo',
     });
     expect(firstPayload.html).toContain('https://mysite.pt/noticias/minha-slug');
     expect(firstPayload.text).toContain('https://mysite.pt/noticias/minha-slug');
   });
 
-  it('não consulta a base nem envia quando falta endereço remetente', async () => {
+  it('does not query subscribers or send mail without a sender address', async () => {
     vi.mocked(mailResend.resolveMailSenderAddress).mockReturnValue(null);
     findMany.mockResolvedValue([{ email: 'a@test.pt' }]);
 
-    await newsletter.notifySubscribersAboutPublishedArticle({
+    const result = await newsletter.notifySubscribersAboutPublishedArticle({
       slug: 's',
       title: 'T',
       excerpt: '',
     });
 
+    expect(result).toMatchObject({ attempted: false, skippedReason: 'missing_sender' });
     expect(findMany).not.toHaveBeenCalled();
     expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
   });
 
-  it('não chama Resend sem subscritores', async () => {
+  it('does not call Resend when there are no subscribers', async () => {
     findMany.mockResolvedValue([]);
 
-    await newsletter.notifySubscribersAboutPublishedArticle({
+    const result = await newsletter.notifySubscribersAboutPublishedArticle({
       slug: 's',
       title: 'T',
       excerpt: '',
     });
 
+    expect(result).toMatchObject({ attempted: false, skippedReason: 'no_subscribers' });
     expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
   });
 });
@@ -120,33 +123,28 @@ describe('enqueueNewsPublishedNotifications', () => {
     delete process.env.RESEND_API_KEY;
   });
 
-  it('executa envio por microtask sem bloquear a chamada síncrona', async () => {
-    newsletter.enqueueNewsPublishedNotifications(null, {
+  it('sends the announcement before the call finishes', async () => {
+    const result = await newsletter.enqueueNewsPublishedNotifications(null, {
       slug: 'nova',
-      title: 'Título novo',
+      title: 'Titulo novo',
       excerpt: '<p>Resumo</p>',
       published: true,
     });
 
-    expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
-
-    await vi.waitUntil(() => vi.mocked(mailResend.sendEmailViaResend).mock.calls.length > 0, { timeout: 500 });
-
+    expect(result).toEqual({ attempted: true, sent: 1, failed: 0 });
     expect(mailResend.sendEmailViaResend).toHaveBeenCalled();
-    expect(vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0].subject).toBe('Nova notícia: Título novo');
+    expect(vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0].subject).toBe('Nova notícia: Titulo novo');
   });
 
-  it('não agenda envio quando não é primeira publicação', async () => {
-    newsletter.enqueueNewsPublishedNotifications(true, {
+  it('does not send when this is not the first publication', async () => {
+    const result = await newsletter.enqueueNewsPublishedNotifications(true, {
       slug: 'x',
       title: 'y',
       excerpt: '',
       published: true,
     });
 
-    await Promise.resolve();
-    await Promise.resolve();
-
+    expect(result).toMatchObject({ attempted: false, skippedReason: 'not_first_publish' });
     expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
   });
 });

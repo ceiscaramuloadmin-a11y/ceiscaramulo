@@ -28,7 +28,7 @@ describe('NewsletterSignup', () => {
       ok: true,
       json: async () => ({
         ok: true,
-        message: 'Pedido registado com sucesso. Obrigado pelo interesse na newsletter.',
+        message: 'Subscrição confirmada. Enviámos um email de confirmação para a tua caixa de correio.',
       }),
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -46,7 +46,9 @@ describe('NewsletterSignup', () => {
       cache: 'no-store',
       body: JSON.stringify({ email: 'maria@example.pt' }),
     }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Pedido registado com sucesso.');
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('Subscrição confirmada.');
+    expect(status).toHaveClass('bg-[#0f4c36]/10');
     expect(screen.getByLabelText('Email da newsletter')).toHaveValue('');
   });
 });

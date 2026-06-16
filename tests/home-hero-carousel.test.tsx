@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import HomeHero from '@/components/HomeHero';
 
@@ -11,30 +11,6 @@ vi.mock('next/link', () => ({
     <a href={href} {...props}>
       {children}
     </a>
-  ),
-}));
-
-vi.mock('swiper/modules', () => ({
-  Autoplay: {},
-  EffectFade: {},
-}));
-
-vi.mock('swiper/react', () => ({
-  Swiper: ({
-    children,
-    className,
-  }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div data-testid="hero-swiper" className={className}>
-      {children}
-    </div>
-  ),
-  SwiperSlide: ({
-    children,
-    className,
-  }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div data-testid="hero-swiper-slide" className={className}>
-      {children}
-    </div>
   ),
 }));
 
@@ -71,34 +47,38 @@ describe('HomeHero image', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
-  it('renders the local hero image folder as an image-only swiper', () => {
+  it('renders only the active local hero image to keep the carousel light', () => {
     mockMatchMedia(false);
     render(<HomeHero hero={baseHero} navigationItems={[]} />);
 
-    expect(screen.getByTestId('hero-swiper')).toBeInTheDocument();
-    expect(screen.getByTestId('hero-swiper')).toHaveClass('z-0');
-    expect(screen.getAllByTestId('hero-swiper-slide')).toHaveLength(9);
+    expect(screen.getByTestId('hero-carousel')).toBeInTheDocument();
+    expect(screen.getByTestId('hero-carousel')).toHaveClass('z-0', 'overflow-hidden');
+    expect(document.querySelectorAll('.ceis-hero-slide-motion.absolute.inset-0')).toHaveLength(1);
     expect(screen.queryByText('Texto')).toBeNull();
-    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(9);
-    expect(document.querySelectorAll('.z-10.bg-\\[\\#27441d\\]\\/35')).toHaveLength(1);
+    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(1);
+    expect(document.querySelectorAll('.z-10.bg-\\[\\#0f4c36\\]\\/35')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /imagem seguinte/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /Mostrar imagem/i })).toBeNull();
   });
 
-  it('does not render carousel controls for a single image', () => {
+  it('advances the single mounted hero image on an interval', async () => {
+    vi.useFakeTimers();
     mockMatchMedia(false);
-    render(
-      <HomeHero
-        hero={{ ...baseHero, imageUrl: '/only.jpg' }}
-        navigationItems={[]}
-      />,
-    );
+    render(<HomeHero hero={baseHero} navigationItems={[]} />);
 
+    const firstSrc = document.querySelector('img[alt="Serra"]')?.getAttribute('src');
+
+    await act(async () => {
+      vi.advanceTimersByTime(6000);
+    });
+
+    expect(document.querySelector('img[alt="Serra"]')?.getAttribute('src')).not.toBe(firstSrc);
+    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
-    expect(document.querySelectorAll('img[alt="Serra"]')).toHaveLength(9);
   });
 
   it('shrinks the sticky hero navigation after scrolling', async () => {
@@ -107,6 +87,7 @@ describe('HomeHero image', () => {
 
     const navShell = screen.getByLabelText('CEISCaramulo - Página inicial').closest('[data-shrunk]');
     expect(navShell).toHaveClass('fixed', 'top-0', 'bg-transparent');
+    expect(navShell).toHaveClass('ceis-hero-nav-motion');
     expect(navShell?.className).not.toContain('backdrop-blur');
     expect(navShell?.firstElementChild).toHaveClass('rounded-full', 'bg-white/90');
     expect(navShell).toHaveAttribute('data-shrunk', 'false');

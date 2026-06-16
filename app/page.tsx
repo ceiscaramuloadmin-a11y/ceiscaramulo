@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Footer from '@/components/Footer';
 import HomeHero from '@/components/HomeHero';
+import MotionReveal from '@/components/MotionReveal';
 import { activities as fallbackActivities, newsArticles as fallbackNewsArticles } from '@/data/content';
 import { navigationItems } from '@/data/navigation';
 import { getActivitySlug } from '@/lib/public-content-slugs';
@@ -183,33 +184,36 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {activities.map((activity) => (
+          <div className="mt-8 grid grid-cols-[repeat(auto-fit,minmax(220px,300px))] justify-center gap-5">
+            {activities.map((activity, index) => (
+              <MotionReveal key={activity.id} className="h-full" delayMs={index * 90}>
               <Link
-                key={activity.id}
                 href={`/atividades/${getActivitySlug(activity)}`}
-                className="rounded-xl border border-[#f1f3f5] bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-34px_rgba(0,0,0,0.3)]"
+                className="group flex h-full flex-col rounded-lg border border-[#f1f3f5] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-30px_rgba(0,0,0,0.35)]"
               >
-                <div className="mb-4 overflow-hidden rounded-lg">
-                  <img
-                    src={getAssetUrl(activity.image)}
-                    alt={activity.title}
-                    className="h-48 w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                  />
+                <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-[#f4f5f7]">
+                    <img
+                      src={getAssetUrl(activity.image)}
+                      alt={activity.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+                    />
                 </div>
                 <span className="inline-flex rounded-md bg-[#f4f5f7] px-2 py-1 text-[10px] font-medium text-[#666]">
                   {capitalize(activity.category)}
                 </span>
-                <h3 className="mt-4 overflow-hidden font-display text-[1.75rem] font-bold leading-[1.12] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
+                <h3 className="mt-3 overflow-hidden font-display text-xl font-bold leading-tight text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                   {activity.title}
                 </h3>
-                <p className="mt-4 overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                <p className="mt-2 overflow-hidden text-sm leading-[1.55] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {richTextToPlainText(activity.description)}
                 </p>
-                <p className="mt-6 text-[11px] text-[#8a8a8a]">
+                <p className="mt-auto pt-4 text-[11px] text-[#8a8a8a]">
                   {activity.location} • {formatShortDate(activity.date)}
                 </p>
               </Link>
+              </MotionReveal>
             ))}
           </div>
         </div>
@@ -232,30 +236,33 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-2">
-            {newsArticles.map((article) => (
+          <div className="mt-8 grid grid-cols-[repeat(auto-fit,minmax(240px,320px))] justify-center gap-5">
+            {newsArticles.map((article, index) => (
+              <MotionReveal key={article.id} className="h-full" delayMs={index * 110}>
               <Link
-                key={article.id}
                 href={`/noticias/${article.slug}`}
-                className="rounded-xl border border-[#f1f3f5] bg-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-34px_rgba(0,0,0,0.3)]"
+                className="group flex h-full flex-col rounded-lg border border-[#f1f3f5] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-30px_rgba(0,0,0,0.35)]"
               >
-                <div className="mb-6 overflow-hidden rounded-lg">
-                  <img
-                    src={getAssetUrl(article.image)}
-                    alt={article.title}
-                    className="h-56 w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                  />
+                <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-[#f4f5f7]">
+                    <img
+                      src={getAssetUrl(article.image)}
+                      alt={article.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+                    />
                 </div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#888]">
                   {formatLongDate(article.publishedAt || article.createdAt || '')} • {article.category}
                 </p>
-                <h3 className="mt-6 overflow-hidden font-display text-[2rem] font-bold leading-[1.04] text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
+                <h3 className="mt-3 overflow-hidden font-display text-xl font-bold leading-tight text-[#1a1a1a] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                   {article.title}
                 </h3>
-                <p className="mt-6 max-w-[34rem] overflow-hidden text-sm leading-[1.65] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                <p className="mt-2 overflow-hidden text-sm leading-[1.55] text-[#666] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                   {richTextToPlainText(article.excerpt)}
                 </p>
               </Link>
+              </MotionReveal>
             ))}
           </div>
         </div>

@@ -149,8 +149,18 @@ describe('backoffice page guards', () => {
     expect(navigationBlock).toContain("id: 'gallery-escola-dos-nossos-avos'");
     expect(navigationBlock).toContain("id: 'gallery-oficinas-de-formacao'");
     expect(navigationBlock).toContain("id: 'gallery-publicacoes'");
-    expect(navigationBlock).toContain("id: 'gallery-biblioteca'");
     expect(backofficePageSource).not.toContain('<Card title="Galeria"');
+  });
+
+  it('keeps only one Recursos entry in the backoffice navigation', () => {
+    const navigationBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS'),
+      backofficePageSource.indexOf('const APPEARANCE_TABS')
+    );
+
+    expect(navigationBlock).toContain("{ id: 'publications', label: 'Recursos' }");
+    expect(navigationBlock).not.toContain("id: 'gallery-biblioteca'");
+    expect((navigationBlock.match(/label: 'Recursos'/g) || [])).toHaveLength(1);
   });
 
   it('allows the recent page media sections to submit videos and PDFs', () => {

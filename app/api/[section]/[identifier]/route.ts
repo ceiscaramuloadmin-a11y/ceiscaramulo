@@ -117,7 +117,7 @@ export async function PUT(
         next.excerpt !== undefined &&
         typeof next.published === 'boolean'
       ) {
-        enqueueNewsPublishedNotifications(prevPublished, {
+        await enqueueNewsPublishedNotifications(prevPublished, {
           slug: next.slug,
           title: next.title,
           excerpt: next.excerpt,

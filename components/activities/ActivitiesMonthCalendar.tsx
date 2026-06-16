@@ -158,7 +158,7 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
       </div>
 
       {todayLabel && (
-        <p className="rounded-md bg-[#eef4ea] px-3 py-2 text-center text-sm font-semibold text-[#27441d]">
+        <p className="rounded-md bg-[#eef4ea] px-3 py-2 text-center text-sm font-semibold text-[#0f4c36]">
           Hoje: {todayLabel}
         </p>
       )}
@@ -192,9 +192,9 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
               disabled={!hasActivities}
               className={`aspect-square rounded-md text-sm transition-colors ${
                 hasActivities
-                  ? 'bg-[#eef4ea] font-semibold text-[#27441d] hover:bg-[#dfead7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+                  ? 'bg-[#eef4ea] font-semibold text-[#0f4c36] hover:bg-[#dfead7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
                   : 'cursor-default text-stone-400 disabled:opacity-100'
-              } ${isToday ? 'ring-2 ring-[#27441d] ring-offset-2' : ''} ${isVisibleMonth ? '' : 'opacity-45'}`}
+              } ${isToday ? 'ring-2 ring-[#0f4c36] ring-offset-2' : ''} ${isVisibleMonth ? '' : 'opacity-45'}`}
               onClick={() => handleDayActivated(day)}
             >
               {day.getDate()}

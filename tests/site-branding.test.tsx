@@ -94,7 +94,7 @@ describe('site branding', () => {
     expect(screen.getByRole('heading', { level: 1, name: /Explorar A Serra Do Caramulo/i })).toHaveClass('font-hero');
   });
 
-  it('uses the logo green for the highlighted homepage title word', () => {
+  it('keeps the original light green on the Serra do Caramulo hero title words', () => {
     render(
       <HomeHero
         hero={{
@@ -115,6 +115,10 @@ describe('site branding', () => {
     );
 
     expect(screen.getByText('Interpretação')).toHaveClass('text-white');
+    expect(screen.getByText('Interpretação')).toHaveClass('ceis-hero-title-line');
+    expect(screen.getByText('Serra')).toHaveClass('text-[#9dc44d]');
+    expect(screen.getByText('do Caramulo')).toHaveClass('text-[#9dc44d]');
+    expect(screen.getByText('do Caramulo')).toHaveClass('ceis-hero-title-line');
   });
 
   it('keeps the full homepage title readable on laptop-sized viewports', () => {
@@ -273,7 +277,7 @@ describe('site branding', () => {
     const facebook = screen.getByRole('link', { name: 'Facebook' });
     const linkedIn = screen.getByRole('link', { name: 'LinkedIn' });
 
-    expect(instagram).toHaveClass('h-8', 'w-8', 'text-[#3e5c32]');
+    expect(instagram).toHaveClass('h-8', 'w-8', 'text-[#0f4c36]');
     expect(instagram).not.toHaveClass('rounded-full', 'border-2');
     expect(facebook).toHaveTextContent('f');
     expect(linkedIn).toHaveTextContent('in');
@@ -338,7 +342,7 @@ describe('site branding', () => {
     const homeLogoLink = screen.getByRole('link', { name: 'CEISCaramulo - Página inicial' });
     const homepageNav = screen.getByRole('navigation', { name: 'Navegação principal da homepage' });
 
-    expect(homeLogoLink).not.toHaveClass('border-b', 'border-[#3e5c32]/60', 'active:border-[#27441d]');
+    expect(homeLogoLink).not.toHaveClass('border-b', 'border-[#0f4c36]/60', 'active:border-[#0f4c36]');
     expect(homeLogoLink).toHaveClass('focus-visible:ring-2', 'active:brightness-95');
     expect(homepageNav).toHaveClass('flex-1', 'justify-between', 'gap-4', '2xl:gap-6');
     expect(screen.getAllByRole('link', { name: 'Sobre Nós' })[0]).toHaveClass('px-2', '2xl:px-3', 'tracking-[0.03em]', '2xl:tracking-[0.06em]');
