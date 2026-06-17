@@ -1,5 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
+import { extname } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
@@ -131,7 +130,7 @@ export function jsonError(message: string, status = 400) {
 }
 
 const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice';
-const UPLOAD_DISK_ROOT = join(process.cwd(), 'public', 'uploads', 'backoffice');
+const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:';
 
 function sanitizeUploadSegment(value: string) {
   return value
@@ -165,15 +164,30 @@ export async function storeUploadedFile(file: File, bucket = 'general') {
   }
 
   const safeBucket = sanitizeUploadSegment(bucket);
-  const diskDirectory = join(UPLOAD_DISK_ROOT, safeBucket);
   const originalExtension = extname(file.name || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
   const extension = originalExtension || extensionFromMimeType(mimeType);
   const filename = `${Date.now()}-${crypto.randomUUID()}${extension}`;
+  const relativePath = `${safeBucket}/${filename}`;
+  const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
-  await mkdir(diskDirectory, { recursive: true });
-  await writeFile(join(diskDirectory, filename), buffer);
+  // Em produção serverless, `/var/task/public` não é gravável. Guardamos o
+  // ficheiro na base de dados e mantemos o mesmo URL público para o frontend.
+  await setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl);
 
-  return `${UPLOAD_PUBLIC_ROOT}/${safeBucket}/${filename}`;
+  return `${UPLOAD_PUBLIC_ROOT}/${relativePath}`;
+}
+
+export async function getStoredUploadedFile(relativePathSegments: string[]) {
+  const relativePath = relativePathSegments
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join('/');
+
+  if (!relativePath || relativePath.includes('..') || !/^[a-z0-9-]+\/[a-z0-9.-]+$/i.test(relativePath)) {
+    return null;
+  }
+
+  return getSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`);
 }
 
 // Converte ficheiro recebido para Data URL (compatível com implementação atual).
