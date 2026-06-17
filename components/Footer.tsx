@@ -9,7 +9,11 @@ import NewsletterSignup from '@/components/NewsletterSignup';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
 
-const FOOTER_LINKS_TO_REMOVE = new Set(['/noticias', '/serra-do-caramulo', '/contactos']);
+const FOOTER_LINKS_TO_REMOVE = new Set(['/sobre-nos', '/projetos', '/biblioteca', '/serra-do-caramulo', '/contactos']);
+const FOOTER_MAIN_LINKS = [
+  { label: 'Atividades', href: '/atividades' },
+  { label: 'Notícias', href: '/noticias' },
+];
 
 const SocialIcon = ({ label }: { label: string }) => {
   if (label === 'Facebook') {
@@ -30,9 +34,12 @@ const SocialIcon = ({ label }: { label: string }) => {
 const getPublicFooterColumns = (settings: SiteLayoutSettings) =>
   settings.footer.columns
     .filter((column) => !column.title.toLowerCase().includes('restrita'))
-    .map((column) => ({
+    .map((column, index) => ({
       ...column,
-      links: column.links.filter((item) => !item.href.startsWith('/backoffice') && !FOOTER_LINKS_TO_REMOVE.has(item.href)),
+      links:
+        index === 0 || column.title.trim().toLowerCase() === 'conhecer'
+          ? FOOTER_MAIN_LINKS
+          : column.links.filter((item) => !item.href.startsWith('/backoffice') && !FOOTER_LINKS_TO_REMOVE.has(item.href)),
     }))
     .filter((column) => column.links.length > 0);
 
@@ -41,6 +48,7 @@ const Footer: React.FC = () => {
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
   const footerColumns = getPublicFooterColumns(layoutSettings);
   const footerContact = layoutSettings.footer.contactInfo;
+  const footerMembership = layoutSettings.footer.membership ?? defaultSiteLayoutSettings.footer.membership;
   const socialLinks = [
     { label: 'Facebook', href: footerContact.socialMedia.facebook },
     { label: 'LinkedIn', href: footerContact.socialMedia.linkedin },
@@ -66,7 +74,7 @@ const Footer: React.FC = () => {
           setLayoutSettings(payload);
         }
       } catch {
-        // fallback silencioso para definições por omissão
+        // Fallback silencioso para definicoes por omissao.
       }
     };
 
@@ -78,9 +86,9 @@ const Footer: React.FC = () => {
   }, []);
 
   return (
-    <footer className="border-t border-stone-200/60 bg-[#f5f5f4]">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-5">
+    <footer className="relative overflow-hidden border-t border-stone-200/60 bg-[#f5f5f4]">
+      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-6">
           <div className="space-y-4">
             <Link href="/" className="inline-flex items-center" aria-label="CEISCaramulo - Página inicial">
               <SiteLogo imageClassName="h-20 w-auto sm:h-24" />
@@ -99,7 +107,11 @@ const Footer: React.FC = () => {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={isActive ? 'text-sm font-semibold text-[#0f4c36] underline' : 'text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'}
+                      className={
+                        isActive
+                          ? 'text-sm font-semibold text-[#0f4c36] underline'
+                          : 'text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'
+                      }
                     >
                       {item.label}
                     </Link>
@@ -114,7 +126,11 @@ const Footer: React.FC = () => {
             <div className="mt-6 grid gap-3 text-sm text-stone-500">
               <Link
                 href="/contactos"
-                className={pathname === '/contactos' ? 'font-semibold text-[#0f4c36] underline' : 'underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'}
+                className={
+                  pathname === '/contactos'
+                    ? 'font-semibold text-[#0f4c36] underline'
+                    : 'underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'
+                }
               >
                 Como nos contactar
               </Link>
@@ -150,10 +166,25 @@ const Footer: React.FC = () => {
               ))}
             </div>
           </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-[#0f4c36]">{footerMembership.title}</h3>
+            <p className="mt-6 text-sm leading-relaxed text-stone-500">
+              {footerMembership.description}
+            </p>
+            <a
+              href={footerMembership.ctaHref}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex w-fit items-center justify-center whitespace-nowrap rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0b3d2b]"
+            >
+              {footerMembership.ctaLabel}
+            </a>
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-stone-200/80">
+      <div className="relative border-t border-stone-200/80">
         <div className="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-stone-500 sm:px-6 lg:px-8">
           {layoutSettings.footer.copyrightLine}
           <div className="mt-2 text-xs uppercase tracking-[0.1em] text-stone-500">{layoutSettings.footer.legalLine}</div>

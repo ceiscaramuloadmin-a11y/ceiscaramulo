@@ -3,7 +3,11 @@ import { contactInfo } from '@/data/site';
 
 export const SITE_LAYOUT_SETTINGS_KEY = 'site_layout_settings';
 const PLACEHOLDER_FOOTER_COLUMN_TITLE = 'teste';
-const FOOTER_LINKS_TO_REMOVE = new Set(['/noticias', '/serra-do-caramulo', '/contactos']);
+const FOOTER_LINKS_TO_REMOVE = new Set(['/sobre-nos', '/projetos', '/biblioteca', '/serra-do-caramulo', '/contactos']);
+const FOOTER_MAIN_LINKS = [
+  { label: 'Atividades', href: '/atividades' },
+  { label: 'Notícias', href: '/noticias' },
+];
 const LOGO_GREEN = '#0f4c36';
 const LEGACY_GREEN_VALUES = new Set(['#27441d', '#3e5c32', '#9dc44d']);
 
@@ -228,9 +232,8 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       {
         title: 'Conhecer',
         links: [
-          { label: 'Sobre Nós', href: '/sobre-nos' },
           { label: 'Atividades', href: '/atividades' },
-          { label: 'Recursos', href: '/biblioteca' },
+          { label: 'Notícias', href: '/noticias' },
         ],
       },
       {
@@ -243,6 +246,12 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
         ],
       },
     ],
+    membership: {
+      title: 'Tornar-se sócio',
+      description: 'Quem se torna sócio ajuda a preservar, estudar e divulgar a Serra do Caramulo.',
+      ctaLabel: 'Preencher formulário',
+      ctaHref: 'https://forms.gle/KQKtyjGUPhF5DNRJ8',
+    },
     socialTitle: 'Redes Sociais',
     copyrightLine: '© CEISCaramulo - Organização sem fins lucrativos. Todos os direitos reservados.',
     legalLine: 'Associação sem fins lucrativos',
@@ -282,14 +291,24 @@ export function normalizeSiteLayoutSettings(settings: SiteLayoutSettings): SiteL
     ...settings,
     footer: {
       ...settings.footer,
-      columns: settings.footer.columns.map((column, index) => ({
-        ...column,
-        title:
-          column.title.trim().toLowerCase() === PLACEHOLDER_FOOTER_COLUMN_TITLE
-            ? defaultSiteLayoutSettings.footer.columns[index]?.title ?? column.title
-            : column.title,
-        links: column.links.filter((link) => !FOOTER_LINKS_TO_REMOVE.has(link.href)),
-      })),
+      membership: settings.footer.membership ?? defaultSiteLayoutSettings.footer.membership,
+      columns: settings.footer.columns
+        .filter((column) => !column.title.toLowerCase().includes('restrita'))
+        .map((column, index) => {
+          const title =
+            column.title.trim().toLowerCase() === PLACEHOLDER_FOOTER_COLUMN_TITLE
+              ? defaultSiteLayoutSettings.footer.columns[index]?.title ?? column.title
+              : column.title;
+
+          return {
+            ...column,
+            title,
+            links:
+              index === 0 || title.trim().toLowerCase() === 'conhecer'
+                ? FOOTER_MAIN_LINKS
+                : column.links.filter((link) => !link.href.startsWith('/backoffice') && !FOOTER_LINKS_TO_REMOVE.has(link.href)),
+          };
+        }),
     },
     visualIdentity: {
       ...settings.visualIdentity,

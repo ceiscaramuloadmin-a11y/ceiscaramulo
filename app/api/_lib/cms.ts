@@ -739,6 +739,22 @@ function serializeForAudit(value: unknown) {
   }
 }
 
+function isMissingAuditTableError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { code?: string; message?: string };
+  const message = String(candidate.message || '').toLowerCase();
+
+  return (
+    candidate.code === 'P2021' ||
+    candidate.code === 'P2022' ||
+    (message.includes('admin_audit_logs') && (message.includes('does not exist') || message.includes('not exist'))) ||
+    (message.includes('adminauditlog') && message.includes('does not exist'))
+  );
+}
+
 export function getAuditLogRetentionCutoff(now = new Date()) {
   return new Date(now.getTime() - AUDIT_LOG_RETENTION_MS);
 }
@@ -756,15 +772,68 @@ export async function pruneExpiredAuditLogs(now = new Date()) {
     return 0;
   }
 
-  const result = await prismaAny.adminAuditLog.deleteMany({
-    where: {
-      createdAt: {
-        lte: getAuditLogRetentionCutoff(now),
+  try {
+    const result = await prismaAny.adminAuditLog.deleteMany({
+      where: {
+        createdAt: {
+          lte: getAuditLogRetentionCutoff(now),
+        },
       },
-    },
+    });
+
+    return result.count;
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      return 0;
+    }
+
+    throw error;
+  }
+}
+
+async function listStoredAuditLogs() {
+  const storedValue = await getSiteSettingValue('admin_audit_logs');
+  const parsed = safeJsonParse<unknown[]>(storedValue, []);
+  const cutoff = getAuditLogRetentionCutoff().getTime();
+  const activeLogs = parsed.filter((item) => {
+    const normalized = normalizeAuditLogRecord(item);
+    return normalized ? Date.parse(normalized.createdAt) > cutoff : false;
   });
 
-  return result.count;
+  if (activeLogs.length !== parsed.length) {
+    await setSiteSettingValue('admin_audit_logs', JSON.stringify(activeLogs.slice(0, MAX_AUDIT_LOGS)));
+  }
+
+  return activeLogs
+    .map((item) => normalizeAuditLogRecord(item))
+    .filter((item): item is AuditLogRecord => Boolean(item))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+async function appendStoredAuditLog(input: {
+  actor: AdminContext;
+  action: string;
+  targetType: string;
+  targetId?: string | null;
+  summary: string;
+  before?: unknown;
+  after?: unknown;
+}) {
+  const logs = await listStoredAuditLogs();
+  const entry: AuditLogRecord = {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    actorEmail: input.actor.email,
+    actorRole: input.actor.role,
+    action: input.action,
+    targetType: input.targetType,
+    targetId: input.targetId ?? null,
+    summary: input.summary,
+    before: serializeForAudit(input.before),
+    after: serializeForAudit(input.after),
+  };
+
+  await setSiteSettingValue('admin_audit_logs', JSON.stringify([entry, ...logs].slice(0, MAX_AUDIT_LOGS)));
 }
 
 // Lista os eventos de auditoria por ordem decrescente de criação.
@@ -790,30 +859,25 @@ export async function listAuditLogs() {
   };
 
   if (!prismaAny.adminAuditLog) {
-    const storedValue = await getSiteSettingValue('admin_audit_logs');
-    const parsed = safeJsonParse<unknown[]>(storedValue, []);
-    const cutoff = getAuditLogRetentionCutoff().getTime();
-    const activeLogs = parsed.filter((item) => {
-      const normalized = normalizeAuditLogRecord(item);
-      return normalized ? Date.parse(normalized.createdAt) > cutoff : false;
-    });
-
-    if (activeLogs.length !== parsed.length) {
-      await setSiteSettingValue('admin_audit_logs', JSON.stringify(activeLogs.slice(0, MAX_AUDIT_LOGS)));
-    }
-
-    return activeLogs
-      .map((item) => normalizeAuditLogRecord(item))
-      .filter((item): item is AuditLogRecord => Boolean(item))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return listStoredAuditLogs();
   }
 
   await pruneExpiredAuditLogs();
 
-  const logs = await prismaAny.adminAuditLog.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: MAX_AUDIT_LOGS,
-  });
+  let logs: Awaited<ReturnType<typeof prismaAny.adminAuditLog.findMany>>;
+
+  try {
+    logs = await prismaAny.adminAuditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: MAX_AUDIT_LOGS,
+    });
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      return listStoredAuditLogs();
+    }
+
+    throw error;
+  }
 
   return logs
     .map((item) =>
@@ -868,21 +932,7 @@ export async function appendAuditLog(input: {
   await pruneExpiredAuditLogs();
 
   if (!prismaAny.adminAuditLog) {
-    const logs = await listAuditLogs();
-    const entry: AuditLogRecord = {
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      actorEmail: input.actor.email,
-      actorRole: input.actor.role,
-      action: input.action,
-      targetType: input.targetType,
-      targetId: input.targetId ?? null,
-      summary: input.summary,
-      before: serializeForAudit(input.before),
-      after: serializeForAudit(input.after),
-    };
-
-    await setSiteSettingValue('admin_audit_logs', JSON.stringify([entry, ...logs].slice(0, MAX_AUDIT_LOGS)));
+    await appendStoredAuditLog(input);
     return;
   }
 
@@ -890,19 +940,28 @@ export async function appendAuditLog(input: {
     ? await prismaAny.adminUser.findUnique({ where: { email: input.actor.email } })
     : null;
 
-  await prismaAny.adminAuditLog.create({
-    data: {
-      actorId: actor?.id ?? null,
-      actorEmail: input.actor.email,
-      actorRole: input.actor.role,
-      action: input.action,
-      targetType: input.targetType,
-      targetId: input.targetId ?? null,
-      summary: input.summary,
-      before: serializeForAudit(input.before),
-      after: serializeForAudit(input.after),
-    },
-  });
+  try {
+    await prismaAny.adminAuditLog.create({
+      data: {
+        actorId: actor?.id ?? null,
+        actorEmail: input.actor.email,
+        actorRole: input.actor.role,
+        action: input.action,
+        targetType: input.targetType,
+        targetId: input.targetId ?? null,
+        summary: input.summary,
+        before: serializeForAudit(input.before),
+        after: serializeForAudit(input.after),
+      },
+    });
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      await appendStoredAuditLog(input);
+      return;
+    }
+
+    throw error;
+  }
 }
 
 // Resolve o item de conteúdo por identificador e secção.

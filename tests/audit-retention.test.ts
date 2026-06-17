@@ -7,6 +7,8 @@ const prismaMocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   create: vi.fn(),
   findUnique: vi.fn(),
+  siteSettingFindUnique: vi.fn(),
+  siteSettingUpsert: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -18,6 +20,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     adminUser: {
       findUnique: prismaMocks.findUnique,
+    },
+    siteSetting: {
+      findUnique: prismaMocks.siteSettingFindUnique,
+      upsert: prismaMocks.siteSettingUpsert,
     },
   },
 }));
@@ -35,6 +41,8 @@ describe('audit log retention', () => {
     prismaMocks.findMany.mockResolvedValue([]);
     prismaMocks.create.mockResolvedValue({});
     prismaMocks.findUnique.mockResolvedValue({ id: 'admin_1' });
+    prismaMocks.siteSettingFindUnique.mockResolvedValue(null);
+    prismaMocks.siteSettingUpsert.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -88,5 +96,66 @@ describe('audit log retention', () => {
       prismaMocks.create.mock.invocationCallOrder[0]
     );
     expect(prismaMocks.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists stored audit history when the dedicated audit table is missing in production', async () => {
+    prismaMocks.deleteMany.mockRejectedValue({ code: 'P2021', message: 'The table admin_audit_logs does not exist' });
+    prismaMocks.findMany.mockRejectedValue({ code: 'P2021', message: 'The table admin_audit_logs does not exist' });
+    prismaMocks.siteSettingFindUnique.mockResolvedValue({
+      value: JSON.stringify([
+        {
+          id: 'stored-1',
+          createdAt: '2026-06-02T11:00:00.000Z',
+          actorEmail: 'admin@example.pt',
+          actorRole: 'owner',
+          action: 'update',
+          targetType: 'news',
+          targetId: 'n1',
+          summary: 'Atualização de registo na secção news.',
+        },
+      ]),
+    });
+
+    const { listAuditLogs } = await import('@/app/api/_lib/cms');
+
+    await expect(listAuditLogs()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'stored-1',
+        summary: 'Atualização de registo na secção news.',
+      }),
+    ]);
+  });
+
+  it('records new audit entries in site settings when the dedicated audit table is missing', async () => {
+    prismaMocks.deleteMany.mockRejectedValue({ code: 'P2021', message: 'The table admin_audit_logs does not exist' });
+    prismaMocks.create.mockRejectedValue({ code: 'P2021', message: 'The table admin_audit_logs does not exist' });
+    prismaMocks.siteSettingFindUnique.mockResolvedValue({ value: '[]' });
+
+    const { appendAuditLog } = await import('@/app/api/_lib/cms');
+
+    await appendAuditLog({
+      actor: {
+        email: 'admin@example.pt',
+        role: 'owner',
+        permissions: ['audit'],
+      },
+      action: 'update',
+      targetType: 'news',
+      targetId: 'n1',
+      summary: 'Atualização de registo na secção news.',
+      before: { title: 'Antigo' },
+      after: { title: 'Novo' },
+    });
+
+    expect(prismaMocks.siteSettingUpsert).toHaveBeenCalledWith({
+      where: { key: 'admin_audit_logs' },
+      create: {
+        key: 'admin_audit_logs',
+        value: expect.stringContaining('Atualização de registo na secção news.'),
+      },
+      update: {
+        value: expect.stringContaining('Atualização de registo na secção news.'),
+      },
+    });
   });
 });

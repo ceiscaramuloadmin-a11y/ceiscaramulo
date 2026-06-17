@@ -226,16 +226,32 @@ describe('site branding', () => {
   });
 
   it('keeps the footer navigation focused on initiatives and moves the contact page link into contacts', () => {
-    render(<Footer />);
+    const { container } = render(<Footer />);
+    const footerGrid = container.querySelector('.grid.gap-12');
 
+    expect(screen.getByRole('link', { name: 'Atividades' })).toHaveAttribute('href', '/atividades');
+    expect(screen.getByRole('link', { name: 'Notícias' })).toHaveAttribute('href', '/noticias');
     expect(screen.getByRole('heading', { name: 'Iniciativas' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Oficina do Burel' })).toHaveAttribute('href', '/oficina-do-burel');
     expect(screen.getByRole('link', { name: 'Escola dos Nossos Avós' })).toHaveAttribute('href', '/escola-dos-nossos-avos');
     expect(screen.getByRole('link', { name: 'PON do Jueus' })).toHaveAttribute('href', '/pon-do-jueus');
     expect(screen.getByRole('link', { name: 'Como nos contactar' })).toHaveAttribute('href', '/contactos');
-    expect(screen.queryByRole('link', { name: 'Notícias' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Sobre Nós' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Projetos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Biblioteca' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Recursos' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'A Serra do Caramulo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
+    expect(footerGrid).toHaveClass('xl:grid-cols-6');
+    expect(screen.getByRole('heading', { name: 'Tornar-se sócio' })).toBeInTheDocument();
+    expect(screen.getByText('Quem se torna sócio ajuda a preservar, estudar e divulgar a Serra do Caramulo.')).toBeInTheDocument();
+
+    const membershipButton = screen.getByRole('link', { name: 'Preencher formulário' });
+
+    expect(membershipButton).toHaveAttribute('href', 'https://forms.gle/KQKtyjGUPhF5DNRJ8');
+    expect(membershipButton).toHaveClass('bg-[#0f4c36]', 'hover:bg-[#0b3d2b]');
+    expect(membershipButton).toHaveClass('whitespace-nowrap');
+    expect(membershipButton.closest('section')).not.toBeInTheDocument();
   });
 
   it('filters outdated fetched footer links that the contact column now owns', async () => {
@@ -262,9 +278,10 @@ describe('site branding', () => {
 
     render(<Footer />);
 
-    await waitFor(() => expect(screen.getByRole('link', { name: 'Recursos' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Notícias' })).toBeInTheDocument());
 
-    expect(screen.queryByRole('link', { name: 'Notícias' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Notícias' })).toHaveAttribute('href', '/noticias');
+    expect(screen.queryByRole('link', { name: 'Recursos' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'A Serra do Caramulo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Como nos contactar' })).toHaveAttribute('href', '/contactos');

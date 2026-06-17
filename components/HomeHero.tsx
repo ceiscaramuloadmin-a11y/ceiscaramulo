@@ -6,8 +6,6 @@ import { CSSProperties, useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import SiteLogo from '@/components/SiteLogo';
 import heroImage from '@/src/assets/hero-imgs/hero-img.webp';
-import heroImage2 from '@/src/assets/hero-imgs/hero-img2.webp';
-import heroCeis7860 from '@/src/assets/hero-imgs/hero-ceis-7860.webp';
 import heroCeis7902 from '@/src/assets/hero-imgs/hero-ceis-7902.webp';
 import heroPonJueus1 from '@/src/assets/hero-imgs/hero-pon-jueus-1.webp';
 import heroPonJueus2 from '@/src/assets/hero-imgs/hero-pon-jueus-2.webp';
@@ -35,10 +33,8 @@ const HERO_SWIPER_INTERVAL_MS = 6000;
 // a diversidade do trabalho da associação logo na entrada do website.
 const localHeroImages = [
   heroImage,
-  heroImage2,
-  heroCeis7860,
-  heroCeis7902,
   heroPonJueus1,
+  heroCeis7902,
   heroPonJueus2,
   heroEscolaAvos1,
   heroEscolaAvos2,
