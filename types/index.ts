@@ -343,6 +343,12 @@ export interface SiteLayoutSettings {
     brandDescription: string;
     contactInfo: FooterContactSettings;
     columns: Array<{ title: string; links: LayoutLinkItem[] }>;
+    membership: {
+      title: string;
+      description: string;
+      ctaLabel: string;
+      ctaHref: string;
+    };
     socialTitle: string;
     copyrightLine: string;
     legalLine: string;

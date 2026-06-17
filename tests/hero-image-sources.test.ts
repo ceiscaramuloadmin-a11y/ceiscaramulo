@@ -17,10 +17,12 @@ describe('splitHeroImageSources', () => {
     expect(splitHeroImageSources('/a.svg| /b.svg ')).toEqual(['/a.svg', '/b.svg']);
   });
 
-  it('keeps the supplied institutional and programme images in the homepage carousel', () => {
+  it('keeps the requested homepage carousel images without the removed second and third photos', () => {
     const source = readFileSync(resolve(process.cwd(), 'components/HomeHero.tsx'), 'utf8');
 
-    expect(source).toContain('hero-ceis-7860.webp');
+    expect(source).not.toContain('hero-img2.webp');
+    expect(source).not.toContain('hero-ceis-7860.webp');
+    expect(source).not.toContain('hero-img-7710.webp');
     expect(source).toContain('hero-ceis-7902.webp');
     expect(source).not.toContain('hero-ceis-7922.webp');
     expect(source).toContain('hero-pon-jueus-1.webp');
@@ -28,5 +30,15 @@ describe('splitHeroImageSources', () => {
     expect(source).toContain('hero-escola-avos-1.webp');
     expect(source).toContain('hero-escola-avos-2.webp');
     expect(source).toContain('hero-escola-avos-3.webp');
+
+    const carouselBlock = source.slice(
+      source.indexOf('const localHeroImages = ['),
+      source.indexOf('];', source.indexOf('const localHeroImages = [')),
+    );
+
+    expect(carouselBlock.indexOf('heroImage')).toBeLessThan(carouselBlock.indexOf('heroPonJueus1'));
+    expect(carouselBlock.indexOf('heroPonJueus1')).toBeLessThan(carouselBlock.indexOf('heroCeis7902'));
+    expect(carouselBlock.indexOf('heroCeis7902')).toBeLessThan(carouselBlock.indexOf('heroPonJueus2'));
+    expect(carouselBlock.trim()).toMatch(/^const localHeroImages = \[\s*heroImage,/);
   });
 });

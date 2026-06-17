@@ -22,13 +22,17 @@ describe('site-layout', () => {
     expect(footerLinks.map((link) => link.href)).not.toContain('/backoffice/login');
   });
 
-  it('aligns footer navigation with institutional initiatives instead of repeated or misplaced links', () => {
+  it('keeps the main footer navigation focused on activities and news', () => {
     const footerLinks = defaultSiteLayoutSettings.footer.columns.flatMap((column) => column.links);
     const footerHrefs = footerLinks.map((link) => link.href);
 
+    expect(defaultSiteLayoutSettings.footer.columns[0].links.map((link) => link.href)).toEqual(['/atividades', '/noticias']);
     expect(defaultSiteLayoutSettings.footer.columns.map((column) => column.title)).toContain('Iniciativas');
     expect(footerHrefs).toEqual(expect.arrayContaining(['/oficina-do-burel', '/escola-dos-nossos-avos', '/pon-do-jueus']));
-    expect(footerHrefs).not.toContain('/noticias');
+    expect(footerHrefs).toContain('/noticias');
+    expect(footerHrefs).not.toContain('/sobre-nos');
+    expect(footerHrefs).not.toContain('/projetos');
+    expect(footerHrefs).not.toContain('/biblioteca');
     expect(footerHrefs).not.toContain('/serra-do-caramulo');
     expect(footerHrefs).not.toContain('/contactos');
   });
@@ -48,6 +52,13 @@ describe('site-layout', () => {
     expect(defaultSiteLayoutSettings.footer.contactInfo.email).toBe('ceiscaramulo@gmail.com');
     expect(defaultSiteLayoutSettings.footer.contactInfo.phone).toBe('+351 966 717 360');
     expect(defaultSiteLayoutSettings.footer.contactInfo.socialMedia.instagram).toBe('https://www.instagram.com/ceiscaramulo_/');
+  });
+
+  it('keeps the footer membership call to action editable in layout settings', () => {
+    expect(defaultSiteLayoutSettings.footer.membership.title).toBe('Tornar-se sócio');
+    expect(defaultSiteLayoutSettings.footer.membership.description).toContain('preservar, estudar e divulgar');
+    expect(defaultSiteLayoutSettings.footer.membership.ctaLabel).toBe('Preencher formulário');
+    expect(defaultSiteLayoutSettings.footer.membership.ctaHref).toBe('https://forms.gle/KQKtyjGUPhF5DNRJ8');
   });
 
   it('replaces placeholder footer column titles with the public defaults', () => {
@@ -72,7 +83,7 @@ describe('site-layout', () => {
     expect(settings.footer.columns[1].title).toBe('Explorar');
   });
 
-  it('removes old footer links that duplicated news, resources, or the contact column', () => {
+  it('removes old footer links for about, projects, resources, or the contact column', () => {
     const settings = normalizeSiteLayoutSettings({
       ...defaultSiteLayoutSettings,
       footer: {
@@ -91,7 +102,38 @@ describe('site-layout', () => {
       },
     });
 
-    expect(settings.footer.columns[0].links).toEqual([{ label: 'Recursos', href: '/biblioteca' }]);
+    expect(settings.footer.columns[0].links.map((link) => link.href)).toEqual(['/atividades', '/noticias']);
+  });
+
+  it('removes restricted footer columns and backoffice links from normalized settings', () => {
+    const settings = normalizeSiteLayoutSettings({
+      ...defaultSiteLayoutSettings,
+      footer: {
+        ...defaultSiteLayoutSettings.footer,
+        columns: [
+          ...defaultSiteLayoutSettings.footer.columns,
+          {
+            title: 'Área Restrita 2',
+            links: [
+              { label: 'Backoffice', href: '/backoffice' },
+              { label: 'Login Administrativo', href: '/backoffice/login' },
+            ],
+          },
+          {
+            title: 'Misto',
+            links: [
+              { label: 'Galeria', href: '/galeria' },
+              { label: 'Backoffice', href: '/backoffice' },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(settings.footer.columns.map((column) => column.title)).not.toContain('Área Restrita 2');
+    expect(settings.footer.columns.flatMap((column) => column.links.map((link) => link.href))).not.toContain('/backoffice');
+    expect(settings.footer.columns.flatMap((column) => column.links.map((link) => link.href))).not.toContain('/backoffice/login');
+    expect(settings.footer.columns.find((column) => column.title === 'Misto')?.links).toEqual([{ label: 'Galeria', href: '/galeria' }]);
   });
 
   it('defines editable visual identity and SEO defaults for the appearance CMS', () => {

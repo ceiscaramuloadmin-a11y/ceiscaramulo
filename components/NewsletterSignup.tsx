@@ -56,9 +56,9 @@ export default function NewsletterSignup() {
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-bold text-[#0f4c36]">Newsletter</h3>
-      <p className="text-xs leading-relaxed text-stone-500">Recebe novidades sobre atividades e notícias (sem spam).</p>
+      <p className="text-xs leading-relaxed text-stone-500">Recebe novidades sobre atividades e notícias.</p>
 
-      <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-stretch" onSubmit={submit} noValidate>
+      <form className="mt-4 flex flex-col gap-3" onSubmit={submit} noValidate>
         <label className="sr-only" htmlFor="newsletter-email">
           Email da newsletter
         </label>
@@ -73,13 +73,13 @@ export default function NewsletterSignup() {
           aria-invalid={feedback?.variant === 'err' ? 'true' : undefined}
           aria-describedby={feedback ? 'newsletter-feedback' : undefined}
           onChange={(event) => setEmail(event.target.value)}
-          className="min-h-11 flex-1 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-[#0f4c36]"
+          className="min-h-11 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-[#0f4c36]"
         />
 
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0b3d2b] disabled:opacity-75"
+          className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0b3d2b] disabled:opacity-75"
         >
           {pending ? 'A registar…' : 'Subscrever'}
         </button>

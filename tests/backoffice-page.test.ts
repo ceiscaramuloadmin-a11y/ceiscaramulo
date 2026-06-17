@@ -38,8 +38,31 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout'");
   });
 
-  it('exposes a dedicated contacts section in the backoffice with read-state actions', () => {
-    expect(backofficePageSource).toContain("{ id: 'contacts', label: 'Contactos' }");
+  it('exposes a dedicated user profile page for account security', () => {
+    expect(backofficePageSource).toContain("'overview' | 'profile'");
+    expect(backofficePageSource).toContain("{ id: 'profile', label: 'Perfil' }");
+    expect(backofficePageSource).toContain("const sections: SectionId[] = ['overview', 'profile']");
+    expect(backofficePageSource).toContain("activeSection === 'profile'");
+    expect(backofficePageSource).toContain('Perfil do utilizador');
+    expect(backofficePageSource).toContain('Segurança da conta');
+    expect(backofficePageSource).toContain('currentAdmin?.email');
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<{ success: boolean }>('/api/admin/password'");
+  });
+
+  it('updates the overview dashboard with quick actions and profile access', () => {
+    expect(backofficePageSource).toContain('Painel de visão geral');
+    expect(backofficePageSource).toContain('Resumo do backoffice');
+    expect(backofficePageSource).toContain('Ações rápidas');
+    expect(backofficePageSource).toContain('Gerir perfil');
+    expect(backofficePageSource).not.toContain('<Card title="Projetos" value={stats.projects}');
+    expect(backofficePageSource).toContain('<Card title="Mensagens" value={stats.contacts}');
+    expect(backofficePageSource).toContain("onClick={() => setActiveSection('profile')}");
+    expect(backofficePageSource).toContain("!['overview', 'profile'].includes(item.id)");
+    expect(backofficePageSource).toContain('lg:grid-cols-4');
+  });
+
+  it('exposes a dedicated messages section in the backoffice with read-state actions', () => {
+    expect(backofficePageSource).toContain("{ id: 'contacts', label: 'Mensagens' }");
     expect(backofficePageSource).toContain('availableSections.includes(item.id)');
     expect(backofficePageSource).toContain('setActiveSection(item.id)');
     expect(backofficePageSource).toContain('mt-6 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1');
@@ -48,11 +71,18 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Marcar como não lida');
   });
 
-  it('keeps the requested administrative menu order with contacts and history last', () => {
+  it('keeps the requested administrative menu order with messages and history last', () => {
+    const navigationBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS'),
+      backofficePageSource.indexOf('const APPEARANCE_TABS')
+    );
+
     expect(backofficePageSource).not.toContain('function sortBackofficeNavItems');
     expect(backofficePageSource).toContain('BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id))');
-    expect(backofficePageSource.indexOf("{ id: 'contacts', label: 'Contactos' }")).toBeLessThan(
-      backofficePageSource.indexOf("{ id: 'audit', label: 'Histórico' }")
+    expect(navigationBlock).toContain("{ id: 'contacts', label: 'Mensagens' }");
+    expect(navigationBlock).not.toContain("{ id: 'contacts', label: 'Contactos' }");
+    expect(navigationBlock.indexOf("{ id: 'contacts', label: 'Mensagens' }")).toBeLessThan(
+      navigationBlock.indexOf("{ id: 'audit', label: 'Histórico' }")
     );
     expect(backofficePageSource).toContain("{ id: 'publications', label: 'Recursos' }");
   });
@@ -81,32 +111,71 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Hero · Upload de imagem');
   });
 
+  it('does not expose the homepage hero description field in appearance management', () => {
+    expect(backofficePageSource).not.toContain('Hero · Descrição');
+    expect(backofficePageSource).toContain('Hero · Subtítulo');
+  });
+
+  it('does not expose the homepage hero preview in appearance management', () => {
+    expect(backofficePageSource).not.toContain('Pré-visualização');
+    expect(backofficePageSource).not.toContain('pré-visualização do primeiro ecrã');
+    expect(backofficePageSource).toContain('Gere o título, botões e imagem do primeiro ecrã.');
+  });
+
   it('allows the appearance tab to edit footer contact details', () => {
     expect(backofficePageSource).toContain('Footer · Contactos');
     expect(backofficePageSource).toContain('Footer · Morada');
     expect(backofficePageSource).toContain('Footer · Telefone');
     expect(backofficePageSource).toContain('Footer · Email');
-    expect(backofficePageSource).toContain('Footer · Instagram');
+    expect(backofficePageSource).toContain('Footer · Redes sociais');
+    expect(backofficePageSource).toContain('Título da secção');
+    expect(backofficePageSource).toContain('Instagram');
     expect(backofficePageSource).toContain('updateFooterContact');
     expect(backofficePageSource).toContain('updateFooterSocialMedia');
   });
 
+  it('aligns the footer appearance editor with the public footer structure', () => {
+    expect(backofficePageSource).toContain('Footer · Navegação visível');
+    expect(backofficePageSource).toContain('A coluna Conhecer é fixa no frontend');
+    expect(backofficePageSource).toContain('Atividades · /atividades');
+    expect(backofficePageSource).toContain('Notícias · /noticias');
+    expect(backofficePageSource).toContain('Footer · Tornar-se sócio');
+    expect(backofficePageSource).toContain('layoutSettings.footer.membership.title');
+    expect(backofficePageSource).toContain('layoutSettings.footer.membership.description');
+    expect(backofficePageSource).toContain('layoutSettings.footer.membership.ctaLabel');
+    expect(backofficePageSource).toContain('layoutSettings.footer.membership.ctaHref');
+    expect(backofficePageSource).toContain('Footer · Rodapé legal');
+    expect(backofficePageSource).toContain("!column.title.toLowerCase().includes('restrita')");
+    expect(backofficePageSource).toContain("!link.href.startsWith('/backoffice')");
+    expect(backofficePageSource).not.toContain('Footer · Descrição da marca');
+  });
+
   it('organizes appearance management into CMS-like tabs with publishing only', () => {
+    const appearanceTabsBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const APPEARANCE_TABS'),
+      backofficePageSource.indexOf('const APPEARANCE_PAGE_FIELDS')
+    );
+    const appearanceHeaderBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('role="tablist" aria-label="Separadores da aparência"'),
+      backofficePageSource.indexOf("appearanceTab === 'hero'")
+    );
+
     expect(backofficePageSource).toContain('APPEARANCE_TABS');
-    expect(backofficePageSource).toContain("'hero'");
-    expect(backofficePageSource).toContain("'pages'");
-    expect(backofficePageSource).toContain("'footer'");
-    expect(backofficePageSource).toContain("'icons'");
-    expect(backofficePageSource).toContain("'colors'");
-    expect(backofficePageSource).toContain("'logos'");
-    expect(backofficePageSource).toContain("'seo'");
+    expect(appearanceTabsBlock).toContain("'hero'");
+    expect(appearanceTabsBlock).toContain("'pages'");
+    expect(appearanceTabsBlock).toContain("'footer'");
+    expect(appearanceTabsBlock).not.toContain("'icons'");
+    expect(appearanceTabsBlock).not.toContain("'colors'");
+    expect(appearanceTabsBlock).not.toContain('Ícones');
+    expect(appearanceTabsBlock).not.toContain('Cores');
+    expect(appearanceTabsBlock).not.toContain("'logos'");
+    expect(appearanceTabsBlock).not.toContain('Logótipos');
+    expect(appearanceTabsBlock).toContain("'seo'");
     expect(backofficePageSource).not.toContain('Guardar rascunho');
     expect(backofficePageSource).not.toContain('Carregar rascunho');
     expect(backofficePageSource).toContain('Publicar Alterações');
-    expect(backofficePageSource).toContain('Pré-visualização');
-    expect(backofficePageSource).toContain('updateVisualColor');
+    expect(appearanceHeaderBlock).not.toContain('Publicar Alterações');
     expect(backofficePageSource).toContain('updateSeo');
-    expect(backofficePageSource).toContain('updateLogo');
   });
 
   it('adds all public frontend pages to the appearance page editor', () => {

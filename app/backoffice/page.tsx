@@ -46,7 +46,7 @@ type ProgrammeGallerySectionId =
   | 'gallery-publicacoes'
   | 'gallery-biblioteca';
 type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
-type SectionId = 'overview' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
+type SectionId = 'overview' | 'profile' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
 type AppearanceTab = 'hero' | 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
 type AppearancePageKey = keyof SiteLayoutSettings['pages'];
 type DashboardStats = {
@@ -62,7 +62,7 @@ const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = 
   { id: 'activities', label: 'Atividades' },
   { id: 'projects', label: 'Projetos' },
   { id: 'publications', label: 'Recursos' },
-  { id: 'contacts', label: 'Contactos' },
+  { id: 'contacts', label: 'Mensagens' },
   { id: 'gallery', label: 'Media das páginas' },
   { id: 'layout', label: 'Layout' },
   { id: 'admins', label: 'Admins' },
@@ -71,6 +71,7 @@ const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = 
 
 const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'overview', label: 'Visão geral' },
+  { id: 'profile', label: 'Perfil' },
   { id: 'about', label: 'Sobre Nós' },
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
@@ -84,7 +85,7 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'gallery-publicacoes', label: 'Publicações' },
   { id: 'layout', label: 'Aparência' },
   { id: 'admins', label: 'Admins' },
-  { id: 'contacts', label: 'Contactos' },
+  { id: 'contacts', label: 'Mensagens' },
   { id: 'audit', label: 'Histórico' },
 ];
 
@@ -92,9 +93,6 @@ const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
   { id: 'hero', label: 'Hero' },
   { id: 'pages', label: 'Páginas' },
   { id: 'footer', label: 'Footer' },
-  { id: 'icons', label: 'Ícones' },
-  { id: 'colors', label: 'Cores' },
-  { id: 'logos', label: 'Logótipos' },
   { id: 'seo', label: 'SEO e Metadados' },
 ];
 
@@ -292,11 +290,11 @@ export default function BackofficePage() {
       return [] as SectionId[];
     }
 
-    if (exportAuthMode) {
-      return ['overview'] as SectionId[];
-    }
+    const sections: SectionId[] = ['overview', 'profile'];
 
-    const sections: SectionId[] = ['overview'];
+    if (exportAuthMode) {
+      return sections;
+    }
     const permissionSet = new Set(currentAdmin.permissions);
 
     for (const section of ['news', 'activities', 'projects', 'publications'] as ContentSection[]) {
@@ -1357,21 +1355,125 @@ export default function BackofficePage() {
 
       {activeSection === 'overview' ? (
         <section className="mt-8 space-y-6">
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#0f4c36]">Painel de visão geral</p>
+            <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-stone-900">Resumo do backoffice</h2>
+                <p className="mt-1 max-w-2xl text-sm text-stone-600">
+                  Acompanha os conteúdos principais, consulta mensagens recentes e entra rapidamente nas áreas disponíveis.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSection('profile')}
+                className="inline-flex w-fit items-center justify-center rounded-lg border border-[#0f4c36]/20 px-4 py-2 text-sm font-semibold text-[#0f4c36] transition hover:bg-[#0f4c36]/10"
+              >
+                Ver perfil
+              </button>
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card title="Notícias" value={stats.news} loading={isLoadingDashboardStats} />
             <Card title="Atividades" value={stats.activities} loading={isLoadingDashboardStats} />
-            <Card title="Projetos" value={stats.projects} loading={isLoadingDashboardStats} />
             <Card title="Recursos" value={stats.publications} loading={isLoadingDashboardStats} />
-            <Card title="Contactos" value={stats.contacts} loading={isLoadingDashboardStats} />
+            <Card title="Mensagens" value={stats.contacts} loading={isLoadingDashboardStats} />
           </div>
 
-          {!exportAuthMode ? (
-            <div className="max-w-2xl rounded-xl border border-stone-200 bg-white p-5">
-              <h2 className="text-xl font-semibold text-[#0f4c36]">Segurança da conta</h2>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.45fr)]">
+            <div className="rounded-xl border border-stone-200 bg-white p-5">
+              <h2 className="text-xl font-semibold text-[#0f4c36]">Ações rápidas</h2>
               <p className="mt-1 text-sm text-stone-600">
-                Altere a sua palavra-passe sempre que precisar.
+                Abre diretamente as áreas que podes gerir nesta sessão.
               </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id) && !['overview', 'profile'].includes(item.id))
+                  .slice(0, 9)
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveSection(item.id)}
+                      className="rounded-lg border border-stone-200 px-4 py-3 text-left text-sm font-semibold text-stone-700 transition hover:border-[#0f4c36]/30 hover:bg-[#0f4c36]/5 hover:text-[#0f4c36]"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+              </div>
+            </div>
 
+            <div className="rounded-xl border border-stone-200 bg-white p-5">
+              <h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>
+              <dl className="mt-5 grid gap-4 text-sm">
+                <div>
+                  <dt className="font-semibold text-stone-500">Utilizador</dt>
+                  <dd className="mt-1 break-all text-stone-800">{currentAdmin?.email || 'Sessão ativa'}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-stone-500">Função</dt>
+                  <dd className="mt-1 text-stone-800">{currentAdmin?.role === 'owner' ? 'Owner' : 'Editor'}</dd>
+                </div>
+              </dl>
+              <button
+                type="button"
+                onClick={() => setActiveSection('profile')}
+                className="mt-5 w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0b3d2b]"
+              >
+                Gerir perfil
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {activeSection === 'profile' ? (
+        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Perfil do utilizador</h2>
+            <p className="mt-1 text-sm text-stone-600">
+              Consulta os dados da tua conta administrativa e gere a segurança de acesso ao backoffice.
+            </p>
+
+            <dl className="mt-6 grid gap-4 text-sm">
+              <div className="rounded-lg bg-stone-50 p-4">
+                <dt className="font-semibold text-stone-500">Email</dt>
+                <dd className="mt-1 text-stone-800">{currentAdmin?.email || 'Sessão sem email associado'}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-4">
+                <dt className="font-semibold text-stone-500">Função</dt>
+                <dd className="mt-1 text-stone-800">{currentAdmin?.role === 'owner' ? 'Owner' : 'Editor'}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-4">
+                <dt className="font-semibold text-stone-500">Permissões</dt>
+                <dd className="mt-2 flex flex-wrap gap-2">
+                  {currentAdmin?.role === 'owner' ? (
+                    <span className="rounded-full bg-[#0f4c36]/10 px-3 py-1 text-xs font-medium text-[#0f4c36]">Acesso total</span>
+                  ) : currentAdmin?.permissions.length ? (
+                    currentAdmin.permissions.map((permission) => (
+                      <span key={permission} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
+                        {ADMIN_PERMISSION_OPTIONS.find((option) => option.id === permission)?.label || permission}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-stone-500">Sem permissões atribuídas.</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Segurança da conta</h2>
+            <p className="mt-1 text-sm text-stone-600">
+              Altera a tua palavra-passe sempre que for necessário reforçar a segurança.
+            </p>
+
+            {exportAuthMode ? (
+              <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                A alteração de palavra-passe exige o modo servidor do backoffice.
+              </p>
+            ) : (
               <form className="mt-5 grid gap-3" onSubmit={(event) => void updateOwnPassword(event)}>
                 <Input
                   label="Nova palavra-passe"
@@ -1394,8 +1496,8 @@ export default function BackofficePage() {
                   {backofficePrimaryActionLabel(busy, 'Atualizar palavra-passe')}
                 </button>
               </form>
-            </div>
-          ) : null}
+            )}
+          </div>
         </section>
       ) : null}
 
@@ -2125,32 +2227,11 @@ export default function BackofficePage() {
                   </button>
                 ))}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button className="rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
-                  {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
-                </button>
-              </div>
             </div>
 
             {appearanceTab === 'hero' ? (
             <>
-            <AppearanceSectionTitle title="Hero da Página Inicial" description="Gere o título, subtítulo, botões, imagem e pré-visualização do primeiro ecrã." />
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0f4c36]">Pré-visualização</p>
-              <div className="mt-3 overflow-hidden rounded-xl border border-stone-200 bg-white">
-                <div className="grid gap-4 p-5 md:grid-cols-[1fr_220px]">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-stone-500">{layoutSettings.home.hero.eyebrow}</p>
-                    <h3 className="mt-2 font-display text-3xl font-bold text-[#0f4c36]">
-                      {[layoutSettings.home.hero.titleLine1, layoutSettings.home.hero.titleLine2, layoutSettings.home.hero.titleLine3, layoutSettings.home.hero.titleLine4].filter(Boolean).join(' ')}
-                    </h3>
-                    <p className="mt-3 text-sm leading-6 text-stone-600">{layoutSettings.home.hero.description}</p>
-                    <span className="mt-4 inline-flex rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white">{layoutSettings.home.hero.primaryCtaLabel}</span>
-                  </div>
-                  <div className="min-h-40 rounded-lg bg-stone-200 bg-cover bg-center" style={{ backgroundImage: `url("${layoutSettings.home.hero.imageUrl.split('|')[0] || '/placeholder.svg'}")` }} />
-                </div>
-              </div>
-            </div>
+            <AppearanceSectionTitle title="Hero da Página Inicial" description="Gere o título, botões e imagem do primeiro ecrã." />
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="Hero · Eyebrow" value={layoutSettings.home.hero.eyebrow} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, eyebrow: v } } }))} />
               <Input label="Hero · Linha 1" value={layoutSettings.home.hero.titleLine1} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine1: v } } }))} />
@@ -2165,7 +2246,6 @@ export default function BackofficePage() {
               <Input label="CTA secundário · Link" value={layoutSettings.home.hero.secondaryCtaHref} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, secondaryCtaHref: v } } }))} />
             </div>
 
-            <TextArea label="Hero · Descrição" value={layoutSettings.home.hero.description} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, description: v } } }))} />
             </>
             ) : null}
 
@@ -2206,10 +2286,7 @@ export default function BackofficePage() {
 
             {appearanceTab === 'footer' ? (
             <>
-            <AppearanceSectionTitle title="Footer" description="Edita contactos, direitos de autor, links úteis e redes sociais." />
-            <TextArea label="Footer · Descrição da marca" value={layoutSettings.footer.brandDescription} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, brandDescription: v } }))} />
-            <Input label="Footer · Copyright" value={layoutSettings.footer.copyrightLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, copyrightLine: v } }))} />
-            <Input label="Footer · Linha legal" value={layoutSettings.footer.legalLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, legalLine: v } }))} />
+            <AppearanceSectionTitle title="Footer" description="Edita apenas os campos que aparecem no footer público: contactos, redes sociais, navegação, sócio e rodapé legal." />
 
             <div className="rounded-lg border border-stone-200 p-3">
               <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Contactos</h3>
@@ -2219,40 +2296,88 @@ export default function BackofficePage() {
                 <Input label="Footer · Localidade" value={layoutSettings.footer.contactInfo.city} onChange={(v) => updateFooterContact({ city: v })} />
                 <Input label="Footer · Telefone" value={layoutSettings.footer.contactInfo.phone} onChange={(v) => updateFooterContact({ phone: v })} />
                 <Input label="Footer · Email" type="email" value={layoutSettings.footer.contactInfo.email} onChange={(v) => updateFooterContact({ email: v })} />
-                <Input label="Footer · Facebook" value={layoutSettings.footer.contactInfo.socialMedia.facebook || ''} onChange={(v) => updateFooterSocialMedia('facebook', v)} />
-                <Input label="Footer · Instagram" value={layoutSettings.footer.contactInfo.socialMedia.instagram || ''} onChange={(v) => updateFooterSocialMedia('instagram', v)} />
-                <Input label="Footer · LinkedIn" value={layoutSettings.footer.contactInfo.socialMedia.linkedin || ''} onChange={(v) => updateFooterSocialMedia('linkedin', v)} />
-                <Input label="Footer · YouTube" value={layoutSettings.footer.contactInfo.socialMedia.youtube || ''} onChange={(v) => updateFooterSocialMedia('youtube', v)} />
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {layoutSettings.footer.columns.map((column, columnIndex) => (
-                <div key={`${column.title}-${columnIndex}`} className="rounded-lg border border-stone-200 p-3">
-                  <Input label={`Footer coluna ${columnIndex + 1} · Título`} value={column.title} onChange={(value) => setLayoutSettings((current) => {
-                    const columns = [...current.footer.columns];
-                    columns[columnIndex] = { ...columns[columnIndex], title: value };
-                    return { ...current, footer: { ...current.footer, columns } };
-                  })} />
-                  {column.links.map((link, linkIndex) => (
-                    <div key={`${link.href}-${linkIndex}`} className="mt-3 grid gap-2 rounded border border-stone-100 p-2">
-                      <Input label="Texto do link" value={link.label} onChange={(value) => setLayoutSettings((current) => {
+
+            <div className="rounded-lg border border-stone-200 p-3">
+              <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Redes sociais</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <Input label="Título da secção" value={layoutSettings.footer.socialTitle} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, socialTitle: v } }))} />
+                <Input label="Facebook" value={layoutSettings.footer.contactInfo.socialMedia.facebook || ''} onChange={(v) => updateFooterSocialMedia('facebook', v)} />
+                <Input label="Instagram" value={layoutSettings.footer.contactInfo.socialMedia.instagram || ''} onChange={(v) => updateFooterSocialMedia('instagram', v)} />
+                <Input label="LinkedIn" value={layoutSettings.footer.contactInfo.socialMedia.linkedin || ''} onChange={(v) => updateFooterSocialMedia('linkedin', v)} />
+                <Input label="YouTube" value={layoutSettings.footer.contactInfo.socialMedia.youtube || ''} onChange={(v) => updateFooterSocialMedia('youtube', v)} />
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-stone-200 p-3">
+              <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Navegação visível</h3>
+              <p className="mt-1 text-xs leading-5 text-stone-500">
+                A coluna Conhecer é fixa no frontend e mostra Atividades e Notícias. A coluna de iniciativas pode ser ajustada abaixo.
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm text-stone-600">
+                  <p className="font-semibold text-[#0f4c36]">Conhecer</p>
+                  <ul className="mt-3 grid gap-2">
+                    <li>Atividades · /atividades</li>
+                    <li>Notícias · /noticias</li>
+                  </ul>
+                </div>
+                {layoutSettings.footer.columns
+                  .map((column, columnIndex) => ({ column, columnIndex }))
+                  .filter(
+                    ({ column, columnIndex }) =>
+                      columnIndex > 0 &&
+                      !column.title.toLowerCase().includes('restrita') &&
+                      column.links.some((link) => !link.href.startsWith('/backoffice'))
+                  )
+                  .map(({ column, columnIndex }) => (
+                    <div key={`${column.title}-${columnIndex}`} className="rounded-lg border border-stone-100 p-3">
+                      <Input label="Título da coluna" value={column.title} onChange={(value) => setLayoutSettings((current) => {
                         const columns = [...current.footer.columns];
-                        const links = [...columns[columnIndex].links];
-                        links[linkIndex] = { ...links[linkIndex], label: value };
-                        columns[columnIndex] = { ...columns[columnIndex], links };
+                        columns[columnIndex] = { ...columns[columnIndex], title: value };
                         return { ...current, footer: { ...current.footer, columns } };
                       })} />
-                      <Input label="URL do link" value={link.href} onChange={(value) => setLayoutSettings((current) => {
-                        const columns = [...current.footer.columns];
-                        const links = [...columns[columnIndex].links];
-                        links[linkIndex] = { ...links[linkIndex], href: value };
-                        columns[columnIndex] = { ...columns[columnIndex], links };
-                        return { ...current, footer: { ...current.footer, columns } };
-                      })} />
+                      {column.links.map((link, linkIndex) => (
+                        <div key={`${link.href}-${linkIndex}`} className="mt-3 grid gap-2 rounded border border-stone-100 p-2">
+                          <Input label="Texto do link" value={link.label} onChange={(value) => setLayoutSettings((current) => {
+                            const columns = [...current.footer.columns];
+                            const links = [...columns[columnIndex].links];
+                            links[linkIndex] = { ...links[linkIndex], label: value };
+                            columns[columnIndex] = { ...columns[columnIndex], links };
+                            return { ...current, footer: { ...current.footer, columns } };
+                          })} />
+                          <Input label="URL do link" value={link.href} onChange={(value) => setLayoutSettings((current) => {
+                            const columns = [...current.footer.columns];
+                            const links = [...columns[columnIndex].links];
+                            links[linkIndex] = { ...links[linkIndex], href: value };
+                            columns[columnIndex] = { ...columns[columnIndex], links };
+                            return { ...current, footer: { ...current.footer, columns } };
+                          })} />
+                        </div>
+                      ))}
                     </div>
                   ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-stone-200 p-3">
+                <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Tornar-se sócio</h3>
+                <div className="mt-3 grid gap-3">
+                  <Input label="Título" value={layoutSettings.footer.membership.title} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, title: value } } }))} />
+                  <TextArea label="Descrição" value={layoutSettings.footer.membership.description} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, description: value } } }))} />
+                  <Input label="Texto do botão" value={layoutSettings.footer.membership.ctaLabel} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, ctaLabel: value } } }))} />
+                  <Input label="Link do botão" value={layoutSettings.footer.membership.ctaHref} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, ctaHref: value } } }))} />
                 </div>
-              ))}
+              </div>
+              <div className="rounded-lg border border-stone-200 p-3">
+                <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Rodapé legal</h3>
+                <div className="mt-3 grid gap-3">
+                  <Input label="Copyright" value={layoutSettings.footer.copyrightLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, copyrightLine: v } }))} />
+                  <Input label="Linha legal" value={layoutSettings.footer.legalLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, legalLine: v } }))} />
+                </div>
+              </div>
             </div>
             </>
             ) : null}

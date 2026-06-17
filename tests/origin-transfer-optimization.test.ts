@@ -25,9 +25,10 @@ describe('origin transfer optimization', () => {
   it('uses resized webp hero slides through next/image instead of full-size jpg img tags', () => {
     expect(homeHeroSource).toContain("import Image from 'next/image'");
     expect(homeHeroSource).toContain("hero-img.webp");
-    expect(homeHeroSource).toContain("hero-img2.webp");
-    expect(homeHeroSource).toContain('priority={index === 0}');
+    expect(homeHeroSource).toContain('priority={activeHeroIndex === 0}');
     expect(homeHeroSource).not.toContain("hero-img.jpg'");
+    expect(homeHeroSource).not.toContain("hero-img-7710.webp");
+    expect(homeHeroSource).not.toContain("hero-img2.webp");
     expect(homeHeroSource).not.toContain("hero-img2.jpg'");
   });
 

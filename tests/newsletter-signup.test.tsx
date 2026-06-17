@@ -23,6 +23,22 @@ describe('NewsletterSignup', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Introduce um email válido para subscrever.');
   });
 
+  it('places the submit button below the email field', () => {
+    render(<NewsletterSignup />);
+
+    expect(screen.getByText('Recebe novidades sobre atividades e notícias.')).toBeInTheDocument();
+    expect(screen.queryByText(/sem spam/i)).not.toBeInTheDocument();
+
+    const input = screen.getByLabelText('Email da newsletter');
+    const button = screen.getByRole('button', { name: 'Subscrever' });
+    const form = input.closest('form');
+
+    expect(form).toHaveClass('flex-col');
+    expect(form).not.toHaveClass('sm:flex-row');
+    expect(input).toHaveClass('w-full');
+    expect(button).toHaveClass('w-full');
+  });
+
   it('subscribes a valid email and shows success feedback', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
