@@ -1381,7 +1381,7 @@ export default function BackofficePage() {
             <Card title="Mensagens" value={stats.contacts} loading={isLoadingDashboardStats} />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.45fr)]">
+          <div className="grid gap-6">
             <div className="rounded-xl border border-stone-200 bg-white p-5">
               <h2 className="text-xl font-semibold text-[#0f4c36]">Ações rápidas</h2>
               <p className="mt-1 text-sm text-stone-600">
@@ -1401,27 +1401,6 @@ export default function BackofficePage() {
                     </button>
                   ))}
               </div>
-            </div>
-
-            <div className="rounded-xl border border-stone-200 bg-white p-5">
-              <h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>
-              <dl className="mt-5 grid gap-4 text-sm">
-                <div>
-                  <dt className="font-semibold text-stone-500">Utilizador</dt>
-                  <dd className="mt-1 break-all text-stone-800">{currentAdmin?.email || 'Sessão ativa'}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-stone-500">Função</dt>
-                  <dd className="mt-1 text-stone-800">{currentAdmin?.role === 'owner' ? 'Owner' : 'Editor'}</dd>
-                </div>
-              </dl>
-              <button
-                type="button"
-                onClick={() => setActiveSection('profile')}
-                className="mt-5 w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0b3d2b]"
-              >
-                Gerir perfil
-              </button>
             </div>
           </div>
         </section>
@@ -1514,7 +1493,7 @@ export default function BackofficePage() {
             <form className="space-y-3" onSubmit={(event) => void handleNewsSubmit(event)}>
               <Input label="Título" value={newsForm.title} onChange={(v) => setNewsForm((c) => ({ ...c, title: v }))} required />
               <Input label="Resumo" value={newsForm.excerpt} onChange={(v) => setNewsForm((c) => ({ ...c, excerpt: v }))} required />
-              <RichTextEditor label="Conteúdo" value={newsForm.content} onChange={(v) => setNewsForm((c) => ({ ...c, content: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)} />
+              <RichTextEditor label="Conteúdo" value={newsForm.content} onChange={(v) => setNewsForm((c) => ({ ...c, content: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)} fullscreenEnabled />
               <Input label="Autor" value={newsForm.author} onChange={(v) => setNewsForm((c) => ({ ...c, author: v }))} required />
               <Input label="Data de publicação" type="date" value={newsForm.publishedAt} onChange={(v) => setNewsForm((c) => ({ ...c, publishedAt: v }))} />
               <FileInput label="Imagem" onFile={(file) => setNewsForm((c) => ({ ...c, imageFile: file }))} />

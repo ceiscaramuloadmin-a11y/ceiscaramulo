@@ -51,7 +51,7 @@ export type AdminContext = {
 type GalleryMediaRecord = GalleryMediaItem;
 
 type SectionConfig = {
-  listOrder: Record<string, 'asc' | 'desc'>;
+  listOrder: Record<string, 'asc' | 'desc'> | Array<Record<string, 'asc' | 'desc'>>;
   publicWhere: Record<string, unknown>;
   findUnique: (identifier: string) => Record<string, unknown>;
   uploadField: 'image' | 'coverImage';
@@ -75,7 +75,7 @@ export const sectionConfig: Record<ContentSection, SectionConfig> = {
     uploadField: 'image',
   },
   activities: {
-    listOrder: { createdAt: 'desc' },
+    listOrder: [{ createdAt: 'desc' }, { date: 'desc' }],
     publicWhere: { published: true },
     findUnique: (identifier) => ({ id: identifier }),
     uploadField: 'image',
@@ -105,7 +105,7 @@ export const sectionModel: Record<ContentSection, unknown> = {
 // Fornece uma interface comum sobre delegates Prisma heterogéneos.
 export function getSectionModel(section: ContentSection) {
   return sectionModel[section] as {
-    findMany: (args: { where: Record<string, unknown>; orderBy: Record<string, 'asc' | 'desc'> }) => Promise<unknown[]>;
+    findMany: (args: { where: Record<string, unknown>; orderBy: SectionConfig['listOrder'] }) => Promise<unknown[]>;
     findFirst: (args: { where: Record<string, unknown> }) => Promise<({ id: string } & Record<string, unknown>) | null>;
     findUnique: (args: { where: { id: string } }) => Promise<({ id: string } & Record<string, unknown>) | null>;
     create: (args: { data: Record<string, unknown> }) => Promise<unknown>;

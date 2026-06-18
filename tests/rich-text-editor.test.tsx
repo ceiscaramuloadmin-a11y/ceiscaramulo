@@ -110,6 +110,25 @@ describe('RichTextEditor', () => {
     expect(editor?.querySelector('ol')).not.toBeNull();
   });
 
+  it('opens and closes the optional fullscreen writing window', () => {
+    render(<RichTextEditor label="Conteúdo" value="<p>Texto</p>" onChange={vi.fn()} fullscreenEnabled />);
+
+    const openButton = screen.getByRole('button', { name: 'Abrir em janela' });
+
+    fireEvent.click(openButton);
+
+    expect(screen.getByRole('dialog', { name: 'Conteúdo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fechar janela' })).toHaveAttribute('aria-expanded', 'true');
+    expect(document.querySelector('.rich-text-editor')).toHaveClass('flex-1');
+    expect(document.body.style.overflow).toBe('hidden');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar janela' }));
+
+    expect(screen.getByRole('button', { name: 'Abrir em janela' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('dialog', { name: 'Conteúdo' })).not.toBeInTheDocument();
+    expect(document.body.style.overflow).toBe('');
+  });
+
   it('uploads audio media and inserts the stored URL instead of an inline data URL', async () => {
     const execCommand = vi.fn();
     const uploadMedia = vi.fn().mockResolvedValue('/uploads/backoffice/rich-text-news-audio/audio.mp3');
