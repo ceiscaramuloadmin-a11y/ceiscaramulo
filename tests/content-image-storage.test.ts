@@ -9,10 +9,13 @@ const adminLayoutSource = readFileSync(resolve(process.cwd(), 'app/api/admin/lay
 const siteLayoutSource = readFileSync(resolve(process.cwd(), 'lib/site-layout.ts'), 'utf8');
 
 describe('content image storage', () => {
-  it('stores uploaded content images as database-backed public upload URLs before persisting them', () => {
+  it('stores uploaded content images through public storage before persisting them', () => {
     expect(cmsSource).toContain('export async function storeUploadedFile');
     expect(cmsSource).toContain("const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice'");
     expect(cmsSource).toContain("const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:'");
+    expect(cmsSource).toContain("import { storePublicUpload } from '@/lib/upload-storage';");
+    expect(cmsSource).toContain('const publicUploadUrl = await storePublicUpload({ relativePath, buffer, contentType: mimeType });');
+    expect(cmsSource).toContain('return publicUploadUrl;');
     expect(cmsSource).toContain('setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl)');
     expect(cmsSource).not.toContain("join(process.cwd(), 'public'");
     expect(cmsSource).not.toContain('await mkdir(');

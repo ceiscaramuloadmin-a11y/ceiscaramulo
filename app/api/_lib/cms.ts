@@ -6,6 +6,7 @@ import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
 import { defaultSiteLayoutSettings, deepMergeSettings, normalizeSiteLayoutSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
+import { storePublicUpload } from '@/lib/upload-storage';
 import { getAdminAuthSession } from '@/lib/admin-auth-server';
 import type { AdminPermission, GalleryMediaItem, GalleryMediaType, SiteLayoutSettings } from '@/types';
 
@@ -168,10 +169,15 @@ export async function storeUploadedFile(file: File, bucket = 'general') {
   const extension = originalExtension || extensionFromMimeType(mimeType);
   const filename = `${Date.now()}-${crypto.randomUUID()}${extension}`;
   const relativePath = `${safeBucket}/${filename}`;
+  const publicUploadUrl = await storePublicUpload({ relativePath, buffer, contentType: mimeType });
+
+  if (publicUploadUrl) {
+    return publicUploadUrl;
+  }
+
   const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
-  // Em produção serverless, `/var/task/public` não é gravável. Guardamos o
-  // ficheiro na base de dados e mantemos o mesmo URL público para o frontend.
+  // Fallback local: em produção os uploads devem usar Blob para não encher a base de dados.
   await setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl);
 
   return `${UPLOAD_PUBLIC_ROOT}/${relativePath}`;
