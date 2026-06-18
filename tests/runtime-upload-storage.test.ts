@@ -7,6 +7,10 @@ const { siteSettingFindUnique, siteSettingUpsert } = vi.hoisted(() => ({
   siteSettingUpsert: vi.fn(),
 }));
 
+const { blobPut } = vi.hoisted(() => ({
+  blobPut: vi.fn(),
+}));
+
 vi.mock('@/lib/auth0', () => ({
   auth0: {
     getSession: vi.fn().mockResolvedValue(null),
@@ -22,10 +26,18 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+vi.mock('@vercel/blob', () => ({
+  put: blobPut,
+}));
+
 describe('runtime upload storage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
     siteSettingUpsert.mockResolvedValue({});
+    blobPut.mockResolvedValue({ url: 'https://blob.vercel-storage.com/backoffice/news-fotos/foto.png' });
   });
 
   it('stores uploads in site settings instead of writing to public at runtime', async () => {
@@ -45,6 +57,38 @@ describe('runtime upload storage', () => {
     });
   });
 
+  it('stores uploads in Vercel Blob when the production token is configured', async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = 'token';
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
+
+    const url = await storeUploadedFile(file, 'News Fotos');
+
+    expect(url).toBe('https://blob.vercel-storage.com/backoffice/news-fotos/foto.png');
+    expect(blobPut).toHaveBeenCalledWith(
+      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
+      Buffer.from('hello'),
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'image/png',
+      }
+    );
+    expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
+  it('does not overload the database with uploads on hosted deployments without Blob configured', async () => {
+    process.env.VERCEL = '1';
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
+
+    await expect(storeUploadedFile(file, 'News Fotos')).rejects.toThrow('BLOB_READ_WRITE_TOKEN');
+    expect(blobPut).not.toHaveBeenCalled();
+    expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
   it('reads only normalized backoffice upload paths', async () => {
     const { getStoredUploadedFile } = await import('@/app/api/_lib/cms');
     siteSettingFindUnique.mockResolvedValueOnce({ value: 'data:text/plain;base64,b2s=' });
@@ -57,4 +101,3 @@ describe('runtime upload storage', () => {
     await expect(getStoredUploadedFile(['..', 'secret.txt'])).resolves.toBeNull();
   });
 });
-
