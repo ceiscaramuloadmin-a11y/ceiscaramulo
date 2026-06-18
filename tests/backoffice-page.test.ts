@@ -157,6 +157,36 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain("fd.append('slug'");
   });
 
+  it('removes the broken checkboxes from news and activities forms', () => {
+    const newsBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'news'"),
+      backofficePageSource.indexOf("activeSection === 'activities'")
+    );
+    const activitiesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'activities'"),
+      backofficePageSource.indexOf("activeSection === 'publications'")
+    );
+
+    expect(newsBlock).not.toContain('Check label="Remover imagem atual"');
+    expect(newsBlock).not.toContain('Check label="Publicado"');
+    expect(activitiesBlock).not.toContain('Check label="Remover imagem atual"');
+    expect(activitiesBlock).not.toContain('Check label="Publicado"');
+    expect(backofficePageSource).toContain("fd.append('published', 'true')");
+    expect(backofficePageSource).toContain("fd.append('removeImage', 'false')");
+  });
+
+  it('scrolls to the content form when creating a new section item', () => {
+    const sectionLayoutBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('function SectionLayout'),
+      backofficePageSource.indexOf('function GalleryGroup')
+    );
+
+    expect(sectionLayoutBlock).toContain('function handleNewClick()');
+    expect(sectionLayoutBlock).toContain('onNew();');
+    expect(sectionLayoutBlock).toContain("formContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })");
+    expect(sectionLayoutBlock).toContain('onClick={handleNewClick}');
+  });
+
   it('does not expose a manual hero image URL field in layout management', () => {
     expect(backofficePageSource).not.toContain('Hero · Imagem URL');
     expect(backofficePageSource).toContain('Hero · Upload de imagem');
