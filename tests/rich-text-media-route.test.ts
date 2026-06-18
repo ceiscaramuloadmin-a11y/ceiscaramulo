@@ -66,6 +66,30 @@ describe('rich text media upload route', () => {
     expect(storeUploadedFile).toHaveBeenCalledWith(file, 'rich-text-news-audio');
   });
 
+  it('stores news editor images as public upload URLs for the frontend body', async () => {
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/rich-text-news-image/foto.png');
+
+    const { POST } = await import('@/app/api/content-assets/rich-text/route');
+    const formData = new FormData();
+    const file = new File(['image'], 'foto.png', { type: 'image/png' });
+
+    formData.set('section', 'news');
+    formData.set('kind', 'image');
+    formData.set('file', file);
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/content-assets/rich-text', {
+        method: 'POST',
+        body: formData,
+      })
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      url: '/uploads/backoffice/rich-text-news-image/foto.png',
+    });
+    expect(storeUploadedFile).toHaveBeenCalledWith(file, 'rich-text-news-image');
+  });
+
   it('rejects media that does not match the declared kind', async () => {
     const { POST } = await import('@/app/api/content-assets/rich-text/route');
     const formData = new FormData();

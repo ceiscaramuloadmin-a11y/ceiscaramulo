@@ -6,7 +6,6 @@ import HomeHero from '@/components/HomeHero';
 import MotionReveal from '@/components/MotionReveal';
 import { activities as fallbackActivities, newsArticles as fallbackNewsArticles } from '@/data/content';
 import { navigationItems } from '@/data/navigation';
-import { getActivitySlug } from '@/lib/public-content-slugs';
 import { withPublicContentAsset } from '@/lib/public-content-assets';
 import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
@@ -188,7 +187,7 @@ export default async function HomePage() {
             {activities.map((activity, index) => (
               <MotionReveal key={activity.id} className="h-full" delayMs={index * 90}>
               <Link
-                href={`/atividades/${getActivitySlug(activity)}`}
+                href={`/atividades/${activity.id}`}
                 className="group flex h-full flex-col rounded-lg border border-[#f1f3f5] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-30px_rgba(0,0,0,0.35)]"
               >
                 <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-[#f4f5f7]">
