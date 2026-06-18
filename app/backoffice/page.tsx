@@ -32,7 +32,6 @@ import type {
   GalleryMediaType,
   LayoutIconName,
   NewsArticle,
-  Project,
   Publication,
   SiteLayoutSettings,
 } from '@/types';
@@ -52,7 +51,6 @@ type AppearancePageKey = keyof SiteLayoutSettings['pages'];
 type DashboardStats = {
   news: number;
   activities: number;
-  projects: number;
   publications: number;
   contacts: number;
 };
@@ -60,8 +58,7 @@ type DashboardStats = {
 const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = [
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
-  { id: 'projects', label: 'Projetos' },
-  { id: 'publications', label: 'Recursos' },
+  { id: 'publications', label: 'Publicações' },
   { id: 'contacts', label: 'Mensagens' },
   { id: 'gallery', label: 'Media das páginas' },
   { id: 'layout', label: 'Layout' },
@@ -75,7 +72,6 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'about', label: 'Sobre Nós' },
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
-  { id: 'projects', label: 'Projetos' },
   { id: 'publications', label: 'Recursos' },
   { id: 'gallery-oficina-do-burel', label: 'Oficina do Burel' },
   { id: 'gallery-biblioteca-jrs', label: 'Biblioteca JRS' },
@@ -107,7 +103,6 @@ const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasE
   { id: 'oficinaDoBurel', label: 'Oficina do Burel' },
   { id: 'oficinasDeFormacao', label: 'Oficinas de formação' },
   { id: 'ponDoJueus', label: 'PON do Jueus' },
-  { id: 'projetos', label: 'Projetos', hasEmptyMessage: true },
   { id: 'publicacoes', label: 'Publicações' },
   { id: 'serra', label: 'Serra do Caramulo' },
   { id: 'sobre', label: 'Sobre Nós' },
@@ -186,7 +181,6 @@ export default function BackofficePage() {
 
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryMediaItem[]>([]);
@@ -210,7 +204,6 @@ export default function BackofficePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null as File | null, removeImage: false });
-  const [projectForm, setProjectForm] = useState({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null as File | null, removeImage: false });
   const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null as File | null, published: true, coverImageFile: null as File | null, removeImage: false });
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
@@ -241,7 +234,6 @@ export default function BackofficePage() {
     () => ({
       news: isLoadingContent && dashboardStats ? dashboardStats.news : news.length,
       activities: isLoadingContent && dashboardStats ? dashboardStats.activities : activities.length,
-      projects: isLoadingContent && dashboardStats ? dashboardStats.projects : projects.length,
       publications: isLoadingContent && dashboardStats ? dashboardStats.publications : publications.length,
       contacts: isLoadingContacts && dashboardStats ? dashboardStats.contacts : contactMessages.length,
     }),
@@ -252,7 +244,6 @@ export default function BackofficePage() {
       isLoadingContacts,
       isLoadingContent,
       news.length,
-      projects.length,
       publications.length,
     ]
   );
@@ -297,7 +288,7 @@ export default function BackofficePage() {
     }
     const permissionSet = new Set(currentAdmin.permissions);
 
-    for (const section of ['news', 'activities', 'projects', 'publications'] as ContentSection[]) {
+    for (const section of ['news', 'activities', 'publications'] as ContentSection[]) {
       if (currentAdmin.role === 'owner' || permissionSet.has(section)) {
         sections.push(section);
       }
@@ -413,16 +404,14 @@ export default function BackofficePage() {
       }
     };
 
-    const [newsData, activitiesData, projectsData, publicationsData] = await Promise.all([
+    const [newsData, activitiesData, publicationsData] = await Promise.all([
       safeFetchSection<NewsArticle>('news'),
       safeFetchSection<Activity>('activities'),
-      safeFetchSection<Project>('projects'),
       safeFetchSection<Publication>('publications'),
     ]);
 
     setNews(newsData);
     setActivities(activitiesData);
-    setProjects(projectsData);
     setPublications(publicationsData);
     setIsLoadingContent(false);
   }, [fetchAdminCollection]);
@@ -543,7 +532,7 @@ export default function BackofficePage() {
       return;
     }
 
-    if (['news', 'activities', 'projects', 'publications'].includes(activeSection)) {
+    if (['news', 'activities', 'publications'].includes(activeSection)) {
       void refreshAll();
       return;
     }
@@ -748,7 +737,6 @@ export default function BackofficePage() {
     setEditingId(null);
     if (activeSection === 'news') setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
     if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false });
-    if (activeSection === 'projects') setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false });
     if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false });
   }
 
@@ -900,6 +888,9 @@ export default function BackofficePage() {
 
   function startEditGallery(item: GalleryMediaItem) {
     setGalleryEditingId(item.id);
+    setSelectedGalleryIds([]);
+    clearGalleryBatchItems();
+    setGalleryFormResetKey((value) => value + 1);
     setGalleryForm({
       title: item.title,
       description: item.description || '',
@@ -909,6 +900,9 @@ export default function BackofficePage() {
       thumbnailUrl: item.thumbnail && !item.thumbnail.startsWith('data:') ? item.thumbnail : '',
       thumbnailFile: null,
       published: item.published,
+    });
+    window.requestAnimationFrame(() => {
+      galleryIndividualFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -1215,21 +1209,6 @@ export default function BackofficePage() {
     await saveSection('activities', fd);
   }
 
-  async function handleProjectSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fd = new FormData();
-    fd.append('title', projectForm.title);
-    fd.append('description', projectForm.description);
-    fd.append('status', projectForm.status);
-    fd.append('startDate', projectForm.startDate);
-    fd.append('endDate', projectForm.endDate);
-    fd.append('partners', projectForm.partners);
-    fd.append('published', String(projectForm.published));
-    fd.append('removeImage', String(projectForm.removeImage));
-    if (projectForm.imageFile) fd.append('image', projectForm.imageFile);
-    await saveSection('projects', fd);
-  }
-
   async function handlePublicationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fd = new FormData();
@@ -1246,7 +1225,7 @@ export default function BackofficePage() {
     await saveSection('publications', fd);
   }
 
-  function startEdit(section: ContentSection, item: NewsArticle | Activity | Project | Publication) {
+  function startEdit(section: ContentSection, item: NewsArticle | Activity | Publication) {
     setActiveSection(section);
     setEditingId(item.id);
 
@@ -1257,10 +1236,6 @@ export default function BackofficePage() {
     if (section === 'activities') {
       const v = item as Activity;
       setActivityForm({ title: v.title || '', description: v.description || '', date: v.date ? new Date(v.date).toISOString().slice(0, 10) : '', endDate: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : '', location: v.location || '', published: v.published, imageFile: null, removeImage: false });
-    }
-    if (section === 'projects') {
-      const v = item as Project;
-      setProjectForm({ title: v.title || '', description: v.description || '', status: v.status || 'planeado', startDate: v.startDate ? new Date(v.startDate).toISOString().slice(0, 10) : '', endDate: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : '', partners: v.partners?.join(', ') || '', published: v.published, imageFile: null, removeImage: false });
     }
     if (section === 'publications') {
       const v = item as Publication;
@@ -1516,20 +1491,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
-        />
-      ) : null}
-
-      {activeSection === 'projects' ? (
-        <SectionLayout
-          title="Projetos"
-          list={projects}
-          loading={isLoadingContent}
-          busy={busy}
-          onNew={() => { setEditingId(null); setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false }); }}
-          onEdit={(item) => startEdit('projects', item as Project)}
-          onDelete={(id) => void deleteSectionItem('projects', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleProjectSubmit(event)}><Input label="Título" value={projectForm.title} onChange={(v) => setProjectForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={projectForm.description} onChange={(v) => setProjectForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('projects', file, kind)} /><Input label="Estado" value={projectForm.status} onChange={(v) => setProjectForm((c) => ({ ...c, status: v }))} required /><Input label="Data início" type="date" value={projectForm.startDate} onChange={(v) => setProjectForm((c) => ({ ...c, startDate: v }))} required /><Input label="Data fim" type="date" value={projectForm.endDate} onChange={(v) => setProjectForm((c) => ({ ...c, endDate: v }))} /><Input label="Parceiros (separados por vírgula)" value={projectForm.partners} onChange={(v) => setProjectForm((c) => ({ ...c, partners: v }))} /><FileInput label="Imagem" onFile={(file) => setProjectForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={projectForm.removeImage} onChange={(checked) => setProjectForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={projectForm.published} onChange={(checked) => setProjectForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar projeto')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
         />
       ) : null}
 
@@ -1542,7 +1504,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 
@@ -1709,8 +1671,8 @@ export default function BackofficePage() {
           </div>
           <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
             <div className={busy ? 'pointer-events-none opacity-70' : ''}>
-              <div className="space-y-6">
-              <form className="space-y-4 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryBatch(event)}>
+              <div className="flex flex-col gap-6">
+              <form className={`${galleryEditingId ? 'order-2' : 'order-1'} space-y-4 rounded-xl border border-stone-200 p-4`} onSubmit={(event) => void saveGalleryBatch(event)}>
                 <div>
                   <h3 className="text-base font-semibold text-[#0f4c36]">Carregamento em massa</h3>
                   <p className="mt-1 text-sm text-stone-600">
@@ -1834,11 +1796,15 @@ export default function BackofficePage() {
                 </div>
               </form>
 
-              <form ref={galleryIndividualFormRef} className="space-y-3 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryItem(event)}>
+              <form ref={galleryIndividualFormRef} className={`${galleryEditingId ? 'order-1 ring-2 ring-[#0f4c36]/20' : 'order-2'} space-y-3 rounded-xl border border-stone-200 p-4`} onSubmit={(event) => void saveGalleryItem(event)}>
                 <div>
-                  <h3 className="text-base font-semibold text-[#0f4c36]">Media individual</h3>
+                  <h3 className="text-base font-semibold text-[#0f4c36]">
+                    {galleryEditingId ? 'Editar media individual' : 'Media individual'}
+                  </h3>
                   <p className="mt-1 text-sm text-stone-600">
-                    Continua disponível para criar ou editar um item específico da galeria.
+                    {galleryEditingId
+                      ? `A editar "${galleryForm.title || 'media selecionado'}". Guarda as alterações ou limpa o formulário para criar outro item.`
+                      : 'Continua disponível para criar ou editar um item específico da galeria.'}
                   </p>
                 </div>
 
@@ -1871,9 +1837,21 @@ export default function BackofficePage() {
                 <FileInput key={`thumbnail-${galleryFormResetKey}`} label="Thumbnail ficheiro (opcional)" accept="image/*" onFile={(file) => setGalleryForm((c) => ({ ...c, thumbnailFile: file }))} />
                 <Check label="Publicado" checked={galleryForm.published} onChange={(checked) => setGalleryForm((c) => ({ ...c, published: checked }))} />
 
-                <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
-                  {backofficePrimaryActionLabel(busy, galleryEditingId ? 'Guardar alterações' : 'Criar media')}
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button className="flex-1 rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
+                    {backofficePrimaryActionLabel(busy, galleryEditingId ? 'Guardar alterações' : 'Criar media')}
+                  </button>
+                  {galleryEditingId ? (
+                    <button
+                      type="button"
+                      onClick={resetGalleryForm}
+                      className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
+                      disabled={busy}
+                    >
+                      Cancelar edição
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </div>
             </div>
@@ -1978,13 +1956,6 @@ export default function BackofficePage() {
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="rounded border px-2 py-1 text-xs"
-                      onClick={() => void updateAdminUser(admin.email, { role: admin.role === 'owner' ? 'editor' : 'owner' })}
-                    >
-                      Alternar papel
-                    </button>
                     <button
                       type="button"
                       className="rounded border px-2 py-1 text-xs"
