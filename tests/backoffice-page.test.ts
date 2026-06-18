@@ -94,11 +94,55 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'publications', label: 'Recursos' }");
   });
 
+  it('removes projects from the backoffice navigation, permissions and editors', () => {
+    const navigationBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS'),
+      backofficePageSource.indexOf('const APPEARANCE_TABS')
+    );
+    const permissionOptionsBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const ADMIN_PERMISSION_OPTIONS'),
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS')
+    );
+    const appearancePagesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const APPEARANCE_PAGE_FIELDS'),
+      backofficePageSource.indexOf('const PROGRAMME_GALLERY_SECTIONS')
+    );
+
+    expect(navigationBlock).not.toContain("id: 'projects'");
+    expect(permissionOptionsBlock).not.toContain("id: 'projects'");
+    expect(appearancePagesBlock).not.toContain("id: 'projetos'");
+    expect(backofficePageSource).not.toContain("activeSection === 'projects'");
+    expect(backofficePageSource).not.toContain('handleProjectSubmit');
+    expect(backofficePageSource).not.toContain('projectForm');
+  });
+
+  it('shows a clear publications permission for admin access editing', () => {
+    const permissionOptionsBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const ADMIN_PERMISSION_OPTIONS'),
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS')
+    );
+    const navigationBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS'),
+      backofficePageSource.indexOf('const APPEARANCE_TABS')
+    );
+
+    expect(permissionOptionsBlock).toContain("{ id: 'publications', label: 'Publicações' }");
+    expect(navigationBlock).toContain("{ id: 'publications', label: 'Recursos' }");
+  });
+
   it('shows the backoffice change history with the 15 day cleanup policy', () => {
     expect(backofficePageSource).toContain("{ id: 'audit', label: 'Histórico' }");
     expect(backofficePageSource).toContain('Histórico de alterações');
     expect(backofficePageSource).toContain('Os eventos com mais de 15 dias são apagados automaticamente');
     expect(backofficePageSource).toContain("fetchAdminEndpoint<AuditLogEntry[]>('/api/admin/audit')");
+  });
+
+  it('removes the non-functional role toggle from admin management', () => {
+    expect(backofficePageSource).toContain("activeSection === 'admins'");
+    expect(backofficePageSource).not.toContain('Alternar papel');
+    expect(backofficePageSource).not.toContain("role: admin.role === 'owner' ? 'editor' : 'owner'");
+    expect(backofficePageSource).toContain('Permissões');
+    expect(backofficePageSource).toContain("{admin.active ? 'Desativar' : 'Ativar'}");
   });
 
   it('allows PDF attachments in the resources form', () => {
@@ -185,7 +229,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('updateSeo');
   });
 
-  it('adds all public frontend pages to the appearance page editor', () => {
+  it('adds the active public frontend pages to the appearance page editor', () => {
     const pagesEditorBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("appearanceTab === 'pages'"),
       backofficePageSource.indexOf("appearanceTab === 'footer'")
@@ -257,11 +301,37 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("fd.append('sourceFile', item.file)");
   });
 
+  it('scrolls to the individual media form when editing page media items', () => {
+    const startEditGalleryBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('function startEditGallery'),
+      backofficePageSource.indexOf('async function saveGalleryItem')
+    );
+
+    expect(startEditGalleryBlock).toContain('setGalleryEditingId(item.id)');
+    expect(startEditGalleryBlock).toContain('setSelectedGalleryIds([])');
+    expect(startEditGalleryBlock).toContain('clearGalleryBatchItems()');
+    expect(startEditGalleryBlock).toContain('setGalleryFormResetKey((value) => value + 1)');
+    expect(startEditGalleryBlock).toContain("galleryIndividualFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })");
+    expect(backofficePageSource).toContain("galleryEditingId ? 'order-1 ring-2 ring-[#0f4c36]/20' : 'order-2'");
+    expect(backofficePageSource).toContain("galleryEditingId ? 'Editar media individual' : 'Media individual'");
+    expect(backofficePageSource).toContain('Cancelar edição');
+  });
+
   it('uploads rich text media before saving news content so audio is not persisted inline', () => {
     expect(backofficePageSource).toContain('uploadRichTextMedia');
     expect(backofficePageSource).toContain("fetchAdminEndpoint<{ url: string }>('/api/content-assets/rich-text'");
     expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)}");
-    expect(backofficePageSource).toContain('fullscreenEnabled');
+  });
+
+  it('enables the writing window on every backoffice rich text editor', () => {
+    const richTextEditorUsages = backofficePageSource.match(/<RichTextEditor/g) || [];
+    const fullscreenUsages = backofficePageSource.match(/fullscreenEnabled/g) || [];
+
+    expect(richTextEditorUsages).toHaveLength(3);
+    expect(fullscreenUsages).toHaveLength(3);
+    expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)} fullscreenEnabled");
+    expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled");
+    expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled");
   });
 
   it('boots the backoffice with the lightweight stats endpoint instead of loading every module', () => {
