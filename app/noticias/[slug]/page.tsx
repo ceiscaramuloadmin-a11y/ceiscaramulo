@@ -194,7 +194,7 @@ export default async function NoticiaDetalhePage({ params }: Props) {
             </p>
             <div
               className="mt-6 rich-text-content"
-              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(article.content) }}
+              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(article.content, { resolveMediaUrl: getAssetUrl }) }}
             />
           </div>
 

@@ -22,6 +22,12 @@ describe('public rich text rendering', () => {
     }
   });
 
+  it('resolves uploaded media URLs inside news rich text before rendering', () => {
+    const source = readAppFile('app/noticias/[slug]/page.tsx');
+
+    expect(source).toContain('prepareRichTextForRender(article.content, { resolveMediaUrl: getAssetUrl })');
+  });
+
   it('renders safe plain-text previews for publication listing cards', () => {
     const source = readAppFile('app/biblioteca/page.tsx');
     expect(source).toContain('richTextToPlainText');

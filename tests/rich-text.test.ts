@@ -27,6 +27,15 @@ describe('rich-text', () => {
     expect(prepareRichTextForRender('<!--StartFragment--><p>Olá</p><!--EndFragment-->')).toBe('<p>Olá</p>');
   });
 
+  it('resolves uploaded media URLs before rendering rich text publicly', () => {
+    const html = prepareRichTextForRender(
+      '<figure><img src="/uploads/backoffice/rich-text-news-image/foto.png" alt="Foto" /></figure>',
+      { resolveMediaUrl: (value) => `https://api.ceiscaramulo.pt${value}` }
+    );
+
+    expect(html).toContain('src="https://api.ceiscaramulo.pt/uploads/backoffice/rich-text-news-image/foto.png"');
+  });
+
   it('converts rich text into stable plain-text previews', () => {
     expect(richTextToPlainText('<!--StartFragment--><p>2019-02-21</p><p><strong>Olá</strong><br>Mundo</p><!--EndFragment-->')).toBe(
       '2019-02-21 Olá Mundo'

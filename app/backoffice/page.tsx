@@ -1188,9 +1188,9 @@ export default function BackofficePage() {
     fd.append('excerpt', newsForm.excerpt);
     fd.append('content', newsForm.content);
     fd.append('author', newsForm.author);
-    fd.append('published', String(newsForm.published));
+    fd.append('published', 'true');
     fd.append('publishedAt', newsForm.publishedAt);
-    fd.append('removeImage', String(newsForm.removeImage));
+    fd.append('removeImage', 'false');
     if (newsForm.imageFile) fd.append('image', newsForm.imageFile);
     await saveSection('news', fd);
   }
@@ -1203,8 +1203,8 @@ export default function BackofficePage() {
     fd.append('date', activityForm.date);
     fd.append('endDate', activityForm.endDate);
     fd.append('location', activityForm.location);
-    fd.append('published', String(activityForm.published));
-    fd.append('removeImage', String(activityForm.removeImage));
+    fd.append('published', 'true');
+    fd.append('removeImage', 'false');
     if (activityForm.imageFile) fd.append('image', activityForm.imageFile);
     await saveSection('activities', fd);
   }
@@ -1472,8 +1472,6 @@ export default function BackofficePage() {
               <Input label="Autor" value={newsForm.author} onChange={(v) => setNewsForm((c) => ({ ...c, author: v }))} required />
               <Input label="Data de publicação" type="date" value={newsForm.publishedAt} onChange={(v) => setNewsForm((c) => ({ ...c, publishedAt: v }))} />
               <FileInput label="Imagem" onFile={(file) => setNewsForm((c) => ({ ...c, imageFile: file }))} />
-              <Check label="Remover imagem atual" checked={newsForm.removeImage} onChange={(checked) => setNewsForm((c) => ({ ...c, removeImage: checked }))} />
-              <Check label="Publicado" checked={newsForm.published} onChange={(checked) => setNewsForm((c) => ({ ...c, published: checked }))} />
               <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                 {backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar notícia')}
               </button>
@@ -1491,7 +1489,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
         />
       ) : null}
 
@@ -2537,12 +2535,21 @@ function SectionLayout({
   busy: boolean;
   loading?: boolean;
 }) {
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
+
+  function handleNewClick() {
+    onNew();
+    window.requestAnimationFrame(() => {
+      formContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   return (
     <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div className="rounded-xl border border-stone-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-[#0f4c36]">{title}</h2>
-          <button type="button" onClick={onNew} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
+          <button type="button" onClick={handleNewClick} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
             Novo
           </button>
         </div>
@@ -2569,7 +2576,7 @@ function SectionLayout({
           {!loading && list.length === 0 ? <p className="text-sm text-stone-500">Sem registos.</p> : null}
         </div>
       </div>
-      <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
+      <div ref={formContainerRef} className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
         <div className={busy ? 'pointer-events-none opacity-70' : ''} aria-busy={busy}>
           {form}
         </div>
