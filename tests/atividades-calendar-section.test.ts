@@ -11,7 +11,8 @@ describe('activities calendar section', () => {
   it('mounts an interactive picker backed by prisma rows', () => {
     expect(pageSource).toContain('ActivitiesMonthCalendar');
     expect(pageSource).toContain('startMs');
-    expect(pageSource).toContain('/atividades/${getActivitySlug(activity)}');
+    expect(pageSource).toContain('/atividades/${activity.id}');
+    expect(pageSource).not.toContain('getActivitySlug');
     expect(pageSource).toContain('Mapa rápido de datas');
     expect(pageSource).toContain('lg:grid-cols-[minmax(0,1fr)_20rem]');
     expect(pageSource).toContain('lg:sticky lg:top-28');

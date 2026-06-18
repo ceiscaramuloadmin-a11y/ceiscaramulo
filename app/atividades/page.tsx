@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { activities as fallbackActivities } from '@/data/content';
-import { getActivitySlug } from '@/lib/public-content-slugs';
 import { withPublicContentAsset } from '@/lib/public-content-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import prisma from '@/lib/prisma';
@@ -92,7 +91,7 @@ export default async function AtividadesPage() {
   const layout = await getPublicSiteLayoutSettings();
   const calendarEntries = activities.map((activity) => ({
     startMs: new Date(activity.date).getTime(),
-    href: `/atividades/${getActivitySlug(activity)}`,
+    href: `/atividades/${activity.id}`,
     title: activity.title,
   }));
 
@@ -122,7 +121,7 @@ export default async function AtividadesPage() {
               {activities.map((activity) => (
                 <Link
                   key={activity.id}
-                  href={`/atividades/${getActivitySlug(activity)}`}
+                  href={`/atividades/${activity.id}`}
                   className="group rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="mb-4 overflow-hidden rounded-lg">
