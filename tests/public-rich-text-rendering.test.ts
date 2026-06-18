@@ -9,8 +9,9 @@ function readAppFile(path: string) {
 }
 
 describe('public rich text rendering', () => {
-  it('renders rich text content for activity and publication detail pages', () => {
+  it('renders rich text content for news, activity and publication detail pages', () => {
     for (const path of [
+      'app/noticias/[slug]/page.tsx',
       'app/atividades/[id]/page.tsx',
       'app/biblioteca/[id]/page.tsx',
     ]) {

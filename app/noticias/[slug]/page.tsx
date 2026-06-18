@@ -10,6 +10,7 @@ import { newsArticles as fallbackNewsArticles } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { publicAssetValue, withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
+import { prepareRichTextForRender } from '@/lib/richText';
 import { formatDate, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
@@ -193,7 +194,7 @@ export default async function NoticiaDetalhePage({ params }: Props) {
             </p>
             <div
               className="mt-6 rich-text-content"
-              dangerouslySetInnerHTML={{ __html: article.content }}
+              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(article.content) }}
             />
           </div>
 

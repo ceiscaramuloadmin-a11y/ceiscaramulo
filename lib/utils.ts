@@ -41,7 +41,7 @@ export function getAssetUrl(value?: string | null): string {
       return `${apiBaseUrl.replace(/\/+$/, '')}${value}`;
     }
 
-    return '/placeholder.svg';
+    return value;
   }
 
   return value;

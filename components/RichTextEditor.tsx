@@ -7,6 +7,8 @@ import {
   Link as LinkIcon,
   List,
   ListOrdered,
+  Maximize2,
+  Minimize2,
   Redo2,
   Underline,
   Undo2,
@@ -21,16 +23,18 @@ type RichTextEditorProps = {
   value: string;
   onChange: (value: string) => void;
   onUploadMedia?: (file: File, kind: MediaKind) => Promise<string>;
+  fullscreenEnabled?: boolean;
 };
 
 type MediaKind = 'image' | 'audio' | 'video';
 
-export default function RichTextEditor({ label, value, onChange, onUploadMedia }: RichTextEditorProps) {
+export default function RichTextEditor({ label, value, onChange, onUploadMedia, fullscreenEnabled = false }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const selectionRef = useRef<Range | null>(null);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -64,6 +68,19 @@ export default function RichTextEditor({ label, value, onChange, onUploadMedia }
     document.addEventListener('selectionchange', updateSelection);
     return () => document.removeEventListener('selectionchange', updateSelection);
   }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isFullscreen]);
 
   const syncContent = () => {
     const editor = editorRef.current;
@@ -183,11 +200,41 @@ export default function RichTextEditor({ label, value, onChange, onUploadMedia }
     syncContent();
   };
 
-  return (
-    <div className="space-y-3">
-      {label ? <p className="text-sm text-stone-600">{label}</p> : null}
+  const editorShellClassName = isFullscreen
+    ? 'fixed inset-0 z-[100] flex flex-col space-y-3 bg-stone-50 p-4 sm:p-6'
+    : 'space-y-3';
 
-      <div className="rounded-2xl border border-stone-200 bg-white">
+  const editorFrameClassName = isFullscreen
+    ? 'flex min-h-0 flex-1 flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl'
+    : 'rounded-2xl border border-stone-200 bg-white';
+
+  const editableClassName = isFullscreen
+    ? 'rich-text-editor min-h-0 flex-1 overflow-y-auto rounded-b-2xl bg-transparent px-5 py-5 text-black outline-none sm:px-8 sm:py-6'
+    : 'rich-text-editor min-h-[320px] rounded-b-2xl bg-transparent px-4 py-4 text-black outline-none';
+
+  return (
+    <div
+      className={editorShellClassName}
+      role={isFullscreen ? 'dialog' : undefined}
+      aria-modal={isFullscreen ? true : undefined}
+      aria-label={isFullscreen ? label || 'Editor em janela' : undefined}
+    >
+      <div className="flex items-center justify-between gap-3">
+        {label ? <p className="text-sm text-stone-600">{label}</p> : <span />}
+        {fullscreenEnabled ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 transition hover:border-[#0f4c36] hover:text-[#0f4c36]"
+            onClick={() => setIsFullscreen((current) => !current)}
+            aria-expanded={isFullscreen}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {isFullscreen ? 'Fechar janela' : 'Abrir em janela'}
+          </button>
+        ) : null}
+      </div>
+
+      <div className={editorFrameClassName}>
         <div className="flex flex-wrap gap-2 border-b border-stone-200 p-3">
           <ToolbarButton label="Negrito" onClick={() => runCommand('bold')}><Bold className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Itálico" onClick={() => runCommand('italic')}><Italic className="h-4 w-4" /></ToolbarButton>
@@ -207,7 +254,7 @@ export default function RichTextEditor({ label, value, onChange, onUploadMedia }
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
-          className="rich-text-editor min-h-[320px] rounded-b-2xl bg-transparent px-4 py-4 text-black outline-none"
+          className={editableClassName}
           onInput={syncContent}
           onBlur={syncContent}
           onFocus={rememberSelection}

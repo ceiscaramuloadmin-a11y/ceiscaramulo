@@ -50,10 +50,17 @@ describe('backoffice page guards', () => {
   });
 
   it('updates the overview dashboard with quick actions and profile access', () => {
+    const overviewBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'overview'"),
+      backofficePageSource.indexOf("activeSection === 'profile'"),
+    );
+
     expect(backofficePageSource).toContain('Painel de visão geral');
     expect(backofficePageSource).toContain('Resumo do backoffice');
     expect(backofficePageSource).toContain('Ações rápidas');
-    expect(backofficePageSource).toContain('Gerir perfil');
+    expect(overviewBlock).toContain('Ver perfil');
+    expect(overviewBlock).not.toContain('Gerir perfil');
+    expect(overviewBlock).not.toContain('<h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>');
     expect(backofficePageSource).not.toContain('<Card title="Projetos" value={stats.projects}');
     expect(backofficePageSource).toContain('<Card title="Mensagens" value={stats.contacts}');
     expect(backofficePageSource).toContain("onClick={() => setActiveSection('profile')}");
@@ -254,6 +261,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('uploadRichTextMedia');
     expect(backofficePageSource).toContain("fetchAdminEndpoint<{ url: string }>('/api/content-assets/rich-text'");
     expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)}");
+    expect(backofficePageSource).toContain('fullscreenEnabled');
   });
 
   it('boots the backoffice with the lightweight stats endpoint instead of loading every module', () => {
