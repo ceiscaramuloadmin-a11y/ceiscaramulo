@@ -169,10 +169,14 @@ export async function storeUploadedFile(file: File, bucket = 'general') {
   const extension = originalExtension || extensionFromMimeType(mimeType);
   const filename = `${Date.now()}-${crypto.randomUUID()}${extension}`;
   const relativePath = `${safeBucket}/${filename}`;
-  const publicUploadUrl = await storePublicUpload({ relativePath, buffer, contentType: mimeType });
+  const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });
 
-  if (publicUploadUrl) {
-    return publicUploadUrl;
+  if (publicUpload) {
+    if (publicUpload.storageValue) {
+      await setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, publicUpload.storageValue);
+    }
+
+    return publicUpload.publicUrl;
   }
 
   const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;

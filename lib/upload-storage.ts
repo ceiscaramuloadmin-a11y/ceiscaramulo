@@ -6,6 +6,11 @@ type PublicUploadInput = {
   contentType: string;
 };
 
+type PublicUploadResult = {
+  publicUrl: string;
+  storageValue?: string;
+};
+
 export function isBlobUploadStorageEnabled() {
   return Boolean(
     process.env.BLOB_READ_WRITE_TOKEN?.trim() ||
@@ -39,7 +44,7 @@ function isMissingBlobCredentialsError(error: unknown) {
   return message.includes('No blob credentials found') || message.includes('No read-write token found');
 }
 
-export async function storePublicUpload(input: PublicUploadInput) {
+export async function storePublicUpload(input: PublicUploadInput): Promise<PublicUploadResult | null> {
   if (isBlobUploadStorageEnabled() || isHostedRuntime()) {
     try {
       const blob = await put(`backoffice/${input.relativePath}`, input.buffer, {
@@ -49,7 +54,7 @@ export async function storePublicUpload(input: PublicUploadInput) {
         ...getBlobUploadOptions(),
       });
 
-      return blob.url;
+      return { publicUrl: blob.url };
     } catch (error) {
       if (isMissingBlobCredentialsError(error)) {
         throw new Error(
@@ -68,7 +73,10 @@ export async function storePublicUpload(input: PublicUploadInput) {
         ...getBlobUploadOptions(),
       });
 
-      return `/uploads/backoffice/${input.relativePath}`;
+      return {
+        publicUrl: `/uploads/backoffice/${input.relativePath}`,
+        storageValue: `blob-private:${input.relativePath}`,
+      };
     }
   }
 
