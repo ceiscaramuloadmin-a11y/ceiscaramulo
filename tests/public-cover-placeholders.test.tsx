@@ -118,7 +118,7 @@ vi.mock('@/data/content', () => ({
 }));
 
 describe('public content cover placeholders', () => {
-  it('renders a placeholder for news cards and news detail when the image is missing', async () => {
+  it('renders a placeholder for news cards without adding the cover image to the news body', async () => {
     const { default: NoticiasPage } = await import('@/app/noticias/page');
     const { default: NoticiaDetalhePage } = await import('@/app/noticias/[slug]/page');
 
@@ -126,7 +126,7 @@ describe('public content cover placeholders', () => {
     expect(screen.getByRole('img', { name: 'Notícia sem capa' })).toHaveAttribute('src', '/placeholder.svg');
 
     render(await NoticiaDetalhePage({ params: Promise.resolve({ slug: 'noticia-sem-capa' }) }));
-    expect(screen.getAllByRole('img', { name: 'Notícia sem capa' }).at(-1)).toHaveAttribute('src', '/placeholder.svg');
+    expect(screen.getAllByRole('img', { name: 'Notícia sem capa' })).toHaveLength(1);
   });
 
   it('renders placeholders for activity and publication details when images are missing', async () => {

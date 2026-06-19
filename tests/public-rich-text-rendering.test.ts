@@ -28,6 +28,12 @@ describe('public rich text rendering', () => {
     expect(source).toContain('prepareRichTextForRender(article.content, { resolveMediaUrl: getAssetUrl })');
   });
 
+  it('does not render the news cover image inside the news detail body', () => {
+    const source = readAppFile('app/noticias/[slug]/page.tsx');
+
+    expect(source).not.toContain('src={getAssetUrl(article.image)}');
+  });
+
   it('resolves uploaded media URLs inside activity and publication rich text before rendering', () => {
     expect(readAppFile('app/atividades/[id]/page.tsx')).toContain(
       'prepareRichTextForRender(activity.description, { resolveMediaUrl: getAssetUrl })'
