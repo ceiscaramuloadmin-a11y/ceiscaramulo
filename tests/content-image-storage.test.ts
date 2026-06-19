@@ -9,10 +9,13 @@ const adminLayoutSource = readFileSync(resolve(process.cwd(), 'app/api/admin/lay
 const siteLayoutSource = readFileSync(resolve(process.cwd(), 'lib/site-layout.ts'), 'utf8');
 
 describe('content image storage', () => {
-  it('stores uploaded content images through public storage before persisting them', () => {
+  it('stores uploaded content cover images inline and keeps other uploads on public storage', () => {
     expect(cmsSource).toContain('export async function storeUploadedFile');
     expect(cmsSource).toContain("const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice'");
     expect(cmsSource).toContain("const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:'");
+    expect(cmsSource).toContain('const INLINE_CONTENT_COVER_MAX_BYTES = 5 * 1024 * 1024');
+    expect(cmsSource).toContain('function shouldInlineContentCoverUpload');
+    expect(cmsSource).toContain('return bufferToDataUrl(buffer, mimeType);');
     expect(cmsSource).toContain("import { storePublicUpload } from '@/lib/upload-storage';");
     expect(cmsSource).toContain('const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });');
     expect(cmsSource).toContain('if (publicUpload.storageValue)');

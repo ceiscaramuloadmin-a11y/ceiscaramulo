@@ -59,6 +59,20 @@ describe('runtime upload storage', () => {
     });
   });
 
+  it('stores public content cover images inline so the official site can serve them without local files', async () => {
+    process.env.BLOB_STORE_ID = 'store-id';
+    process.env.BLOB_READ_WRITE_TOKEN = 'token';
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['cover'], 'capa.png', { type: 'image/png' });
+
+    const url = await storeUploadedFile(file, 'news');
+
+    expect(url).toBe('data:image/png;base64,Y292ZXI=');
+    expect(blobPut).not.toHaveBeenCalled();
+    expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
   it('stores uploads in Vercel Blob when the production token is configured', async () => {
     process.env.BLOB_STORE_ID = 'store-id';
     process.env.BLOB_READ_WRITE_TOKEN = 'token';

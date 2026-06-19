@@ -132,6 +132,8 @@ export function jsonError(message: string, status = 400) {
 
 const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice';
 const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:';
+const INLINE_CONTENT_COVER_SECTIONS = new Set<ContentSection>(['news', 'activities', 'projects', 'publications']);
+const INLINE_CONTENT_COVER_MAX_BYTES = 5 * 1024 * 1024;
 
 function sanitizeUploadSegment(value: string) {
   return value
@@ -155,6 +157,18 @@ function extensionFromMimeType(mimeType: string) {
   return '';
 }
 
+function bufferToDataUrl(buffer: Buffer, mimeType: string) {
+  return `data:${mimeType};base64,${buffer.toString('base64')}`;
+}
+
+function shouldInlineContentCoverUpload(bucket: string, mimeType: string, buffer: Buffer) {
+  return (
+    INLINE_CONTENT_COVER_SECTIONS.has(bucket as ContentSection) &&
+    mimeType.startsWith('image/') &&
+    buffer.byteLength <= INLINE_CONTENT_COVER_MAX_BYTES
+  );
+}
+
 export async function storeUploadedFile(file: File, bucket = 'general') {
   const mimeType = file.type || 'application/octet-stream';
   const arrayBuffer = await file.arrayBuffer();
@@ -162,6 +176,12 @@ export async function storeUploadedFile(file: File, bucket = 'general') {
 
   if (!buffer.length) {
     throw new Error('Não foi possível guardar o ficheiro enviado.');
+  }
+
+  // As imagens de capa do conteúdo público ficam no próprio registo.
+  // Assim o site oficial não depende de ficheiros locais em /public, que não existem em produção.
+  if (shouldInlineContentCoverUpload(bucket, mimeType, buffer)) {
+    return bufferToDataUrl(buffer, mimeType);
   }
 
   const safeBucket = sanitizeUploadSegment(bucket);
@@ -179,7 +199,7 @@ export async function storeUploadedFile(file: File, bucket = 'general') {
     return publicUpload.publicUrl;
   }
 
-  const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+  const dataUrl = bufferToDataUrl(buffer, mimeType);
 
   // Fallback local: em produção os uploads devem usar Blob para não encher a base de dados.
   await setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl);
