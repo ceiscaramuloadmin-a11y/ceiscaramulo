@@ -11,6 +11,7 @@ const {
   appendAuditLog,
   hasAdminPermission,
   enqueueNewsPublishedNotifications,
+  storePublicUpload,
 } = vi.hoisted(() => ({
   newsCreate: vi.fn(),
   newsFindUnique: vi.fn(),
@@ -19,6 +20,7 @@ const {
   appendAuditLog: vi.fn(),
   hasAdminPermission: vi.fn(),
   enqueueNewsPublishedNotifications: vi.fn(),
+  storePublicUpload: vi.fn(),
 }));
 
 vi.mock('@/lib/auth0', () => ({
@@ -44,6 +46,10 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/newsletter-on-publish', () => ({
   enqueueNewsPublishedNotifications,
+}));
+
+vi.mock('@/lib/upload-storage', () => ({
+  storePublicUpload,
 }));
 
 vi.mock('@/app/api/_lib/cms', async (importOriginal) => {
@@ -83,6 +89,7 @@ describe('news content API routes', () => {
     });
     hasAdminPermission.mockReturnValue(true);
     appendAuditLog.mockResolvedValue(undefined);
+    storePublicUpload.mockResolvedValue({ publicUrl: 'https://blob.example/backoffice/news/capa.png' });
   });
 
   afterEach(() => {
@@ -138,6 +145,39 @@ describe('news content API routes', () => {
       excerpt: '<p>Resumo</p>',
       published: false,
     });
+  });
+
+  it('POST /api/[section] keeps uploaded news cover images as short URLs when creating records', async () => {
+    newsCreate.mockImplementation(async ({ data }) => ({
+      id: 'n-cover',
+      ...data,
+    }));
+
+    const { POST } = await import('@/app/api/[section]/route');
+    const formData = newsForm();
+    formData.set('image', new File(['cover'], 'capa.png', { type: 'image/png' }));
+
+    const request = new NextRequest('http://localhost/api/news', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ section: 'news' }) });
+
+    expect(response.status).toBe(201);
+    expect(newsCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        image: 'https://blob.example/backoffice/news/capa.png',
+      }),
+    });
+    expect(newsCreate.mock.calls[0][0].data.image).not.toContain('data:image');
+    expect(appendAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        after: expect.objectContaining({
+          image: 'https://blob.example/backoffice/news/capa.png',
+        }),
+      })
+    );
   });
 
   it('PUT /api/[section]/[identifier] updates news and passes previous published state to newsletter hook', async () => {

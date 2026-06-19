@@ -59,7 +59,7 @@ describe('runtime upload storage', () => {
     });
   });
 
-  it('stores public content cover images inline so the official site can serve them without local files', async () => {
+  it('stores public content cover images as short URLs so saving records and audit logs stays lightweight', async () => {
     process.env.BLOB_STORE_ID = 'store-id';
     process.env.BLOB_READ_WRITE_TOKEN = 'token';
 
@@ -68,8 +68,18 @@ describe('runtime upload storage', () => {
 
     const url = await storeUploadedFile(file, 'news');
 
-    expect(url).toBe('data:image/png;base64,Y292ZXI=');
-    expect(blobPut).not.toHaveBeenCalled();
+    expect(url).toBe('https://blob.vercel-storage.com/backoffice/news-fotos/foto.png');
+    expect(blobPut).toHaveBeenCalledWith(
+      expect.stringMatching(/^backoffice\/news\/.+\.png$/),
+      Buffer.from('cover'),
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'image/png',
+        storeId: 'store-id',
+        token: 'token',
+      }
+    );
     expect(siteSettingUpsert).not.toHaveBeenCalled();
   });
 
