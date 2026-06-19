@@ -11,6 +11,16 @@ type PublicUploadResult = {
   storageValue?: string;
 };
 
+const DATABASE_IMAGE_BACKUP_MAX_BYTES = 5 * 1024 * 1024;
+
+function canUseDatabaseImageBackup(input: PublicUploadInput) {
+  return input.contentType.startsWith('image/') && input.buffer.byteLength <= DATABASE_IMAGE_BACKUP_MAX_BYTES;
+}
+
+function dataUrlFromUpload(input: PublicUploadInput) {
+  return `data:${input.contentType};base64,${input.buffer.toString('base64')}`;
+}
+
 export function isBlobUploadStorageEnabled() {
   return Boolean(
     process.env.BLOB_READ_WRITE_TOKEN?.trim() ||
@@ -44,6 +54,17 @@ function isMissingBlobCredentialsError(error: unknown) {
   return message.includes('No blob credentials found') || message.includes('No read-write token found');
 }
 
+function databaseImageBackup(input: PublicUploadInput): PublicUploadResult | null {
+  if (!canUseDatabaseImageBackup(input)) {
+    return null;
+  }
+
+  return {
+    publicUrl: `/uploads/backoffice/${input.relativePath}`,
+    storageValue: dataUrlFromUpload(input),
+  };
+}
+
 export async function storePublicUpload(input: PublicUploadInput): Promise<PublicUploadResult | null> {
   if (isBlobUploadStorageEnabled() || isHostedRuntime()) {
     try {
@@ -57,12 +78,17 @@ export async function storePublicUpload(input: PublicUploadInput): Promise<Publi
       return { publicUrl: blob.url };
     } catch (error) {
       if (isMissingBlobCredentialsError(error)) {
-        throw new Error(
-          'O Blob está ativo no código, mas o alojamento não está a disponibilizar BLOB_READ_WRITE_TOKEN nem BLOB_STORE_ID com VERCEL_OIDC_TOKEN ao site publicado.'
-        );
+        return databaseImageBackup(input);
       }
 
       if (!isPrivateStoreAccessError(error)) {
+        const backup = databaseImageBackup(input);
+
+        if (backup) {
+          console.error(`Blob upload failed for "${input.relativePath}". Using database image backup.`, error);
+          return backup;
+        }
+
         throw error;
       }
 
@@ -73,17 +99,13 @@ export async function storePublicUpload(input: PublicUploadInput): Promise<Publi
         ...getBlobUploadOptions(),
       });
 
-      return {
-        publicUrl: `/uploads/backoffice/${input.relativePath}`,
-        storageValue: `blob-private:${input.relativePath}`,
-      };
+      return (
+        databaseImageBackup(input) ?? {
+          publicUrl: `/uploads/backoffice/${input.relativePath}`,
+          storageValue: `blob-private:${input.relativePath}`,
+        }
+      );
     }
-  }
-
-  if (isHostedRuntime()) {
-    throw new Error(
-      'Configure BLOB_READ_WRITE_TOKEN ou BLOB_STORE_ID com VERCEL_OIDC_TOKEN no alojamento para guardar imagens fora da base de dados.'
-    );
   }
 
   return null;
