@@ -33,8 +33,14 @@ function isPrivateStoreAccessError(error: unknown) {
   return String(error instanceof Error ? error.message : error).includes('Cannot use public access on a private store');
 }
 
+function isMissingBlobCredentialsError(error: unknown) {
+  const message = String(error instanceof Error ? error.message : error);
+
+  return message.includes('No blob credentials found') || message.includes('No read-write token found');
+}
+
 export async function storePublicUpload(input: PublicUploadInput) {
-  if (isBlobUploadStorageEnabled()) {
+  if (isBlobUploadStorageEnabled() || isHostedRuntime()) {
     try {
       const blob = await put(`backoffice/${input.relativePath}`, input.buffer, {
         access: 'public',
@@ -45,6 +51,12 @@ export async function storePublicUpload(input: PublicUploadInput) {
 
       return blob.url;
     } catch (error) {
+      if (isMissingBlobCredentialsError(error)) {
+        throw new Error(
+          'O Blob está ativo no código, mas o alojamento não está a disponibilizar BLOB_READ_WRITE_TOKEN nem BLOB_STORE_ID com VERCEL_OIDC_TOKEN ao site publicado.'
+        );
+      }
+
       if (!isPrivateStoreAccessError(error)) {
         throw error;
       }
