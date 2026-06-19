@@ -17,4 +17,10 @@ describe('getAssetUrl', () => {
 
     expect(getAssetUrl('/uploads/backoffice/news/foto.png')).toBe('/uploads/backoffice/news/foto.png');
   });
+
+  it('normalizes backoffice upload URLs that were saved without a leading slash', () => {
+    expect(getAssetUrl('uploads/backoffice/rich-text-activities-image/foto.jpg')).toBe(
+      '/uploads/backoffice/rich-text-activities-image/foto.jpg'
+    );
+  });
 });

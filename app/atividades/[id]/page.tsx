@@ -195,7 +195,9 @@ export default async function AtividadeDetalhePage({ params }: Props) {
           <div className="mt-8 prose prose-lg max-w-none">
             <div
               className="rich-text-content text-lg leading-relaxed text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(activity.description) }}
+              dangerouslySetInnerHTML={{
+                __html: prepareRichTextForRender(activity.description, { resolveMediaUrl: getAssetUrl }),
+              }}
             />
           </div>
 

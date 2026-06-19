@@ -28,6 +28,15 @@ describe('public rich text rendering', () => {
     expect(source).toContain('prepareRichTextForRender(article.content, { resolveMediaUrl: getAssetUrl })');
   });
 
+  it('resolves uploaded media URLs inside activity and publication rich text before rendering', () => {
+    expect(readAppFile('app/atividades/[id]/page.tsx')).toContain(
+      'prepareRichTextForRender(activity.description, { resolveMediaUrl: getAssetUrl })'
+    );
+    expect(readAppFile('app/biblioteca/[id]/page.tsx')).toContain(
+      'prepareRichTextForRender(publication.description, { resolveMediaUrl: getAssetUrl })'
+    );
+  });
+
   it('renders safe plain-text previews for publication listing cards', () => {
     const source = readAppFile('app/biblioteca/page.tsx');
     expect(source).toContain('richTextToPlainText');
