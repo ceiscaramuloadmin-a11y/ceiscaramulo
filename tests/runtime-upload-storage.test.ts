@@ -35,6 +35,7 @@ describe('runtime upload storage', () => {
     vi.clearAllMocks();
     delete process.env.BLOB_STORE_ID;
     delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.VERCEL_OIDC_TOKEN;
     delete process.env.VERCEL;
     delete process.env.VERCEL_ENV;
     siteSettingUpsert.mockResolvedValue({});
@@ -77,6 +78,31 @@ describe('runtime upload storage', () => {
         contentType: 'image/png',
         storeId: 'store-id',
         token: 'token',
+      }
+    );
+    expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
+  it('stores uploads with Vercel OIDC when no read-write token is injected', async () => {
+    process.env.BLOB_STORE_ID = 'store-id';
+    process.env.VERCEL_OIDC_TOKEN = 'oidc-token';
+    process.env.VERCEL = '1';
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
+
+    const url = await storeUploadedFile(file, 'News Fotos');
+
+    expect(url).toBe('https://blob.vercel-storage.com/backoffice/news-fotos/foto.png');
+    expect(blobPut).toHaveBeenCalledWith(
+      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
+      Buffer.from('hello'),
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'image/png',
+        storeId: 'store-id',
+        oidcToken: 'oidc-token',
       }
     );
     expect(siteSettingUpsert).not.toHaveBeenCalled();
