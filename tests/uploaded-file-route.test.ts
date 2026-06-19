@@ -1,6 +1,6 @@
 /* @vitest-environment node */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getStoredUploadedFile = vi.fn();
 const getPrivateBlobUpload = vi.fn();
@@ -16,6 +16,12 @@ vi.mock('@/lib/upload-storage', () => ({
 describe('backoffice uploaded file route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('serves database-backed uploads through the legacy /uploads/backoffice URL', async () => {
@@ -67,5 +73,21 @@ describe('backoffice uploaded file route', () => {
     });
 
     expect(response.status).toBe(404);
+  });
+
+  it('returns 404 instead of crashing when private Blob lookup fails', async () => {
+    getStoredUploadedFile.mockResolvedValueOnce(null);
+    getPrivateBlobUpload.mockRejectedValueOnce(new Error('No blob credentials found.'));
+
+    const { GET } = await import('@/app/uploads/backoffice/[...path]/route');
+    const response = await GET(new Request('http://localhost/uploads/backoffice/news/file.png'), {
+      params: Promise.resolve({ path: ['news', 'file.png'] }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(console.error).toHaveBeenCalledWith(
+      'Unable to read uploaded Blob file "news/file.png".',
+      expect.any(Error)
+    );
   });
 });
