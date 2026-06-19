@@ -150,12 +150,21 @@ describe('runtime upload storage', () => {
 
   it('does not overload the database with uploads on hosted deployments without Blob configured', async () => {
     process.env.VERCEL = '1';
+    blobPut.mockRejectedValueOnce(new Error('Vercel Blob: No blob credentials found.'));
 
     const { storeUploadedFile } = await import('@/app/api/_lib/cms');
     const file = new File(['hello'], 'foto.png', { type: 'image/png' });
 
-    await expect(storeUploadedFile(file, 'News Fotos')).rejects.toThrow('BLOB_READ_WRITE_TOKEN');
-    expect(blobPut).not.toHaveBeenCalled();
+    await expect(storeUploadedFile(file, 'News Fotos')).rejects.toThrow('alojamento não está a disponibilizar');
+    expect(blobPut).toHaveBeenCalledWith(
+      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
+      Buffer.from('hello'),
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'image/png',
+      }
+    );
     expect(siteSettingUpsert).not.toHaveBeenCalled();
   });
 
