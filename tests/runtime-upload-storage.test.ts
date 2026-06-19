@@ -108,7 +108,7 @@ describe('runtime upload storage', () => {
     expect(siteSettingUpsert).not.toHaveBeenCalled();
   });
 
-  it('falls back to private Blob uploads when the store is private', async () => {
+  it('stores a database image backup when a private Blob store blocks public access', async () => {
     process.env.BLOB_STORE_ID = 'store-id';
     process.env.BLOB_READ_WRITE_TOKEN = 'token';
     blobPut
@@ -121,19 +121,6 @@ describe('runtime upload storage', () => {
     const url = await storeUploadedFile(file, 'News Fotos');
 
     expect(url).toMatch(/^\/uploads\/backoffice\/news-fotos\/.+\.png$/);
-    const storedKey = expect.stringMatching(/^upload:backoffice:news-fotos\/.+\.png$/);
-    expect(blobPut).toHaveBeenNthCalledWith(
-      1,
-      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
-      Buffer.from('hello'),
-      {
-        access: 'public',
-        addRandomSuffix: false,
-        contentType: 'image/png',
-        storeId: 'store-id',
-        token: 'token',
-      }
-    );
     expect(blobPut).toHaveBeenNthCalledWith(
       2,
       expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
@@ -146,16 +133,54 @@ describe('runtime upload storage', () => {
         token: 'token',
       }
     );
-    const privateBlobPath = (blobPut.mock.calls[1]?.[0] as string).replace(/^backoffice\//, '');
     expect(siteSettingUpsert).toHaveBeenCalledWith({
-      where: { key: storedKey },
+      where: { key: expect.stringMatching(/^upload:backoffice:news-fotos\/.+\.png$/) },
       create: {
-        key: storedKey,
-        value: `blob-private:${privateBlobPath}`,
+        key: expect.stringMatching(/^upload:backoffice:news-fotos\/.+\.png$/),
+        value: 'data:image/png;base64,aGVsbG8=',
       },
-      update: { value: `blob-private:${privateBlobPath}` },
+      update: { value: 'data:image/png;base64,aGVsbG8=' },
     });
-    expect(siteSettingUpsert.mock.calls[0]?.[0].create.value).not.toContain('base64');
+  });
+
+  it('uses the localhost-compatible database image backup when hosted Blob credentials are missing', async () => {
+    process.env.VERCEL = '1';
+    blobPut.mockRejectedValueOnce(new Error('Vercel Blob: No blob credentials found.'));
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
+
+    const url = await storeUploadedFile(file, 'News Fotos');
+
+    expect(url).toMatch(/^\/uploads\/backoffice\/news-fotos\/.+\.png$/);
+    expect(siteSettingUpsert).toHaveBeenCalledWith({
+      where: { key: expect.stringMatching(/^upload:backoffice:news-fotos\/.+\.png$/) },
+      create: {
+        key: expect.stringMatching(/^upload:backoffice:news-fotos\/.+\.png$/),
+        value: 'data:image/png;base64,aGVsbG8=',
+      },
+      update: { value: 'data:image/png;base64,aGVsbG8=' },
+    });
+  });
+
+  it('keeps non-image hosted uploads on the existing local fallback when Blob credentials are missing', async () => {
+    process.env.VERCEL = '1';
+    blobPut.mockRejectedValueOnce(new Error('Vercel Blob: No blob credentials found.'));
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['audio'], 'audio.mp3', { type: 'audio/mpeg' });
+
+    const url = await storeUploadedFile(file, 'News Audio');
+
+    expect(url).toMatch(/^\/uploads\/backoffice\/news-audio\/.+\.mp3$/);
+    expect(siteSettingUpsert).toHaveBeenCalledWith({
+      where: { key: expect.stringMatching(/^upload:backoffice:news-audio\/.+\.mp3$/) },
+      create: {
+        key: expect.stringMatching(/^upload:backoffice:news-audio\/.+\.mp3$/),
+        value: 'data:audio/mpeg;base64,YXVkaW8=',
+      },
+      update: { value: 'data:audio/mpeg;base64,YXVkaW8=' },
+    });
   });
 
   it('reads private Blob markers from upload metadata', async () => {
@@ -166,38 +191,6 @@ describe('runtime upload storage', () => {
     expect(siteSettingFindUnique).toHaveBeenCalledWith({
       where: { key: 'upload:backoffice:news/file.png' },
     });
-  });
-
-  it('does not store database metadata for public Blob uploads', async () => {
-    process.env.BLOB_STORE_ID = 'store-id';
-    process.env.BLOB_READ_WRITE_TOKEN = 'token';
-
-    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
-    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
-
-    await storeUploadedFile(file, 'News Fotos');
-
-    expect(siteSettingUpsert).not.toHaveBeenCalled();
-  });
-
-  it('does not overload the database with uploads on hosted deployments without Blob configured', async () => {
-    process.env.VERCEL = '1';
-    blobPut.mockRejectedValueOnce(new Error('Vercel Blob: No blob credentials found.'));
-
-    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
-    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
-
-    await expect(storeUploadedFile(file, 'News Fotos')).rejects.toThrow('alojamento não está a disponibilizar');
-    expect(blobPut).toHaveBeenCalledWith(
-      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
-      Buffer.from('hello'),
-      {
-        access: 'public',
-        addRandomSuffix: false,
-        contentType: 'image/png',
-      }
-    );
-    expect(siteSettingUpsert).not.toHaveBeenCalled();
   });
 
   it('reads only normalized backoffice upload paths', async () => {
