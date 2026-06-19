@@ -33,6 +33,7 @@ vi.mock('@vercel/blob', () => ({
 describe('runtime upload storage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.BLOB_STORE_ID;
     delete process.env.BLOB_READ_WRITE_TOKEN;
     delete process.env.VERCEL;
     delete process.env.VERCEL_ENV;
@@ -58,6 +59,7 @@ describe('runtime upload storage', () => {
   });
 
   it('stores uploads in Vercel Blob when the production token is configured', async () => {
+    process.env.BLOB_STORE_ID = 'store-id';
     process.env.BLOB_READ_WRITE_TOKEN = 'token';
 
     const { storeUploadedFile } = await import('@/app/api/_lib/cms');
@@ -73,6 +75,48 @@ describe('runtime upload storage', () => {
         access: 'public',
         addRandomSuffix: false,
         contentType: 'image/png',
+        storeId: 'store-id',
+        token: 'token',
+      }
+    );
+    expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
+  it('falls back to private Blob uploads when the store is private', async () => {
+    process.env.BLOB_STORE_ID = 'store-id';
+    process.env.BLOB_READ_WRITE_TOKEN = 'token';
+    blobPut
+      .mockRejectedValueOnce(new Error('Vercel Blob: Cannot use public access on a private store.'))
+      .mockResolvedValueOnce({ url: 'https://private.blob.vercel-storage.com/backoffice/news-fotos/foto.png' });
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
+
+    const url = await storeUploadedFile(file, 'News Fotos');
+
+    expect(url).toMatch(/^\/uploads\/backoffice\/news-fotos\/.+\.png$/);
+    expect(blobPut).toHaveBeenNthCalledWith(
+      1,
+      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
+      Buffer.from('hello'),
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'image/png',
+        storeId: 'store-id',
+        token: 'token',
+      }
+    );
+    expect(blobPut).toHaveBeenNthCalledWith(
+      2,
+      expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
+      Buffer.from('hello'),
+      {
+        access: 'private',
+        addRandomSuffix: false,
+        contentType: 'image/png',
+        storeId: 'store-id',
+        token: 'token',
       }
     );
     expect(siteSettingUpsert).not.toHaveBeenCalled();
