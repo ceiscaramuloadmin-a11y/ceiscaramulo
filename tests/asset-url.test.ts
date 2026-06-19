@@ -12,11 +12,9 @@ describe('getAssetUrl', () => {
     expect(getAssetUrl('/uploads/backoffice/news/foto.png')).toBe('/uploads/backoffice/news/foto.png');
   });
 
-  it('prefixes backoffice upload URLs when an API base URL is configured', () => {
+  it('keeps backoffice upload URLs on the same origin even when an API base URL is configured', () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'https://api.ceiscaramulo.pt/';
 
-    expect(getAssetUrl('/uploads/backoffice/news/foto.png')).toBe(
-      'https://api.ceiscaramulo.pt/uploads/backoffice/news/foto.png',
-    );
+    expect(getAssetUrl('/uploads/backoffice/news/foto.png')).toBe('/uploads/backoffice/news/foto.png');
   });
 });
