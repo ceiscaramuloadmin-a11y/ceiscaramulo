@@ -4,6 +4,7 @@ import {
   hasAdminPermission,
   isContentSection,
   jsonError,
+  fileToDataUrl,
   requireAdminContextFromRequest,
   storeUploadedFile,
 } from '@/app/api/_lib/cms';
@@ -15,6 +16,8 @@ const ACCEPTED_MEDIA = {
   audio: 'audio/',
   video: 'video/',
 } as const;
+
+const INLINE_RICH_TEXT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 type RichTextMediaKind = keyof typeof ACCEPTED_MEDIA;
 
@@ -54,6 +57,11 @@ export async function POST(request: NextRequest) {
 
     if (!file.type.startsWith(ACCEPTED_MEDIA[kind])) {
       return jsonError('O ficheiro não corresponde ao tipo de media escolhido.', 400);
+    }
+
+    if (kind === 'image' && file.size <= INLINE_RICH_TEXT_IMAGE_MAX_BYTES) {
+      const url = await fileToDataUrl(file);
+      return NextResponse.json({ url });
     }
 
     // O ficheiro fica fora do HTML da notícia. A base de dados guarda apenas
