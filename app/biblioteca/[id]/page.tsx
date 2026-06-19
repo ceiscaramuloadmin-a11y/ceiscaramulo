@@ -203,7 +203,9 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
           <div className="mt-8 prose prose-lg max-w-none">
             <div
               className="rich-text-content text-lg leading-relaxed text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(publication.description) }}
+              dangerouslySetInnerHTML={{
+                __html: prepareRichTextForRender(publication.description, { resolveMediaUrl: getAssetUrl }),
+              }}
             />
           </div>
 
