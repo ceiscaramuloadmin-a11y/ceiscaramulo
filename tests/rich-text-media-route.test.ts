@@ -7,10 +7,12 @@ const {
   requireAdminContextFromRequest,
   hasAdminPermission,
   storeUploadedFile,
+  fileToDataUrl,
 } = vi.hoisted(() => ({
   requireAdminContextFromRequest: vi.fn(),
   hasAdminPermission: vi.fn(),
   storeUploadedFile: vi.fn(),
+  fileToDataUrl: vi.fn(),
 }));
 
 vi.mock('@/lib/auth0', () => ({
@@ -30,6 +32,7 @@ vi.mock('@/app/api/_lib/cms', async (importOriginal) => {
     requireAdminContextFromRequest,
     hasAdminPermission,
     storeUploadedFile,
+    fileToDataUrl,
   };
 });
 
@@ -42,6 +45,7 @@ describe('rich text media upload route', () => {
     });
     hasAdminPermission.mockReturnValue(true);
     storeUploadedFile.mockResolvedValue('/uploads/backoffice/rich-text-news-audio/audio.mp3');
+    fileToDataUrl.mockResolvedValue('data:image/png;base64,aW1hZ2U=');
   });
 
   it('stores news editor audio as an upload URL instead of inline content', async () => {
@@ -66,9 +70,7 @@ describe('rich text media upload route', () => {
     expect(storeUploadedFile).toHaveBeenCalledWith(file, 'rich-text-news-audio');
   });
 
-  it('stores news editor images as public upload URLs for the frontend body', async () => {
-    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/rich-text-news-image/foto.png');
-
+  it('embeds news editor images inline so frontend body images cannot 404', async () => {
     const { POST } = await import('@/app/api/content-assets/rich-text/route');
     const formData = new FormData();
     const file = new File(['image'], 'foto.png', { type: 'image/png' });
@@ -85,9 +87,10 @@ describe('rich text media upload route', () => {
     );
 
     await expect(response.json()).resolves.toEqual({
-      url: '/uploads/backoffice/rich-text-news-image/foto.png',
+      url: 'data:image/png;base64,aW1hZ2U=',
     });
-    expect(storeUploadedFile).toHaveBeenCalledWith(file, 'rich-text-news-image');
+    expect(fileToDataUrl).toHaveBeenCalledWith(file);
+    expect(storeUploadedFile).not.toHaveBeenCalled();
   });
 
   it('rejects media that does not match the declared kind', async () => {
