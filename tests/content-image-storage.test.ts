@@ -14,8 +14,9 @@ describe('content image storage', () => {
     expect(cmsSource).toContain("const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice'");
     expect(cmsSource).toContain("const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:'");
     expect(cmsSource).toContain("import { storePublicUpload } from '@/lib/upload-storage';");
-    expect(cmsSource).toContain('const publicUploadUrl = await storePublicUpload({ relativePath, buffer, contentType: mimeType });');
-    expect(cmsSource).toContain('return publicUploadUrl;');
+    expect(cmsSource).toContain('const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });');
+    expect(cmsSource).toContain('if (publicUpload.storageValue)');
+    expect(cmsSource).toContain('return publicUpload.publicUrl;');
     expect(cmsSource).toContain('setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl)');
     expect(cmsSource).not.toContain("join(process.cwd(), 'public'");
     expect(cmsSource).not.toContain('await mkdir(');

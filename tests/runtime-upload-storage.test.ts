@@ -121,6 +121,7 @@ describe('runtime upload storage', () => {
     const url = await storeUploadedFile(file, 'News Fotos');
 
     expect(url).toMatch(/^\/uploads\/backoffice\/news-fotos\/.+\.png$/);
+    const storedKey = expect.stringMatching(/^upload:backoffice:news-fotos\/.+\.png$/);
     expect(blobPut).toHaveBeenNthCalledWith(
       1,
       expect.stringMatching(/^backoffice\/news-fotos\/.+\.png$/),
@@ -145,6 +146,37 @@ describe('runtime upload storage', () => {
         token: 'token',
       }
     );
+    const privateBlobPath = (blobPut.mock.calls[1]?.[0] as string).replace(/^backoffice\//, '');
+    expect(siteSettingUpsert).toHaveBeenCalledWith({
+      where: { key: storedKey },
+      create: {
+        key: storedKey,
+        value: `blob-private:${privateBlobPath}`,
+      },
+      update: { value: `blob-private:${privateBlobPath}` },
+    });
+    expect(siteSettingUpsert.mock.calls[0]?.[0].create.value).not.toContain('base64');
+  });
+
+  it('reads private Blob markers from upload metadata', async () => {
+    const { getStoredUploadedFile } = await import('@/app/api/_lib/cms');
+    siteSettingFindUnique.mockResolvedValueOnce({ value: 'blob-private:news/file.png' });
+
+    await expect(getStoredUploadedFile(['news', 'file.png'])).resolves.toBe('blob-private:news/file.png');
+    expect(siteSettingFindUnique).toHaveBeenCalledWith({
+      where: { key: 'upload:backoffice:news/file.png' },
+    });
+  });
+
+  it('does not store database metadata for public Blob uploads', async () => {
+    process.env.BLOB_STORE_ID = 'store-id';
+    process.env.BLOB_READ_WRITE_TOKEN = 'token';
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['hello'], 'foto.png', { type: 'image/png' });
+
+    await storeUploadedFile(file, 'News Fotos');
+
     expect(siteSettingUpsert).not.toHaveBeenCalled();
   });
 

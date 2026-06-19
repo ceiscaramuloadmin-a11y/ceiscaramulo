@@ -63,6 +63,28 @@ describe('backoffice uploaded file route', () => {
     expect(getPrivateBlobUpload).toHaveBeenCalledWith('news/file.png');
   });
 
+  it('serves private Blob uploads using lightweight stored metadata', async () => {
+    getStoredUploadedFile.mockResolvedValueOnce('blob-private:news/file.png');
+    getPrivateBlobUpload.mockResolvedValueOnce({
+      statusCode: 200,
+      stream: new Blob(['blob-ok']).stream(),
+      blob: {
+        contentType: 'image/png',
+        size: 7,
+      },
+    });
+
+    const { GET } = await import('@/app/uploads/backoffice/[...path]/route');
+    const response = await GET(new Request('http://localhost/uploads/backoffice/news/file.png'), {
+      params: Promise.resolve({ path: ['news', 'file.png'] }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('image/png');
+    await expect(response.text()).resolves.toBe('blob-ok');
+    expect(getPrivateBlobUpload).toHaveBeenCalledWith('news/file.png');
+  });
+
   it('returns 404 when an upload URL has no stored file', async () => {
     getStoredUploadedFile.mockResolvedValueOnce(null);
     getPrivateBlobUpload.mockResolvedValueOnce(null);
