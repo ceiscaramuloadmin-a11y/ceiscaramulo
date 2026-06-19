@@ -180,14 +180,6 @@ export default async function NoticiaDetalhePage({ params }: Props) {
             {article.title}
           </h1>
 
-          <div className="mt-8 overflow-hidden rounded-lg">
-            <img
-              src={getAssetUrl(article.image)}
-              alt={article.title}
-              className="h-auto w-full object-cover"
-            />
-          </div>
-
           <div className="mt-8 prose prose-lg max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">
               {article.excerpt}
