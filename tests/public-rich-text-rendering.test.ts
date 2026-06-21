@@ -34,6 +34,12 @@ describe('public rich text rendering', () => {
     expect(source).not.toContain('src={getAssetUrl(article.image)}');
   });
 
+  it('does not render the activity cover image inside the activity detail body', () => {
+    const source = readAppFile('app/atividades/[id]/page.tsx');
+
+    expect(source).not.toContain('src={getAssetUrl(activity.image)}');
+  });
+
   it('resolves uploaded media URLs inside activity and publication rich text before rendering', () => {
     expect(readAppFile('app/atividades/[id]/page.tsx')).toContain(
       'prepareRichTextForRender(activity.description, { resolveMediaUrl: getAssetUrl })'

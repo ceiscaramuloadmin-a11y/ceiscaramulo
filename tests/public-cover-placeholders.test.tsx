@@ -39,10 +39,10 @@ vi.mock('@/lib/public-db-guard', () => ({
 vi.mock('@/lib/site-layout-settings', () => ({
   getPublicSiteLayoutSettings: async () => ({
     pages: {
-      noticias: { title: 'Notícias', description: 'Desc', emptyMessage: 'Sem notícias' },
+      noticias: { title: 'Noticias', description: 'Desc', emptyMessage: 'Sem noticias' },
       atividades: { title: 'Atividades', description: 'Desc', emptyMessage: 'Sem atividades' },
       projetos: { title: 'Projetos', description: 'Desc', emptyMessage: 'Sem projetos' },
-      biblioteca: { title: 'Biblioteca', description: 'Desc', emptyMessage: 'Sem publicações' },
+      biblioteca: { title: 'Biblioteca', description: 'Desc', emptyMessage: 'Sem publicacoes' },
     },
   }),
 }));
@@ -64,10 +64,10 @@ vi.mock('@/data/content', () => ({
   newsArticles: [
     {
       id: 'n1',
-      title: 'Notícia sem capa',
+      title: 'Noticia sem capa',
       slug: 'noticia-sem-capa',
       excerpt: 'Resumo',
-      content: '<p>Conteúdo</p>',
+      content: '<p>Conteudo</p>',
       author: 'Autor',
       category: 'Geral',
       image: null,
@@ -80,7 +80,7 @@ vi.mock('@/data/content', () => ({
     {
       id: 'a1',
       title: 'Atividade sem capa',
-      description: 'Descrição',
+      description: 'Descricao',
       date: '2026-01-01T00:00:00.000Z',
       endDate: null,
       location: 'Caramulo',
@@ -93,7 +93,7 @@ vi.mock('@/data/content', () => ({
     {
       id: 'p1',
       title: 'Projeto sem capa',
-      description: 'Descrição',
+      description: 'Descricao',
       status: 'planeado',
       startDate: '2026-01-01T00:00:00.000Z',
       endDate: null,
@@ -105,11 +105,11 @@ vi.mock('@/data/content', () => ({
   publications: [
     {
       id: 'b1',
-      title: 'Publicação sem capa',
+      title: 'Publicacao sem capa',
       author: 'Autor',
       year: 2026,
       type: 'documento',
-      description: 'Descrição',
+      description: 'Descricao',
       downloadUrl: '',
       coverImage: null,
       published: true,
@@ -123,20 +123,23 @@ describe('public content cover placeholders', () => {
     const { default: NoticiaDetalhePage } = await import('@/app/noticias/[slug]/page');
 
     render(await NoticiasPage());
-    expect(screen.getByRole('img', { name: 'Notícia sem capa' })).toHaveAttribute('src', '/placeholder.svg');
+    expect(screen.getByRole('img', { name: 'Noticia sem capa' })).toHaveAttribute('src', '/placeholder.svg');
 
     render(await NoticiaDetalhePage({ params: Promise.resolve({ slug: 'noticia-sem-capa' }) }));
-    expect(screen.getAllByRole('img', { name: 'Notícia sem capa' })).toHaveLength(1);
+    expect(screen.getAllByRole('img', { name: 'Noticia sem capa' })).toHaveLength(1);
   });
 
-  it('renders placeholders for activity and publication details when images are missing', async () => {
+  it('does not render an activity cover placeholder in activity details when the image is missing', async () => {
     const { default: AtividadeDetalhePage } = await import('@/app/atividades/[id]/page');
-    const { default: PublicacaoDetalhePage } = await import('@/app/biblioteca/[id]/page');
 
     render(await AtividadeDetalhePage({ params: Promise.resolve({ id: 'atividade-sem-capa' }) }));
-    expect(screen.getByRole('img', { name: 'Atividade sem capa' })).toHaveAttribute('src', '/placeholder.svg');
+    expect(screen.queryByRole('img', { name: 'Atividade sem capa' })).not.toBeInTheDocument();
+  });
 
-    render(await PublicacaoDetalhePage({ params: Promise.resolve({ id: 'publicação-sem-capa' }) }));
-    expect(screen.getByRole('img', { name: 'Publicação sem capa' })).toHaveAttribute('src', '/placeholder.svg');
+  it('renders a placeholder for publication details when images are missing', async () => {
+    const { default: PublicacaoDetalhePage } = await import('@/app/biblioteca/[id]/page');
+
+    render(await PublicacaoDetalhePage({ params: Promise.resolve({ id: 'publicacao-sem-capa' }) }));
+    expect(screen.getByRole('img', { name: 'Publicacao sem capa' })).toHaveAttribute('src', '/placeholder.svg');
   });
 });

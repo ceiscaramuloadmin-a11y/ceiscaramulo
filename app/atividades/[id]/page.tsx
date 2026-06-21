@@ -184,14 +184,6 @@ export default async function AtividadeDetalhePage({ params }: Props) {
             {activity.title}
           </h1>
 
-          <div className="mt-8 overflow-hidden rounded-lg">
-            <img
-              src={getAssetUrl(activity.image)}
-              alt={activity.title}
-              className="h-auto w-full object-cover"
-            />
-          </div>
-
           <div className="mt-8 prose prose-lg max-w-none">
             <div
               className="rich-text-content text-lg leading-relaxed text-muted-foreground"
