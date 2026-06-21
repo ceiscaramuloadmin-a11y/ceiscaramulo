@@ -248,7 +248,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     ],
     membership: {
       title: 'Tornar-se sócio',
-      description: 'Quem se torna sócio ajuda a preservar, estudar e divulgar a Serra do Caramulo.',
+      description: '',
       ctaLabel: 'Preencher formulário',
       ctaHref: 'https://forms.gle/KQKtyjGUPhF5DNRJ8',
     },
