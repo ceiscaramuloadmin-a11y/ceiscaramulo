@@ -43,8 +43,8 @@ const Header: React.FC = () => {
 
       <div
         className={cn(
-          'mx-auto flex w-full max-w-[96rem] items-center justify-between gap-3 px-4 transition-[height] duration-200 sm:px-6 lg:px-8',
-          isShrunk ? 'h-16' : 'h-24'
+          'mx-auto flex w-full max-w-[96rem] items-center justify-between gap-8 px-4 transition-[height] duration-200 sm:px-6 lg:px-8',
+          isShrunk ? 'h-[4.5rem]' : 'h-28'
         )}
       >
         <Link
@@ -52,10 +52,10 @@ const Header: React.FC = () => {
           className="inline-flex items-center"
           aria-label="CEISCaramulo - Página inicial"
         >
-          <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-10 sm:h-11' : 'h-14 sm:h-16')} />
+          <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-12 sm:h-14' : 'h-16 sm:h-20')} />
         </Link>
 
-        <nav className="hidden min-w-0 items-center xl:flex" aria-label="Navegação principal">
+        <nav className="hidden min-w-0 flex-1 items-center justify-between gap-4 xl:flex" aria-label="Navegação principal">
           {visibleNavItems.map((item) => {
             const isActive = pathname === item.href;
             const activeLinkClass = isActive
@@ -69,7 +69,7 @@ const Header: React.FC = () => {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'whitespace-nowrap px-1.5 text-[11px] text-stone-600 transition-colors hover:text-[#0f4c36] 2xl:px-2 2xl:text-xs',
+                  'whitespace-nowrap px-2 text-[11px] text-stone-600 transition-colors hover:text-[#0f4c36] 2xl:px-3 2xl:text-xs',
                   activeLinkClass
                 )}
                 aria-current={isActive ? 'page' : undefined}

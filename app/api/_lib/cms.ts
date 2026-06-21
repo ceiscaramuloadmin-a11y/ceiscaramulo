@@ -1,10 +1,12 @@
+import { extname } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
 import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
-import { defaultSiteLayoutSettings, deepMergeSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
+import { defaultSiteLayoutSettings, deepMergeSettings, normalizeSiteLayoutSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
+import { storePublicUpload } from '@/lib/upload-storage';
 import { getAdminAuthSession } from '@/lib/admin-auth-server';
 import type { AdminPermission, GalleryMediaItem, GalleryMediaType, SiteLayoutSettings } from '@/types';
 
@@ -50,18 +52,20 @@ export type AdminContext = {
 type GalleryMediaRecord = GalleryMediaItem;
 
 type SectionConfig = {
-  listOrder: Record<string, 'asc' | 'desc'>;
+  listOrder: Record<string, 'asc' | 'desc'> | Array<Record<string, 'asc' | 'desc'>>;
   publicWhere: Record<string, unknown>;
   findUnique: (identifier: string) => Record<string, unknown>;
   uploadField: 'image' | 'coverImage';
 };
 
 const MAX_AUDIT_LOGS = 500;
+export const AUDIT_LOG_RETENTION_DAYS = 15;
+const AUDIT_LOG_RETENTION_MS = AUDIT_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 const GALLERY_MEDIA_STORAGE_KEY = 'gallery_media_items';
+const DEFAULT_GALLERY_CONTEXT = 'global';
 const OLD_FOOTER_BRAND_DESCRIPTION =
   'Promovendo o estudo, a preservação e a valorização do património natural e cultural da Serra do Caramulo.';
-const REQUESTED_FOOTER_BRAND_DESCRIPTION =
-  'promover o estudo e a investigação nos vários domínios e interesses, designadamente ambiental, geográfico, biológico, geológico, histórico, etnográfico, gastronómico, ..., da Serra do Caramulo';
+const REQUESTED_FOOTER_BRAND_DESCRIPTION = '';
 
 // Configuração transversal por secção.
 export const sectionConfig: Record<ContentSection, SectionConfig> = {
@@ -72,7 +76,7 @@ export const sectionConfig: Record<ContentSection, SectionConfig> = {
     uploadField: 'image',
   },
   activities: {
-    listOrder: { date: 'asc' },
+    listOrder: [{ createdAt: 'desc' }, { date: 'desc' }],
     publicWhere: { published: true },
     findUnique: (identifier) => ({ id: identifier }),
     uploadField: 'image',
@@ -102,7 +106,7 @@ export const sectionModel: Record<ContentSection, unknown> = {
 // Fornece uma interface comum sobre delegates Prisma heterogéneos.
 export function getSectionModel(section: ContentSection) {
   return sectionModel[section] as {
-    findMany: (args: { where: Record<string, unknown>; orderBy: Record<string, 'asc' | 'desc'> }) => Promise<unknown[]>;
+    findMany: (args: { where: Record<string, unknown>; orderBy: SectionConfig['listOrder'] }) => Promise<unknown[]>;
     findFirst: (args: { where: Record<string, unknown> }) => Promise<({ id: string } & Record<string, unknown>) | null>;
     findUnique: (args: { where: { id: string } }) => Promise<({ id: string } & Record<string, unknown>) | null>;
     create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
@@ -126,7 +130,79 @@ export function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
 }
 
+const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice';
 const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:';
+
+function sanitizeUploadSegment(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'general';
+}
+
+function extensionFromMimeType(mimeType: string) {
+  if (mimeType === 'image/jpeg') return '.jpg';
+  if (mimeType === 'image/png') return '.png';
+  if (mimeType === 'image/webp') return '.webp';
+  if (mimeType === 'image/gif') return '.gif';
+  if (mimeType === 'video/mp4') return '.mp4';
+  if (mimeType === 'audio/mpeg') return '.mp3';
+  if (mimeType === 'audio/mp4') return '.m4a';
+  if (mimeType === 'audio/wav') return '.wav';
+  if (mimeType === 'application/pdf') return '.pdf';
+  return '';
+}
+
+function bufferToDataUrl(buffer: Buffer, mimeType: string) {
+  return `data:${mimeType};base64,${buffer.toString('base64')}`;
+}
+
+export async function storeUploadedFile(file: File, bucket = 'general') {
+  const mimeType = file.type || 'application/octet-stream';
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  if (!buffer.length) {
+    throw new Error('Não foi possível guardar o ficheiro enviado.');
+  }
+
+  const safeBucket = sanitizeUploadSegment(bucket);
+  const originalExtension = extname(file.name || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
+  const extension = originalExtension || extensionFromMimeType(mimeType);
+  const filename = `${Date.now()}-${crypto.randomUUID()}${extension}`;
+  const relativePath = `${safeBucket}/${filename}`;
+  const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });
+
+  if (publicUpload) {
+    if (publicUpload.storageValue) {
+      await setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, publicUpload.storageValue);
+    }
+
+    return publicUpload.publicUrl;
+  }
+
+  const dataUrl = bufferToDataUrl(buffer, mimeType);
+
+  // Fallback local: em produção os uploads devem usar Blob para não encher a base de dados.
+  await setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl);
+
+  return `${UPLOAD_PUBLIC_ROOT}/${relativePath}`;
+}
+
+export async function getStoredUploadedFile(relativePathSegments: string[]) {
+  const relativePath = relativePathSegments
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join('/');
+
+  if (!relativePath || relativePath.includes('..') || !/^[a-z0-9-]+\/[a-z0-9._-]+$/i.test(relativePath)) {
+    return null;
+  }
+
+  return getSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`);
+}
 
 // Converte ficheiro recebido para Data URL (compatível com implementação atual).
 export async function fileToDataUrl(file: File) {
@@ -213,19 +289,6 @@ async function setSiteSettingValue(key: string, value: string) {
 }
 
 // Faz parse seguro de JSON vindo das definições persistidas.
-export async function getStoredUploadedFile(relativePathSegments: string[]) {
-  const relativePath = relativePathSegments
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .join('/');
-
-  if (!relativePath || relativePath.includes('..') || !/^[a-z0-9-]+\/[a-z0-9._-]+$/i.test(relativePath)) {
-    return null;
-  }
-
-  return getSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`);
-}
-
 function safeJsonParse<T>(value: string | null, fallback: T) {
   if (!value) {
     return fallback;
@@ -252,7 +315,7 @@ export async function getSiteLayoutSettings(): Promise<SiteLayoutSettings> {
   const parsed = safeJsonParse<unknown>(stored ? JSON.stringify(stored.value) : fallbackRaw, {});
   const settings = deepMergeSettings(defaultSiteLayoutSettings, parsed);
 
-  return {
+  return normalizeSiteLayoutSettings({
     ...settings,
     footer: {
       ...settings.footer,
@@ -261,7 +324,7 @@ export async function getSiteLayoutSettings(): Promise<SiteLayoutSettings> {
           ? REQUESTED_FOOTER_BRAND_DESCRIPTION
           : settings.footer.brandDescription,
     },
-  };
+  });
 }
 
 // Persiste as definições completas de layout do site.
@@ -690,10 +753,108 @@ function serializeForAudit(value: unknown) {
   }
 }
 
+function isMissingAuditTableError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { code?: string; message?: string };
+  const message = String(candidate.message || '').toLowerCase();
+
+  return (
+    candidate.code === 'P2021' ||
+    candidate.code === 'P2022' ||
+    (message.includes('admin_audit_logs') && (message.includes('does not exist') || message.includes('not exist'))) ||
+    (message.includes('adminauditlog') && message.includes('does not exist'))
+  );
+}
+
+export function getAuditLogRetentionCutoff(now = new Date()) {
+  return new Date(now.getTime() - AUDIT_LOG_RETENTION_MS);
+}
+
+// Mantém a auditoria leve: eventos com 15 dias ou mais deixam de ser úteis
+// para operação diária e são apagados antes de listar ou acrescentar histórico.
+export async function pruneExpiredAuditLogs(now = new Date()) {
+  const prismaAny = prisma as unknown as {
+    adminAuditLog?: {
+      deleteMany: (args: { where: { createdAt: { lte: Date } } }) => Promise<{ count: number }>;
+    };
+  };
+
+  if (!prismaAny.adminAuditLog) {
+    return 0;
+  }
+
+  try {
+    const result = await prismaAny.adminAuditLog.deleteMany({
+      where: {
+        createdAt: {
+          lte: getAuditLogRetentionCutoff(now),
+        },
+      },
+    });
+
+    return result.count;
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      return 0;
+    }
+
+    throw error;
+  }
+}
+
+async function listStoredAuditLogs() {
+  const storedValue = await getSiteSettingValue('admin_audit_logs');
+  const parsed = safeJsonParse<unknown[]>(storedValue, []);
+  const cutoff = getAuditLogRetentionCutoff().getTime();
+  const activeLogs = parsed.filter((item) => {
+    const normalized = normalizeAuditLogRecord(item);
+    return normalized ? Date.parse(normalized.createdAt) > cutoff : false;
+  });
+
+  if (activeLogs.length !== parsed.length) {
+    await setSiteSettingValue('admin_audit_logs', JSON.stringify(activeLogs.slice(0, MAX_AUDIT_LOGS)));
+  }
+
+  return activeLogs
+    .map((item) => normalizeAuditLogRecord(item))
+    .filter((item): item is AuditLogRecord => Boolean(item))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+async function appendStoredAuditLog(input: {
+  actor: AdminContext;
+  action: string;
+  targetType: string;
+  targetId?: string | null;
+  summary: string;
+  before?: unknown;
+  after?: unknown;
+}) {
+  const logs = await listStoredAuditLogs();
+  const entry: AuditLogRecord = {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    actorEmail: input.actor.email,
+    actorRole: input.actor.role,
+    action: input.action,
+    targetType: input.targetType,
+    targetId: input.targetId ?? null,
+    summary: input.summary,
+    before: serializeForAudit(input.before),
+    after: serializeForAudit(input.after),
+  };
+
+  await setSiteSettingValue('admin_audit_logs', JSON.stringify([entry, ...logs].slice(0, MAX_AUDIT_LOGS)));
+}
+
 // Lista os eventos de auditoria por ordem decrescente de criação.
 export async function listAuditLogs() {
   const prismaAny = prisma as unknown as {
     adminAuditLog?: {
+      deleteMany: (args: { where: { createdAt: { lte: Date } } }) => Promise<{ count: number }>;
       findMany: (args: { orderBy: { createdAt: 'desc' }; take: number }) => Promise<
         Array<{
           id: string;
@@ -712,19 +873,25 @@ export async function listAuditLogs() {
   };
 
   if (!prismaAny.adminAuditLog) {
-    const storedValue = await getSiteSettingValue('admin_audit_logs');
-    const parsed = safeJsonParse<unknown[]>(storedValue, []);
-
-    return parsed
-      .map((item) => normalizeAuditLogRecord(item))
-      .filter((item): item is AuditLogRecord => Boolean(item))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return listStoredAuditLogs();
   }
 
-  const logs = await prismaAny.adminAuditLog.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: MAX_AUDIT_LOGS,
-  });
+  await pruneExpiredAuditLogs();
+
+  let logs: Awaited<ReturnType<typeof prismaAny.adminAuditLog.findMany>>;
+
+  try {
+    logs = await prismaAny.adminAuditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: MAX_AUDIT_LOGS,
+    });
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      return listStoredAuditLogs();
+    }
+
+    throw error;
+  }
 
   return logs
     .map((item) =>
@@ -776,22 +943,10 @@ export async function appendAuditLog(input: {
     };
   };
 
-  if (!prismaAny.adminAuditLog) {
-    const logs = await listAuditLogs();
-    const entry: AuditLogRecord = {
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      actorEmail: input.actor.email,
-      actorRole: input.actor.role,
-      action: input.action,
-      targetType: input.targetType,
-      targetId: input.targetId ?? null,
-      summary: input.summary,
-      before: serializeForAudit(input.before),
-      after: serializeForAudit(input.after),
-    };
+  await pruneExpiredAuditLogs();
 
-    await setSiteSettingValue('admin_audit_logs', JSON.stringify([entry, ...logs].slice(0, MAX_AUDIT_LOGS)));
+  if (!prismaAny.adminAuditLog) {
+    await appendStoredAuditLog(input);
     return;
   }
 
@@ -799,19 +954,28 @@ export async function appendAuditLog(input: {
     ? await prismaAny.adminUser.findUnique({ where: { email: input.actor.email } })
     : null;
 
-  await prismaAny.adminAuditLog.create({
-    data: {
-      actorId: actor?.id ?? null,
-      actorEmail: input.actor.email,
-      actorRole: input.actor.role,
-      action: input.action,
-      targetType: input.targetType,
-      targetId: input.targetId ?? null,
-      summary: input.summary,
-      before: serializeForAudit(input.before),
-      after: serializeForAudit(input.after),
-    },
-  });
+  try {
+    await prismaAny.adminAuditLog.create({
+      data: {
+        actorId: actor?.id ?? null,
+        actorEmail: input.actor.email,
+        actorRole: input.actor.role,
+        action: input.action,
+        targetType: input.targetType,
+        targetId: input.targetId ?? null,
+        summary: input.summary,
+        before: serializeForAudit(input.before),
+        after: serializeForAudit(input.after),
+      },
+    });
+  } catch (error) {
+    if (isMissingAuditTableError(error)) {
+      await appendStoredAuditLog(input);
+      return;
+    }
+
+    throw error;
+  }
 }
 
 // Resolve o item de conteúdo por identificador e secção.
@@ -839,7 +1003,7 @@ export async function parseSectionFormData(
   const file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
 
   const currentAsset = currentItem?.[config.uploadField] as string | null | undefined;
-  const resolvedAsset = file ? await fileToDataUrl(file) : removeImage ? null : (currentAsset ?? null);
+  const resolvedAsset = file ? await storeUploadedFile(file, section) : removeImage ? null : (currentAsset ?? null);
 
   if (section === 'news') {
     const published = booleanFromForm(formData.get('published'));
@@ -883,24 +1047,50 @@ export async function parseSectionFormData(
     };
   }
 
+  const rawDocument = formData.get('document');
+  const documentFile =
+    rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'
+      ? rawDocument
+      : null;
+  const currentDownloadUrl = currentItem?.downloadUrl as string | null | undefined;
+
+  // Os PDFs usam o mesmo armazenamento público já utilizado pelas capas.
+  // Assim, o contrato existente de `downloadUrl` continua válido no frontend.
+  const resolvedDownloadUrl = documentFile
+    ? await storeUploadedFile(documentFile, 'publications-documents')
+    : emptyToNull(formData.get('downloadUrl')) ?? currentDownloadUrl ?? null;
+
   return {
     title: String(formData.get('title') || ''),
     author: String(formData.get('author') || ''),
     year: Number(formData.get('year')),
     type: String(formData.get('type') || ''),
     description: String(formData.get('description') || ''),
-    downloadUrl: emptyToNull(formData.get('downloadUrl')),
+    downloadUrl: resolvedDownloadUrl,
     published: booleanFromForm(formData.get('published')),
     coverImage: resolvedAsset,
   };
 }
 
 function normalizeGalleryType(value: unknown): GalleryMediaType {
+  if (value === 'video' || value === 'audio' || value === 'document') {
+    return value;
+  }
+
+  return 'photo';
+}
+
+function normalizeDatabaseGalleryType(value: GalleryMediaType): 'photo' | 'video' | 'audio' {
   if (value === 'video' || value === 'audio') {
     return value;
   }
 
   return 'photo';
+}
+
+function normalizeGalleryContext(value: unknown) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized.replace(/[^a-z0-9-]/g, '-') || DEFAULT_GALLERY_CONTEXT;
 }
 
 function normalizeGalleryRecord(value: unknown): GalleryMediaRecord | null {
@@ -912,15 +1102,12 @@ function normalizeGalleryRecord(value: unknown): GalleryMediaRecord | null {
   const now = new Date().toISOString();
   const source = String(candidate.source || '').trim();
 
-  if (!source) {
-    return null;
-  }
-
   return {
     id: String(candidate.id || crypto.randomUUID()),
     title: String(candidate.title || '').trim() || 'Sem título',
     description: candidate.description ? String(candidate.description) : null,
     type: normalizeGalleryType(candidate.type),
+    context: normalizeGalleryContext(candidate.context),
     source,
     thumbnail: candidate.thumbnail ? String(candidate.thumbnail) : null,
     mimeType: candidate.mimeType ? String(candidate.mimeType) : null,
@@ -953,6 +1140,7 @@ function getStaticGalleryFallback(): GalleryMediaRecord[] {
       title: item.title,
       description: item.category || null,
       type: item.type === 'foto' ? 'photo' : item.type === 'video' ? 'video' : 'audio',
+      context: DEFAULT_GALLERY_CONTEXT,
       source: item.url,
       thumbnail: item.type === 'foto' ? item.url : null,
       mimeType: null,
@@ -990,9 +1178,17 @@ async function retryGalleryQuery<T>(query: () => Promise<T>) {
   }
 }
 
-export async function listGalleryMedia(scope: 'public' | 'admin') {
+export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFAULT_GALLERY_CONTEXT) {
+  const galleryContext = normalizeGalleryContext(context);
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
+    const items = await listGalleryFromStorage();
+    const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
+    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+  }
+
   if (scope === 'public' && shouldSkipPublicDb()) {
-    return getStaticGalleryFallback();
+    return galleryContext === DEFAULT_GALLERY_CONTEXT ? getStaticGalleryFallback() : [];
   }
 
   const prismaAny = prisma as unknown as {
@@ -1019,7 +1215,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
 
   if (!prismaAny.galleryMedia) {
     const items = await listGalleryFromStorage();
-    return scope === 'admin' ? items : items.filter((item) => item.published);
+    const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
+    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
   }
 
   let items;
@@ -1040,7 +1237,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
     }
     try {
       const fallbackItems = await listGalleryFromStorage();
-      return scope === 'admin' ? fallbackItems : fallbackItems.filter((item) => item.published);
+      const contextItems = fallbackItems.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
+      return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
     } catch (storageError) {
       if (scope === 'public' && isPublicDbQuotaExceededError(storageError)) {
         markPublicDbQuotaExceeded('public gallery storage');
@@ -1048,7 +1246,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
         console.warn('Gallery storage fallback failed.');
       }
       if (scope === 'public') {
-        return getStaticGalleryFallback();
+        return galleryContext === DEFAULT_GALLERY_CONTEXT ? getStaticGalleryFallback() : [];
       }
       return [];
     }
@@ -1059,6 +1257,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin') {
     title: item.title,
     description: item.description,
     type: item.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: item.source,
     thumbnail: item.thumbnail,
     mimeType: item.mimeType,
@@ -1116,7 +1315,14 @@ export async function getGalleryMediaById(id: string, scope: 'public' | 'admin')
   }
 
   if (!found) {
-    return null;
+    const items = await listGalleryFromStorage();
+    const storageFound = items.find((item) => item.id === id) ?? null;
+
+    if (!storageFound) {
+      return null;
+    }
+
+    return scope === 'admin' || storageFound.published ? storageFound : null;
   }
 
   if (scope !== 'admin' && !found.published) {
@@ -1128,6 +1334,7 @@ export async function getGalleryMediaById(id: string, scope: 'public' | 'admin')
     title: found.title,
     description: found.description,
     type: found.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: found.source,
     thumbnail: found.thumbnail,
     mimeType: found.mimeType,
@@ -1141,11 +1348,35 @@ export async function createGalleryMedia(input: {
   title: string;
   description?: string | null;
   type: GalleryMediaType;
+  context?: string | null;
   source: string;
   thumbnail?: string | null;
   mimeType?: string | null;
   published: boolean;
 }) {
+  const galleryContext = normalizeGalleryContext(input.context);
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT || input.type === 'document') {
+    const now = new Date().toISOString();
+    const created: GalleryMediaRecord = {
+      id: crypto.randomUUID(),
+      title: input.title.trim() || 'Sem título',
+      description: input.description ?? null,
+      type: normalizeGalleryType(input.type),
+      context: galleryContext,
+      source: input.source,
+      thumbnail: input.thumbnail ?? null,
+      mimeType: input.mimeType ?? null,
+      published: input.published,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const items = await listGalleryFromStorage();
+    await saveGalleryToStorage([created, ...items]);
+    return created;
+  }
+
   const prismaAny = prisma as unknown as {
     galleryMedia?: {
       create: (args: {
@@ -1180,6 +1411,7 @@ export async function createGalleryMedia(input: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
       type: normalizeGalleryType(input.type),
+      context: DEFAULT_GALLERY_CONTEXT,
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1197,7 +1429,7 @@ export async function createGalleryMedia(input: {
     data: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
-      type: normalizeGalleryType(input.type),
+      type: normalizeDatabaseGalleryType(input.type),
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1210,6 +1442,7 @@ export async function createGalleryMedia(input: {
     title: created.title,
     description: created.description,
     type: created.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: created.source,
     thumbnail: created.thumbnail,
     mimeType: created.mimeType,
@@ -1225,12 +1458,41 @@ export async function updateGalleryMedia(
     title: string;
     description?: string | null;
     type: GalleryMediaType;
+    context?: string | null;
     source: string;
     thumbnail?: string | null;
     mimeType?: string | null;
     published: boolean;
   }
 ) {
+  const galleryContext = normalizeGalleryContext(input.context);
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT || input.type === 'document') {
+    const items = await listGalleryFromStorage();
+    const index = items.findIndex((item) => item.id === id);
+
+    if (index < 0) {
+      return null;
+    }
+
+    const updated: GalleryMediaRecord = {
+      ...items[index],
+      title: input.title.trim() || 'Sem título',
+      description: input.description ?? null,
+      type: normalizeGalleryType(input.type),
+      context: galleryContext,
+      source: input.source,
+      thumbnail: input.thumbnail ?? null,
+      mimeType: input.mimeType ?? null,
+      published: input.published,
+      updatedAt: new Date().toISOString(),
+    };
+
+    items[index] = updated;
+    await saveGalleryToStorage(items);
+    return updated;
+  }
+
   const prismaAny = prisma as unknown as {
     galleryMedia?: {
       update: (args: {
@@ -1272,6 +1534,7 @@ export async function updateGalleryMedia(
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
       type: normalizeGalleryType(input.type),
+      context: DEFAULT_GALLERY_CONTEXT,
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1289,7 +1552,7 @@ export async function updateGalleryMedia(
     data: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,
-      type: normalizeGalleryType(input.type),
+      type: normalizeDatabaseGalleryType(input.type),
       source: input.source,
       thumbnail: input.thumbnail ?? null,
       mimeType: input.mimeType ?? null,
@@ -1302,6 +1565,7 @@ export async function updateGalleryMedia(
     title: updated.title,
     description: updated.description,
     type: updated.type,
+    context: DEFAULT_GALLERY_CONTEXT,
     source: updated.source,
     thumbnail: updated.thumbnail,
     mimeType: updated.mimeType,
@@ -1312,6 +1576,14 @@ export async function updateGalleryMedia(
 }
 
 export async function deleteGalleryMedia(id: string) {
+  const storageItems = await listGalleryFromStorage();
+  const storageFiltered = storageItems.filter((item) => item.id !== id);
+
+  if (storageFiltered.length !== storageItems.length) {
+    await saveGalleryToStorage(storageFiltered);
+    return true;
+  }
+
   const prismaAny = prisma as unknown as {
     galleryMedia?: {
       delete: (args: { where: { id: string } }) => Promise<unknown>;

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         draft.excerpt !== undefined &&
         typeof draft.published === 'boolean'
       ) {
-        enqueueNewsPublishedNotifications(null, {
+        await enqueueNewsPublishedNotifications(null, {
           slug: draft.slug,
           title: draft.title,
           excerpt: draft.excerpt,

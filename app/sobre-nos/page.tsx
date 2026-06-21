@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
-import { contactInfo, siteConfig } from '@/data/site';
+import { contactInfo } from '@/data/site';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Sobre Nós | CEISCaramulo',
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
   },
 };
 
-const socialBodies = [
+const defaultSocialBodies = [
   {
     title: 'Mesa da Assembleia Geral',
     members: [
@@ -69,78 +70,95 @@ const socialBodies = [
   },
 ];
 
+const aboutHeroImage = '/internal-pages/sobre-nos.jpg';
+
 export default async function SobreNosPage() {
   const layout = await getPublicSiteLayoutSettings();
+  // A pagina publica le o conteudo editavel que o backoffice grava no layout.
+  // Se a lista de corpos sociais vier vazia por erro editorial, mantemos o
+  // conteudo institucional base para nao publicar uma coluna sem informacao.
+  const about = layout.aboutPage;
+  const socialBodies = about.socialBodies.length > 0 ? about.socialBodies : defaultSocialBodies;
 
   return (
     <>
       <Header />
-      <main id="main-content" className="min-h-screen bg-white pt-20">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <h1 className="font-display text-4xl font-bold leading-tight text-foreground sm:text-5xl">
+      <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
+        <section
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
+          style={{
+            backgroundImage: `url(${aboutHeroImage})`,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
+          <div className="relative z-10 mx-auto max-w-4xl text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">
+              CEISCaramulo
+            </p>
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
               {layout.pages.sobre.title}
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
               {layout.pages.sobre.description}
             </p>
           </div>
+        </section>
 
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-8">
-              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+              <section className="rounded-[28px] border border-[#d7decf] bg-white/95 p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Landmark className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold text-foreground">Quem Somos</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{about.whoWeAreTitle}</h2>
                 </div>
-                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  O CEISCaramulo é uma associação legalmente constituída, sem fins lucrativos, sediada na vila do Caramulo, no edifício do Turismo. A sua missão passa por promover o estudo e a investigação nos vários domínios ligados à Serra do Caramulo, desde o ambiente à geografia, da biologia à geologia, da história à etnografia e à gastronomia.
-                </p>
-                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                  Este trabalho é pensado com um olhar simultaneamente científico, cultural e económico, valorizando o património material e imaterial da região e promovendo o empreendedorismo local como parte de uma estratégia de desenvolvimento sustentável.
-                </p>
-                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                  Conhecer aquilo que distingue a Serra do Caramulo é, para o CEISCaramulo, a base para projetar o futuro e valorizar o que já existe.
-                </p>
+                {layout.aboutPage.whoWeAreParagraphs.map((paragraph, index) => (
+                  <p key={paragraph} className={index === 0 ? 'mt-5 text-lg leading-relaxed text-muted-foreground' : 'mt-4 text-lg leading-relaxed text-muted-foreground'}>
+                    {paragraph}
+                  </p>
+                ))}
               </section>
 
-              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+              <section className="rounded-[28px] border border-[#d7decf] bg-white/95 p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Award className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold text-foreground">Como Nasceu</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{about.originTitle}</h2>
                 </div>
-                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  A ideia de criar o Centro de Estudos e Interpretação da Serra do Caramulo nasceu no âmbito do projeto “Conhecer o que é nosso, para preservar e valorizar”, apresentado pelo então Agrupamento de Escolas do Caramulo ao concurso promovido pela Fundação Montepio.
-                </p>
-                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                  Esse projeto recebeu o Prémio Escolar Montepio 2011, no valor de 25 mil euros, e foi esse impulso que ajudou a transformar a visão inicial numa associação ativa e enraizada no território.
-                </p>
+                {layout.aboutPage.originParagraphs.map((paragraph, index) => (
+                  <p key={paragraph} className={index === 0 ? 'mt-5 text-lg leading-relaxed text-muted-foreground' : 'mt-4 text-lg leading-relaxed text-muted-foreground'}>
+                    {paragraph}
+                  </p>
+                ))}
               </section>
 
-              <section className="rounded-[28px] border border-border bg-card p-8 shadow-sm">
+              <section className="rounded-[28px] border border-[#d7decf] bg-white/95 p-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
                     <Users2 className="h-6 w-6 text-primary" />
                   </div>
-                  <h2 className="font-display text-3xl font-bold text-foreground">Fundadores</h2>
+                  <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{about.foundersTitle}</h2>
                 </div>
-                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  O grupo fundador que concretizou a Associação CEISCaramulo reuniu pessoal docente e não docente, encarregados de educação da Escola EB 2,3 do Caramulo e do Agrupamento de Escolas de Tondela Tomaz Ribeiro, as freguesias do território da Serra do Caramulo representadas pelas respetivas juntas e ainda o vereador do pelouro da Cultura e Educação da Câmara Municipal de Tondela.
-                </p>
+                {layout.aboutPage.foundersParagraphs.map((paragraph, index) => (
+                  <p key={paragraph} className={index === 0 ? 'mt-5 text-lg leading-relaxed text-muted-foreground' : 'mt-4 text-lg leading-relaxed text-muted-foreground'}>
+                    {paragraph}
+                  </p>
+                ))}
               </section>
             </div>
 
             <div className="space-y-8">
-              <section className="rounded-[28px] border border-border bg-muted p-8">
-                <h2 className="font-display text-3xl font-bold text-foreground">Corpos Sociais</h2>
+              <section className="rounded-[28px] border border-[#d7decf] bg-[#e9efe3] p-8">
+                <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">{layout.aboutPage.socialBodiesTitle}</h2>
                 <div className="mt-6 space-y-5">
                   {socialBodies.map((group) => (
-                    <article key={group.title} className="rounded-2xl border border-border bg-white p-5">
-                      <h3 className="font-display text-xl font-bold text-foreground">{group.title}</h3>
+                    <article key={group.title} className="rounded-2xl border border-[#d7decf] bg-white/90 p-5">
+                      <h3 className="font-display text-xl font-bold !text-[#0f4c36]">{group.title}</h3>
                       <ul className="mt-4 space-y-2">
                         {group.members.map((member) => (
                           <li key={member} className="text-sm leading-6 text-muted-foreground">
@@ -153,48 +171,40 @@ export default async function SobreNosPage() {
                 </div>
               </section>
 
-              <div className="rounded-[28px] bg-primary px-8 py-7 text-primary-foreground shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground/75">
-                  Desde {siteConfig.founded}
-                </p>
-                <p className="mt-3 font-display text-2xl font-bold">
-                  Um projeto dedicado a estudar, interpretar e valorizar a Serra do Caramulo.
-                </p>
-              </div>
             </div>
           </div>
 
-          <div className="mt-16 rounded-lg bg-muted p-8">
-            <h2 className="font-display text-3xl font-bold text-foreground">Contacte-nos</h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              Tem questões ou quer saber mais sobre o nosso trabalho? Entre em contacto connosco.
+          <div className="mt-16 rounded-[28px] bg-[#0f4c36] p-8 text-white shadow-xl">
+            <h2 className="font-display text-3xl font-bold !text-white">{about.contactTitle}</h2>
+            <p className="mt-4 text-lg leading-relaxed text-white/85">
+              {about.contactDescription}
             </p>
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <div className="flex items-start gap-3">
-                <MapPin className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <MapPin className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-foreground">Morada</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-white">Morada</p>
+                  <p className="text-sm text-white/75">
                     {contactInfo.address}, {contactInfo.postalCode} {contactInfo.city}
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Phone className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <Phone className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-foreground">Telefone</p>
-                  <p className="text-sm text-muted-foreground">{contactInfo.phone}</p>
+                  <p className="font-medium text-white">Telefone</p>
+                  <p className="text-sm text-white/75">{contactInfo.phone}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Mail className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <Mail className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-foreground">Email</p>
-                  <p className="text-sm text-muted-foreground">{contactInfo.email}</p>
+                  <p className="font-medium text-white">Email</p>
+                  <p className="text-sm text-white/75">{contactInfo.email}</p>
                 </div>
               </div>
             </div>
-            <Button asChild className="mt-6">
+            <Button asChild className="mt-6 bg-white !text-[#0f4c36] hover:bg-[#eef4ec] hover:!text-[#0f4c36] [&_*]:!text-[#0f4c36]">
               <Link href="/contactos">Enviar mensagem</Link>
             </Button>
           </div>

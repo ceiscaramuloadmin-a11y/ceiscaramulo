@@ -4,6 +4,7 @@ import localFont from 'next/font/local';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import SiteAppearanceStyles from '@/components/SiteAppearanceStyles';
 import './globals.css';
 
 const inter = Inter({
@@ -24,7 +25,7 @@ const coolvetica = localFont({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#27441d',
+  themeColor: '#0f4c36',
 };
 
 export const metadata: Metadata = {
@@ -111,6 +112,7 @@ export default function RootLayout({
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <SiteAppearanceStyles />
           {children}
         </TooltipProvider>
       </body>

@@ -9,16 +9,34 @@ const adminLayoutSource = readFileSync(resolve(process.cwd(), 'app/api/admin/lay
 const siteLayoutSource = readFileSync(resolve(process.cwd(), 'lib/site-layout.ts'), 'utf8');
 
 describe('content image storage', () => {
-  it('converts uploaded content images to base64 data URLs before persisting them', () => {
-    expect(cmsSource).toContain('const resolvedAsset = file ? await fileToDataUrl(file)');
+  it('stores uploaded content images through public storage before persisting short URLs', () => {
+    expect(cmsSource).toContain('export async function storeUploadedFile');
+    expect(cmsSource).toContain("const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice'");
+    expect(cmsSource).toContain("const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:'");
+    expect(cmsSource).toContain("import { storePublicUpload } from '@/lib/upload-storage';");
+    expect(cmsSource).toContain('const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });');
+    expect(cmsSource).toContain('if (publicUpload.storageValue)');
+    expect(cmsSource).toContain('return publicUpload.publicUrl;');
+    expect(cmsSource).not.toContain('function shouldInlineContentCoverUpload');
+    expect(cmsSource).toContain('setSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`, dataUrl)');
+    expect(cmsSource).not.toContain("join(process.cwd(), 'public'");
+    expect(cmsSource).not.toContain('await mkdir(');
+    expect(cmsSource).not.toContain('await writeFile(');
+    expect(cmsSource).toContain('const resolvedAsset = file ? await storeUploadedFile(file, section)');
     expect(cmsSource).toContain('image: resolvedAsset');
     expect(cmsSource).toContain('coverImage: resolvedAsset');
   });
 
-  it('converts uploaded layout hero images to base64 data URLs before saving settings', () => {
+  it('stores uploaded publication PDFs and keeps using the downloadUrl contract', () => {
+    expect(cmsSource).toContain("rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'");
+    expect(cmsSource).toContain("storeUploadedFile(documentFile, 'publications-documents')");
+    expect(cmsSource).toContain('downloadUrl: resolvedDownloadUrl');
+  });
+
+  it('stores uploaded layout hero images as public upload files before saving settings', () => {
     expect(adminLayoutSource).toContain('normalizeHeroImageValue');
-    expect(adminLayoutSource).toContain("return normalized.startsWith('data:') ? normalized : '';");
-    expect(adminLayoutSource).toContain('merged.home.hero.imageUrl = await fileToDataUrl(heroImageFile);');
+    expect(adminLayoutSource).toContain("normalized.startsWith('/uploads/')");
+    expect(adminLayoutSource).toContain("merged.home.hero.imageUrl = await storeUploadedFile(heroImageFile, 'layout');");
   });
 
   it('does not keep a static project path as the default hero image source', () => {

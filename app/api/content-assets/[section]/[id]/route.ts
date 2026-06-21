@@ -21,41 +21,47 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ section: string; id: string }> }
 ) {
-  const { section, id } = await params;
+  try {
+    const { section, id } = await params;
 
-  if (!isPublicContentSection(section)) {
+    if (!isPublicContentSection(section)) {
+      return new NextResponse(null, { status: 404 });
+    }
+
+    const config = SECTION_CONFIG[section];
+    const model = config.model() as unknown as {
+      findFirst: (args: {
+        where: { id: string; published: true };
+        select: Record<string, true>;
+      }) => Promise<Record<string, string | null> | null>;
+    };
+    const item = await model.findFirst({
+      where: { id, published: true },
+      select: { [config.field]: true },
+    });
+    const rawAsset = item?.[config.field];
+
+    if (!rawAsset?.trim().startsWith('data:')) {
+      return new NextResponse(null, { status: 404 });
+    }
+
+    const parsed = parseDataUrl(rawAsset);
+
+    if (!parsed) {
+      console.warn(`Invalid public content asset for ${section}/${id}.`);
+      return new NextResponse(null, { status: 404 });
+    }
+
+    return new NextResponse(parsed.buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': parsed.mimeType,
+        'Content-Length': String(parsed.buffer.byteLength),
+        ...PUBLIC_MEDIA_CACHE_HEADERS,
+      },
+    });
+  } catch (error) {
+    console.error('Unable to serve public content asset.', error);
     return new NextResponse(null, { status: 404 });
   }
-
-  const config = SECTION_CONFIG[section];
-  const model = config.model() as unknown as {
-    findFirst: (args: {
-      where: { id: string; published: true };
-      select: Record<string, true>;
-    }) => Promise<Record<string, string | null> | null>;
-  };
-  const item = await model.findFirst({
-    where: { id, published: true },
-    select: { [config.field]: true },
-  });
-  const rawAsset = item?.[config.field];
-
-  if (!rawAsset?.trim().startsWith('data:')) {
-    return new NextResponse(null, { status: 404 });
-  }
-
-  const parsed = parseDataUrl(rawAsset);
-
-  if (!parsed) {
-    return NextResponse.json({ message: 'Imagem inválida.' }, { status: 400 });
-  }
-
-  return new NextResponse(parsed.buffer, {
-    status: 200,
-    headers: {
-      'Content-Type': parsed.mimeType,
-      'Content-Length': String(parsed.buffer.byteLength),
-      ...PUBLIC_MEDIA_CACHE_HEADERS,
-    },
-  });
 }

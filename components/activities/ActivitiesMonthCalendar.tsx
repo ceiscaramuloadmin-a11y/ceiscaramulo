@@ -29,6 +29,13 @@ const getMonthLabel = (date: Date) =>
     year: 'numeric',
   });
 
+const getFullDateLabel = (date: Date) =>
+  date.toLocaleDateString('pt-PT', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
 const getCalendarDays = (month: Date) => {
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
   const mondayBasedOffset = (firstDay.getDay() + 6) % 7;
@@ -51,9 +58,10 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
   );
   const firstEntryDate = sortedEntries[0] ? getEntryDate(sortedEntries[0]) : new Date();
   const lastEntryDate = sortedEntries.at(-1) ? getEntryDate(sortedEntries.at(-1)!) : firstEntryDate;
-  const [visibleMonth, setVisibleMonth] = useState(
-    () => getMonthStart(firstEntryDate)
-  );
+  // O calendário abre sempre no mês real do visitante. As datas extremas
+  // continuam acessíveis pelos atalhos, sem fazer um evento antigo parecer atual.
+  const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(new Date()));
+  const [todayLabel, setTodayLabel] = useState<string | null>(null);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<number, ActivityCalendarEntry[]>();
@@ -69,6 +77,13 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
   }, [sortedEntries]);
 
   const calendarDays = useMemo(() => getCalendarDays(visibleMonth), [visibleMonth]);
+  const todayKey = getDayKey(new Date());
+
+  const handleTodayClick = () => {
+    const today = new Date();
+    setVisibleMonth(getMonthStart(today));
+    setTodayLabel(getFullDateLabel(today));
+  };
 
   const handleDayActivated = useCallback(
     (clicked: Date) => {
@@ -118,7 +133,7 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
         <button
           type="button"
           className="inline-flex min-h-9 flex-1 basis-28 items-center justify-center gap-1 rounded-md border border-border bg-white px-3 text-xs font-medium text-stone-700 transition-colors hover:border-primary hover:text-primary"
-          onClick={() => setVisibleMonth(getMonthStart(new Date()))}
+          onClick={handleTodayClick}
         >
           Hoje
         </button>
@@ -142,6 +157,12 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
         </button>
       </div>
 
+      {todayLabel && (
+        <p className="rounded-md bg-[#eef4ea] px-3 py-2 text-center text-sm font-semibold text-[#0f4c36]">
+          Hoje: {todayLabel}
+        </p>
+      )}
+
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-muted-foreground">
         {weekdays.map((weekday) => (
           <span key={weekday} className="py-2">
@@ -155,9 +176,12 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
           const dayEvents = eventsByDay.get(getDayKey(day)) ?? [];
           const hasActivities = dayEvents.length > 0;
           const isVisibleMonth = day.getMonth() === visibleMonth.getMonth();
+          const isToday = getDayKey(day) === todayKey;
           const dayLabel = hasActivities
             ? `${day.getDate()}: ${dayEvents.map((event) => event.title).join(', ')}`
-            : `${day.getDate()}`;
+            : isToday
+              ? `Hoje, ${getFullDateLabel(day)}`
+              : `${day.getDate()}`;
 
           return (
             <button
@@ -168,9 +192,9 @@ export default function ActivitiesMonthCalendar({ entries }: Props) {
               disabled={!hasActivities}
               className={`aspect-square rounded-md text-sm transition-colors ${
                 hasActivities
-                  ? 'bg-[#eef4ea] font-semibold text-[#27441d] hover:bg-[#dfead7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+                  ? 'bg-[#eef4ea] font-semibold text-[#0f4c36] hover:bg-[#dfead7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
                   : 'cursor-default text-stone-400 disabled:opacity-100'
-              } ${isVisibleMonth ? '' : 'opacity-45'}`}
+              } ${isToday ? 'ring-2 ring-[#0f4c36] ring-offset-2' : ''} ${isVisibleMonth ? '' : 'opacity-45'}`}
               onClick={() => handleDayActivated(day)}
             >
               {day.getDate()}

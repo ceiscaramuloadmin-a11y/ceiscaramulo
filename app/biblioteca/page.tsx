@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Download, Tag, User } from 'lucide-react';
+import GalleryTabs from '@/components/GalleryTabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { listGalleryMedia } from '@/app/api/_lib/cms';
 import { publications as fallbackPublications } from '@/data/content';
 import {
   bibliotecaPublicationTypes,
@@ -17,14 +19,15 @@ import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 import { capitalizeFirstLetter, cn, getAssetUrl } from '@/lib/utils';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Biblioteca | CEISCaramulo',
+  title: 'Recursos | CEISCaramulo',
   description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
   keywords: ['biblioteca', 'CEISCaramulo', 'Serra do Caramulo', 'publicações', 'livros', 'artigos'],
   openGraph: {
-    title: 'Biblioteca | CEISCaramulo',
+    title: 'Recursos | CEISCaramulo',
     description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
     url: 'https://ceiscaramulo.pt/biblioteca',
     siteName: 'CEISCaramulo',
@@ -33,7 +36,7 @@ export const metadata: Metadata = {
         url: '/og-image.svg',
         width: 1200,
         height: 630,
-        alt: 'Biblioteca - CEISCaramulo',
+        alt: 'Recursos - CEISCaramulo',
       },
     ],
     locale: 'pt_PT',
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Biblioteca | CEISCaramulo',
+    title: 'Recursos | CEISCaramulo',
     description: 'Publicações, livros, artigos e documentos do CEISCaramulo sobre a Serra do Caramulo.',
     images: ['/og-image.svg'],
   },
@@ -49,6 +52,8 @@ export const metadata: Metadata = {
     canonical: '/biblioteca',
   },
 };
+
+const bibliotecaHeroImage = '/internal-pages/biblioteca.jpg';
 
 async function getPublicPublications() {
   if (shouldSkipPublicDb()) {
@@ -84,6 +89,7 @@ export default async function BibliotecaPage({
   const tipo = parseBibliotecaTipoParam(tipoRaw, distinctTypes);
   const publications = filterBibliotecaByTipo(pubForFilter, tipo) as typeof publicationsAll;
   const layout = await getPublicSiteLayoutSettings();
+  const media = await listGalleryMedia('public', 'biblioteca');
 
   const typeLabels: Record<string, string> = {
     livro: 'Livro',
@@ -96,16 +102,28 @@ export default async function BibliotecaPage({
   return (
     <>
       <Header />
-      <main id="main-content" className="min-h-screen bg-white pt-20">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <h1 className="font-display text-4xl font-bold leading-tight text-foreground sm:text-5xl">
-              {layout.pages.biblioteca.title}
+      <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
+        <section
+          className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
+          style={{
+            backgroundImage: `url(${bibliotecaHeroImage})`,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
+          <div className="relative z-10 mx-auto max-w-4xl text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">CEISCaramulo</p>
+            <h1 className="mt-5 font-display text-4xl font-bold leading-tight !text-white sm:text-6xl lg:text-7xl">
+              Recursos
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-relaxed text-white">
               {layout.pages.biblioteca.description}
             </p>
           </div>
+        </section>
+
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 
           {publicationsAll.length > 0 && (
             <div className="mb-10 flex flex-wrap gap-2" role="navigation" aria-label="Filtrar por tipo">
@@ -204,6 +222,13 @@ export default async function BibliotecaPage({
               ))}
             </div>
           )}
+
+          <section className="mt-14">
+            <div className="mb-6">
+              <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">Conteúdos de Recursos</h2>
+            </div>
+            <GalleryTabs items={media} />
+          </section>
         </div>
       </main>
       <Footer />

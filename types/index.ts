@@ -84,13 +84,14 @@ export interface ContentComment {
   createdAt: string;
 }
 
-export type GalleryMediaType = 'photo' | 'video' | 'audio';
+export type GalleryMediaType = 'photo' | 'video' | 'audio' | 'document';
 
 export interface GalleryMediaItem {
   id: string;
   title: string;
   description?: string | null;
   type: GalleryMediaType;
+  context?: string | null;
   source: string;
   thumbnail?: string | null;
   mimeType?: string | null;
@@ -224,6 +225,62 @@ export interface LayoutHomeLinkItem extends LayoutLinkItem {
   icon: LayoutIconName;
 }
 
+export interface FooterContactSettings {
+  address: string;
+  postalCode: string;
+  city: string;
+  phone: string;
+  email: string;
+  socialMedia: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+    youtube?: string;
+  };
+}
+
+export interface SiteVisualIdentitySettings {
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    buttons: string;
+    links: string;
+    titles: string;
+  };
+  logos: {
+    primary: string;
+    footer: string;
+    institutional: string;
+  };
+}
+
+export interface SiteSeoSettings {
+  title: string;
+  description: string;
+  keywords: string;
+  ogImage: string;
+}
+
+export interface SitePageIntroSettings {
+  title: string;
+  description: string;
+  emptyMessage?: string;
+}
+
+export interface SiteAboutPageSettings {
+  whoWeAreTitle: string;
+  whoWeAreParagraphs: string[];
+  originTitle: string;
+  originParagraphs: string[];
+  foundersTitle: string;
+  foundersParagraphs: string[];
+  socialBodiesTitle: string;
+  socialBodies: Array<{ title: string; members: string[] }>;
+  contactTitle: string;
+  contactDescription: string;
+}
+
 export interface SiteLayoutSettings {
   home: {
     hero: {
@@ -254,13 +311,22 @@ export interface SiteLayoutSettings {
     };
   };
   pages: {
-    sobre: { title: string; description: string };
-    atividades: { title: string; description: string; emptyMessage: string };
-    noticias: { title: string; description: string; emptyMessage: string };
-    projetos: { title: string; description: string; emptyMessage: string };
-    biblioteca: { title: string; description: string; emptyMessage: string };
-    serra: { title: string; description: string };
+    sobre: SitePageIntroSettings;
+    atividades: SitePageIntroSettings & { emptyMessage: string };
+    noticias: SitePageIntroSettings & { emptyMessage: string };
+    projetos: SitePageIntroSettings & { emptyMessage: string };
+    biblioteca: SitePageIntroSettings & { emptyMessage: string };
+    serra: SitePageIntroSettings;
+    contactos: SitePageIntroSettings;
+    galeria: SitePageIntroSettings;
+    bibliotecaJrs: SitePageIntroSettings;
+    oficinaDoBurel: SitePageIntroSettings;
+    ponDoJueus: SitePageIntroSettings;
+    escolaDosNossosAvos: SitePageIntroSettings;
+    oficinasDeFormacao: SitePageIntroSettings;
+    publicacoes: SitePageIntroSettings;
   };
+  aboutPage: SiteAboutPageSettings;
   serra: {
     sections: Array<{
       id: string;
@@ -275,11 +341,20 @@ export interface SiteLayoutSettings {
   };
   footer: {
     brandDescription: string;
+    contactInfo: FooterContactSettings;
     columns: Array<{ title: string; links: LayoutLinkItem[] }>;
+    membership: {
+      title: string;
+      description: string;
+      ctaLabel: string;
+      ctaHref: string;
+    };
     socialTitle: string;
     copyrightLine: string;
     legalLine: string;
   };
+  visualIdentity: SiteVisualIdentitySettings;
+  seo: SiteSeoSettings;
 }
 
 export type ContentSection = 'news' | 'activities' | 'projects' | 'publications';

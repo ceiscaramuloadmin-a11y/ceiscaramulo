@@ -24,8 +24,17 @@ describe('public rendering mode', () => {
       'app/galeria/page.tsx',
       'app/sobre-nos/page.tsx',
       'app/serra-do-caramulo/page.tsx',
+      'app/contactos/page.tsx',
+      'app/pon-do-jueus/page.tsx',
+      'app/escola-dos-nossos-avos/page.tsx',
+      'app/oficinas-de-formacao/page.tsx',
+      'app/oficina-do-burel/page.tsx',
+      'app/biblioteca-jrs/page.tsx',
+      'app/publicacoes/page.tsx',
     ]) {
-      expect(readAppFile(path)).toContain("export const dynamic = 'force-dynamic';");
+      const source = readAppFile(path);
+      expect(source).toContain("export const dynamic = 'force-dynamic';");
+      expect(source).toContain('export const revalidate = 0;');
     }
   });
 
@@ -38,6 +47,7 @@ describe('public rendering mode', () => {
     ]) {
       const source = readAppFile(path);
       expect(source).toContain("export const dynamic = 'force-dynamic';");
+      expect(source).toContain('export const revalidate = 0;');
       expect(source).toContain('export const dynamicParams = true;');
       expect(source).not.toContain('export async function generateStaticParams()');
     }
@@ -46,7 +56,15 @@ describe('public rendering mode', () => {
   it('keeps export mode out of development and clears stale chunks before next dev', () => {
     expect(nextConfigSource).toContain("process.env.NODE_ENV === 'production'");
     expect(nextConfigSource).toContain("process.env.NEXT_OUTPUT_MODE === 'export'");
-    expect(packageJson.scripts?.predev).toBe('rm -rf .next');
+    expect(packageJson.scripts?.predev).toContain("rmSync('.next',{recursive:true,force:true})");
     expect(packageJson.scripts?.dev).toBe('next dev');
+  });
+
+  it('keeps Auth0 middleware on the Node.js runtime', () => {
+    expect(readAppFile('middleware.ts')).toContain("export const runtime = 'nodejs';");
+  });
+
+  it('pins output tracing to this Next.js project root', () => {
+    expect(nextConfigSource).toContain('outputFileTracingRoot: __dirname');
   });
 });

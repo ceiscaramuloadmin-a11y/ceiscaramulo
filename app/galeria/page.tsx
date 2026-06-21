@@ -3,8 +3,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import GalleryTabs from '@/components/GalleryTabs';
 import { listGalleryMedia } from '@/app/api/_lib/cms';
+import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Galeria Multimédia | CEISCaramulo',
@@ -38,6 +40,7 @@ export const metadata: Metadata = {
 };
 
 export default async function GaleriaPage() {
+  const layout = await getPublicSiteLayoutSettings();
   const media = await listGalleryMedia('public');
 
   return (
@@ -47,10 +50,10 @@ export default async function GaleriaPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="font-display text-4xl font-bold leading-tight text-foreground sm:text-5xl">
-              Galeria Multimédia
+              {layout.pages.galeria.title}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Descobre fotografias, vídeos e áudios do património natural e cultural da Serra do Caramulo.
+              {layout.pages.galeria.description}
             </p>
           </div>
 

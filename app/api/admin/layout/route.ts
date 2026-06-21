@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   appendAuditLog,
-  fileToDataUrl,
   getSiteLayoutSettings,
   hasAdminPermission,
   jsonError,
   requireAdminContextFromRequest,
   saveSiteLayoutSettings,
+  storeUploadedFile,
 } from '@/app/api/_lib/cms';
 import { deepMergeSettings, defaultSiteLayoutSettings } from '@/lib/site-layout';
 import type { SiteLayoutSettings } from '@/types';
@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 
 function normalizeHeroImageValue(value: unknown) {
   const normalized = typeof value === 'string' ? value.trim() : '';
-  return normalized.startsWith('data:') ? normalized : '';
+  return normalized.startsWith('data:') || normalized.startsWith('/uploads/') ? normalized : '';
 }
 
 // Endpoint administrativo para leitura das definições completas do layout.
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
     merged.home.hero.imageUrl = normalizeHeroImageValue(merged.home.hero.imageUrl);
 
     if (heroImageFile) {
-      merged.home.hero.imageUrl = await fileToDataUrl(heroImageFile);
+      merged.home.hero.imageUrl = await storeUploadedFile(heroImageFile, 'layout');
     }
 
     await saveSiteLayoutSettings(merged);

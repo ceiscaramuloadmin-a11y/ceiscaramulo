@@ -11,16 +11,19 @@ describe('activities calendar section', () => {
   it('mounts an interactive picker backed by prisma rows', () => {
     expect(pageSource).toContain('ActivitiesMonthCalendar');
     expect(pageSource).toContain('startMs');
-    expect(pageSource).toContain('/atividades/${getActivitySlug(activity)}');
+    expect(pageSource).toContain('/atividades/${activity.id}');
+    expect(pageSource).not.toContain('getActivitySlug');
     expect(pageSource).toContain('Mapa rápido de datas');
+    expect(pageSource).toContain('lg:grid-cols-[minmax(0,1fr)_20rem]');
+    expect(pageSource).toContain('lg:sticky lg:top-28');
+    expect(pageSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
   });
 
-  it('mounts the activities calendar on the homepage', () => {
-    expect(homeSource).toContain('ActivitiesMonthCalendar');
-    expect(homeSource).toContain('Calendário de atividades na página inicial');
-    expect(homeSource).toContain('Datas no calendário');
-    expect(homeSource.indexOf('Calendário de atividades na página inicial')).toBeLessThan(
-      homeSource.indexOf('{activities.map((activity) => (')
-    );
+  it('keeps the homepage activities section simple and calendar-free', () => {
+    expect(homeSource).not.toContain('ActivitiesMonthCalendar');
+    expect(homeSource).not.toContain('Calendário de atividades na página inicial');
+    expect(homeSource).not.toContain('Próximas');
+    expect(homeSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
+    expect(homeSource).toContain('take: 6');
   });
 });

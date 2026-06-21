@@ -2,6 +2,10 @@ type SanitizeOptions = {
   forEditor?: boolean;
 };
 
+type RenderOptions = {
+  resolveMediaUrl?: (value: string) => string;
+};
+
 const allowedTags = new Set([
   'A',
   'AUDIO',
@@ -85,7 +89,7 @@ export function richTextToPlainText(value: string | null | undefined) {
     .trim();
 }
 
-export function prepareRichTextForRender(value: string | null | undefined) {
+export function prepareRichTextForRender(value: string | null | undefined, options: RenderOptions = {}) {
   const normalized = stripHtmlComments(String(value ?? '').trim());
 
   if (!normalized) {
@@ -93,7 +97,26 @@ export function prepareRichTextForRender(value: string | null | undefined) {
   }
 
   const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(normalized);
-  return hasHtmlTags ? normalized : textToHtml(normalized);
+  const html = hasHtmlTags ? normalized : textToHtml(normalized);
+
+  return options.resolveMediaUrl ? resolveRichTextMediaUrls(html, options.resolveMediaUrl) : html;
+}
+
+function resolveRichTextMediaUrls(html: string, resolveMediaUrl: (value: string) => string) {
+  return html.replace(
+    /\s(src|poster)=("([^"]*)"|'([^']*)')/gi,
+    (match, attributeName: string, quotedValue: string, doubleQuotedValue?: string, singleQuotedValue?: string) => {
+      const originalValue = doubleQuotedValue ?? singleQuotedValue ?? '';
+      const resolvedValue = resolveMediaUrl(originalValue);
+
+      if (!resolvedValue || resolvedValue === originalValue) {
+        return match;
+      }
+
+      const quote = quotedValue.startsWith("'") ? "'" : '"';
+      return ` ${attributeName}=${quote}${escapeHtml(resolvedValue)}${quote}`;
+    }
+  );
 }
 
 function decodeHtmlEntities(value: string) {

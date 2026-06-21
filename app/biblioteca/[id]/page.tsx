@@ -15,7 +15,8 @@ import { prepareRichTextForRender } from '@/lib/richText';
 import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const dynamicParams = true;
 
 interface Props {
@@ -167,7 +168,7 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
             <Button asChild variant="ghost" className="mb-6">
               <Link href="/biblioteca" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                Voltar à Biblioteca
+                Voltar aos Recursos
               </Link>
             </Button>
 
@@ -202,7 +203,9 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
           <div className="mt-8 prose prose-lg max-w-none">
             <div
               className="rich-text-content text-lg leading-relaxed text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(publication.description) }}
+              dangerouslySetInnerHTML={{
+                __html: prepareRichTextForRender(publication.description, { resolveMediaUrl: getAssetUrl }),
+              }}
             />
           </div>
 

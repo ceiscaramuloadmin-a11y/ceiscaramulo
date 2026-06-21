@@ -2,18 +2,16 @@ import React, { useEffect, useRef } from 'react';
 import {
   AudioLines,
   Bold,
-  Heading1,
-  Heading2,
   Image as ImageIcon,
   Italic,
   Link as LinkIcon,
   List,
   ListOrdered,
-  Quote,
+  Maximize2,
+  Minimize2,
   Redo2,
   Underline,
   Undo2,
-  Unlink,
   Video,
   Globe,
 } from 'lucide-react';
@@ -24,16 +22,19 @@ type RichTextEditorProps = {
   label?: string;
   value: string;
   onChange: (value: string) => void;
+  onUploadMedia?: (file: File, kind: MediaKind) => Promise<string>;
+  fullscreenEnabled?: boolean;
 };
 
 type MediaKind = 'image' | 'audio' | 'video';
 
-export default function RichTextEditor({ label, value, onChange }: RichTextEditorProps) {
+export default function RichTextEditor({ label, value, onChange, onUploadMedia, fullscreenEnabled = false }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const selectionRef = useRef<Range | null>(null);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -68,6 +69,19 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
     return () => document.removeEventListener('selectionchange', updateSelection);
   }, []);
 
+  useEffect(() => {
+    if (!isFullscreen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isFullscreen]);
+
   const syncContent = () => {
     const editor = editorRef.current;
 
@@ -87,12 +101,33 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
   const runCommand = (command: string, commandValue?: string) => {
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand(command, false, commandValue);
+    execEditorCommand(command, commandValue);
     syncContent();
   };
 
-  const setBlock = (tagName: 'H1' | 'H2' | 'P' | 'BLOCKQUOTE') => {
-    runCommand('formatBlock', tagName);
+  const runListCommand = (ordered: boolean) => {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const expectedTag = ordered ? 'OL' : 'UL';
+    const beforeHtml = editor.innerHTML;
+
+    editor.focus();
+    restoreSelection();
+    const command = ordered ? 'insertOrderedList' : 'insertUnorderedList';
+    execEditorCommand(command);
+
+    const listWasCreated = editor.innerHTML !== beforeHtml && !!editor.querySelector(expectedTag.toLowerCase());
+
+    if (!listWasCreated) {
+      const listHtml = buildListHtmlFromCurrentSelection(ordered);
+      insertListHtml(listHtml);
+    }
+
+    syncContent();
   };
 
   const insertLink = () => {
@@ -121,23 +156,26 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
 
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand('insertHTML', false, embedHtml);
+    execEditorCommand('insertHTML', embedHtml);
     syncContent();
   };
 
   const insertMedia = async (file: File, kind: MediaKind) => {
-    const dataUrl = await fileToDataUrl(file);
+    // Ficheiros de audio/video ficam demasiado grandes quando entram como
+    // data URL no HTML da noticia. Quando o backoffice fornece uma funcao de
+    // upload, guardamos o ficheiro em /uploads e inserimos apenas esse URL.
+    const sourceUrl = onUploadMedia ? await onUploadMedia(file, kind) : await fileToDataUrl(file);
     const escapedName = escapeHtml(file.name || kind);
 
     const htmlByKind = {
-      image: `<figure><img src="${dataUrl}" alt="${escapedName}" /><figcaption>${escapedName}</figcaption></figure>`,
-      audio: `<figure><audio controls src="${dataUrl}"></audio><figcaption>${escapedName}</figcaption></figure>`,
-      video: `<figure><video controls src="${dataUrl}"></video><figcaption>${escapedName}</figcaption></figure>`,
+      image: `<figure><img src="${sourceUrl}" alt="${escapedName}" /><figcaption>${escapedName}</figcaption></figure>`,
+      audio: `<figure><audio controls src="${sourceUrl}"></audio><figcaption>${escapedName}</figcaption></figure>`,
+      video: `<figure><video controls src="${sourceUrl}"></video><figcaption>${escapedName}</figcaption></figure>`,
     };
 
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand('insertHTML', false, htmlByKind[kind]);
+    execEditorCommand('insertHTML', htmlByKind[kind]);
     syncContent();
   };
 
@@ -158,26 +196,52 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
 
     editorRef.current?.focus();
     restoreSelection();
-    document.execCommand('insertHTML', false, sanitized);
+    execEditorCommand('insertHTML', sanitized);
     syncContent();
   };
 
-  return (
-    <div className="space-y-3">
-      {label ? <p className="text-sm text-stone-600">{label}</p> : null}
+  const editorShellClassName = isFullscreen
+    ? 'fixed inset-0 z-[100] flex flex-col space-y-3 bg-stone-50 p-4 sm:p-6'
+    : 'space-y-3';
 
-      <div className="rounded-2xl border border-stone-200 bg-white">
+  const editorFrameClassName = isFullscreen
+    ? 'flex min-h-0 flex-1 flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl'
+    : 'rounded-2xl border border-stone-200 bg-white';
+
+  const editableClassName = isFullscreen
+    ? 'rich-text-editor min-h-0 flex-1 overflow-y-auto rounded-b-2xl bg-transparent px-5 py-5 text-black outline-none sm:px-8 sm:py-6'
+    : 'rich-text-editor min-h-[320px] rounded-b-2xl bg-transparent px-4 py-4 text-black outline-none';
+
+  return (
+    <div
+      className={editorShellClassName}
+      role={isFullscreen ? 'dialog' : undefined}
+      aria-modal={isFullscreen ? true : undefined}
+      aria-label={isFullscreen ? label || 'Editor em janela' : undefined}
+    >
+      <div className="flex items-center justify-between gap-3">
+        {label ? <p className="text-sm text-stone-600">{label}</p> : <span />}
+        {fullscreenEnabled ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 transition hover:border-[#0f4c36] hover:text-[#0f4c36]"
+            onClick={() => setIsFullscreen((current) => !current)}
+            aria-expanded={isFullscreen}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {isFullscreen ? 'Fechar janela' : 'Abrir em janela'}
+          </button>
+        ) : null}
+      </div>
+
+      <div className={editorFrameClassName}>
         <div className="flex flex-wrap gap-2 border-b border-stone-200 p-3">
           <ToolbarButton label="Negrito" onClick={() => runCommand('bold')}><Bold className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Itálico" onClick={() => runCommand('italic')}><Italic className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Sublinhado" onClick={() => runCommand('underline')}><Underline className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Título 1" onClick={() => setBlock('H1')}><Heading1 className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Título 2" onClick={() => setBlock('H2')}><Heading2 className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Citação" onClick={() => setBlock('BLOCKQUOTE')}><Quote className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Lista" onClick={() => runCommand('insertUnorderedList')}><List className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Lista numerada" onClick={() => runCommand('insertOrderedList')}><ListOrdered className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Lista" onClick={() => runListCommand(false)}><List className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Lista numerada" onClick={() => runListCommand(true)}><ListOrdered className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Link" onClick={insertLink}><LinkIcon className="h-4 w-4" /></ToolbarButton>
-          <ToolbarButton label="Remover link" onClick={() => runCommand('unlink')}><Unlink className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Incorporar URL" onClick={insertEmbed}><Globe className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Desfazer" onClick={() => runCommand('undo')}><Undo2 className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Refazer" onClick={() => runCommand('redo')}><Redo2 className="h-4 w-4" /></ToolbarButton>
@@ -190,9 +254,12 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
-          className="rich-text-editor min-h-[320px] rounded-b-2xl bg-transparent px-4 py-4 text-black outline-none"
+          className={editableClassName}
           onInput={syncContent}
           onBlur={syncContent}
+          onFocus={rememberSelection}
+          onKeyUp={rememberSelection}
+          onMouseUp={rememberSelection}
           onPaste={handlePaste}
         />
       </div>
@@ -235,6 +302,100 @@ export default function RichTextEditor({ label, value, onChange }: RichTextEdito
     selection.removeAllRanges();
     selection.addRange(selectionRef.current);
   }
+
+  function rememberSelection() {
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    if (editorRef.current?.contains(range.commonAncestorContainer)) {
+      selectionRef.current = range.cloneRange();
+    }
+  }
+
+  function execEditorCommand(command: string, commandValue?: string) {
+    // Alguns browsers/dev bundles falham com execCommand; esta guarda evita quebrar o editor inteiro.
+    if (typeof document.execCommand !== 'function') {
+      return false;
+    }
+
+    return document.execCommand(command, false, commandValue);
+  }
+
+  function getSelectedEditorBlock() {
+    const range = selectionRef.current;
+
+    if (!range) {
+      return null;
+    }
+
+    let node: Node | null = range.commonAncestorContainer;
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    while (node && node !== editorRef.current) {
+      if (node instanceof HTMLElement && ['P', 'DIV', 'LI'].includes(node.tagName)) {
+        return node;
+      }
+
+      node = node.parentNode;
+    }
+
+    return null;
+  }
+
+  function buildListHtmlFromCurrentSelection(ordered: boolean) {
+    const selection = window.getSelection()?.toString().trim();
+    const blockText = getSelectedEditorBlock()?.textContent?.trim();
+    const source = selection || blockText || 'Novo item';
+    const items = source
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join('');
+
+    return ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`;
+  }
+
+  function insertListHtml(listHtml: string) {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = listHtml;
+    const list = template.content.firstElementChild;
+
+    if (!list) {
+      return;
+    }
+
+    const block = getSelectedEditorBlock();
+
+    if (block && block !== editor) {
+      block.replaceWith(list);
+      return;
+    }
+
+    const range = selectionRef.current;
+
+    if (range && editor.contains(range.commonAncestorContainer)) {
+      range.deleteContents();
+      range.insertNode(list);
+      return;
+    }
+
+    editor.appendChild(list);
+  }
 }
 
 function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
@@ -242,7 +403,8 @@ function ToolbarButton({ label, onClick, children }: { label: string; onClick: (
     <button
       type="button"
       title={label}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-[#3e5c32] hover:text-[#27441d]"
+      aria-label={label}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-[#0f4c36] hover:text-[#0f4c36]"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
@@ -290,8 +452,13 @@ async function handleFileChange(
     return;
   }
 
-  await insertMedia(file, kind);
-  input.value = '';
+  try {
+    await insertMedia(file, kind);
+  } catch (error) {
+    window.alert(error instanceof Error ? error.message : 'Não foi possível inserir o ficheiro.');
+  } finally {
+    input.value = '';
+  }
 }
 
 function fileToDataUrl(file: File) {

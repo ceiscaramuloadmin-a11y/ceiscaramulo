@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { sendNewsletterSubscriptionConfirmation } from '@/lib/newsletter-on-publish';
 
 const bodySchema = z.object({
   email: z.string().trim().email('Email inválido.').max(320),
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 
   let parsed: z.infer<typeof bodySchema>;
   try {
-    const unknown = await request.json();
+    const unknown = await readNewsletterPayload(request);
     parsed = bodySchema.parse(unknown);
   } catch {
     return Response.json({ ok: false, message: 'Corpo inválido. Envia apenas { "email": "..." } com um email válido.' }, {
@@ -50,10 +51,29 @@ export async function POST(request: Request) {
     );
   }
 
+  const confirmation = await sendNewsletterSubscriptionConfirmation(normalized);
+
+  if (!confirmation.ok) {
+    console.warn('Subscrição guardada, mas email de confirmação não enviado:', confirmation.reason);
+  }
+
   return Response.json({
     ok: true,
-    message: 'Pedido registado com sucesso. Obrigado pelo interesse na newsletter.',
+    message: confirmation.ok
+      ? 'Subscrição confirmada. Enviámos um email de confirmação para a tua caixa de correio.'
+      : 'Subscrição confirmada. Obrigado pelo interesse na newsletter.',
   });
+}
+
+async function readNewsletterPayload(request: Request) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+    const formData = await request.formData();
+    return { email: formData.get('email') || formData.get('newsletter-email') };
+  }
+
+  return request.json();
 }
 
 function isNewsletterPersistenceReady(): boolean {

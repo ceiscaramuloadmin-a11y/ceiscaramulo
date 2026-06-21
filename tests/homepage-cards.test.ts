@@ -22,11 +22,28 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
   });
 
-  it('limits card titles to 3 lines and descriptions to 4 lines', () => {
-    expect(homePageSource).toContain('[-webkit-line-clamp:3]');
+  it('uses compact responsive cards for homepage activities and news', () => {
+    expect(homePageSource).toContain("import MotionReveal from '@/components/MotionReveal'");
+    expect(homePageSource).toContain('grid-cols-[repeat(auto-fit,minmax(220px,300px))]');
+    expect(homePageSource).toContain('grid-cols-[repeat(auto-fit,minmax(240px,320px))]');
+    expect(homePageSource).toContain('aspect-[4/3]');
+    expect(homePageSource).toContain('loading="lazy"');
+    expect(homePageSource).toContain('decoding="async"');
+    expect(homePageSource).toContain('p-4');
+    expect(homePageSource).toContain('text-xl');
+    expect(homePageSource).toContain('<MotionReveal key={activity.id} className="h-full" delayMs={index * 90}>');
+    expect(homePageSource).toContain('<MotionReveal key={article.id} className="h-full" delayMs={index * 110}>');
+    expect(homePageSource).toContain('group-hover:scale-[1.035]');
+    expect(homePageSource).not.toContain('h-48 w-full');
+    expect(homePageSource).not.toContain('h-56 w-full');
+    expect(homePageSource).not.toContain('p-8 transition-all');
+  });
+
+  it('limits compact card titles to 2 lines and descriptions to 3 lines', () => {
+    expect(homePageSource).toContain('[-webkit-line-clamp:2]');
     expect(homePageSource).toContain('richTextToPlainText(activity.description)');
     expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
-    expect(homePageSource).toContain('[-webkit-line-clamp:4]');
+    expect(homePageSource).toContain('[-webkit-line-clamp:3]');
   });
 
   it('does not highlight a Projetos carousel on the homepage (section removed from destaques)', () => {

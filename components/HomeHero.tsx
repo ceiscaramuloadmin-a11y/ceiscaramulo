@@ -2,13 +2,16 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { CSSProperties, useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { Autoplay, EffectFade } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import SiteLogo from '@/components/SiteLogo';
 import heroImage from '@/src/assets/hero-imgs/hero-img.webp';
-import heroImage2 from '@/src/assets/hero-imgs/hero-img2.webp';
+import heroCeis7902 from '@/src/assets/hero-imgs/hero-ceis-7902.webp';
+import heroPonJueus1 from '@/src/assets/hero-imgs/hero-pon-jueus-1.webp';
+import heroPonJueus2 from '@/src/assets/hero-imgs/hero-pon-jueus-2.webp';
+import heroEscolaAvos1 from '@/src/assets/hero-imgs/hero-escola-avos-1.webp';
+import heroEscolaAvos2 from '@/src/assets/hero-imgs/hero-escola-avos-2.webp';
+import heroEscolaAvos3 from '@/src/assets/hero-imgs/hero-escola-avos-3.webp';
 import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
 import type { NavItem, SiteLayoutSettings } from '@/types';
@@ -26,12 +29,23 @@ const NAV_OUTER_CLASSES =
 
 const HERO_SWIPER_INTERVAL_MS = 6000;
 
-const localHeroImages = [heroImage, heroImage2];
+// O carrossel reúne paisagem, espaços do CEIS e memória local para apresentar
+// a diversidade do trabalho da associação logo na entrada do website.
+const localHeroImages = [
+  heroImage,
+  heroPonJueus1,
+  heroCeis7902,
+  heroPonJueus2,
+  heroEscolaAvos1,
+  heroEscolaAvos2,
+  heroEscolaAvos3,
+];
 
 export default function HomeHero({ hero, navigationItems }: HeroProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const isShrunk = scrollY > 8;
 
   const trimmedTitleLines = [hero.titleLine1, hero.titleLine2, hero.titleLine3, hero.titleLine4].map((line) =>
@@ -55,28 +69,45 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (prefersReducedMotion || localHeroImages.length <= 1) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setActiveHeroIndex((current) => (current + 1) % localHeroImages.length);
+    }, HERO_SWIPER_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [prefersReducedMotion]);
+
   const parallaxOffset = prefersReducedMotion ? 0 : Math.min(scrollY * 0.22, 120);
+  const activeHeroImage = localHeroImages[activeHeroIndex] ?? localHeroImages[0];
 
   return (
-    <section className="relative min-h-[870px] overflow-hidden">
-      <div className={cn(NAV_OUTER_CLASSES, navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
+    <section className="relative min-h-[620px] overflow-hidden lg:min-h-[640px]">
+      <div className={cn(NAV_OUTER_CLASSES, 'ceis-hero-nav-motion', navBarElevatedClasses(scrollY, 'hero'))} data-shrunk={isShrunk ? 'true' : 'false'}>
         <div
           className={cn(
-            'mx-auto max-w-[96rem] rounded-full border border-white/35 bg-white/90 px-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-8',
+            'mx-auto max-w-[96rem] rounded-full border border-white/35 bg-white/90 px-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.45)] transition-[padding] duration-200 md:px-10',
             isShrunk ? 'py-3' : 'py-4'
           )}
         >
-          <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="flex items-center gap-3 text-foreground" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-10 sm:h-11' : 'h-14 sm:h-16')} />
+          <div className="flex items-center justify-between gap-8">
+            <Link
+              href="/"
+              className="flex items-center gap-3 text-foreground transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f4c36]/35 active:filter active:brightness-95"
+              aria-label="CEISCaramulo - Página inicial"
+            >
+              <SiteLogo imageClassName={cn('w-auto transition-[height] duration-200', isShrunk ? 'h-12 sm:h-14' : 'h-16 sm:h-20')} />
             </Link>
 
-            <nav className="hidden min-w-0 items-center gap-2 xl:flex 2xl:gap-3" aria-label="Navegação principal da homepage">
+            <nav className="hidden min-w-0 flex-1 items-center justify-between gap-4 xl:flex 2xl:gap-6" aria-label="Navegação principal da homepage">
               {navigationItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.03em] text-foreground transition-colors hover:text-[#0f4c36] 2xl:text-[11px] 2xl:tracking-[0.06em]"
+                  className="whitespace-nowrap px-2 text-[10px] font-semibold uppercase tracking-[0.03em] text-foreground transition-colors hover:text-[#0f4c36] 2xl:px-3 2xl:text-[11px] 2xl:tracking-[0.06em]"
                 >
                   {item.label}
                 </Link>
@@ -118,59 +149,44 @@ export default function HomeHero({ hero, navigationItems }: HeroProps) {
       </div>
 
       <div className="absolute inset-0">
-        <Swiper
-          modules={[Autoplay, EffectFade]}
-          className="absolute inset-0 z-0 h-full w-full"
-          slidesPerView={1}
-          effect="fade"
-          fadeEffect={{ crossFade: true }}
-          loop={localHeroImages.length > 1}
-          allowTouchMove={false}
-          autoplay={
-            !prefersReducedMotion && localHeroImages.length > 1
-              ? { delay: HERO_SWIPER_INTERVAL_MS, disableOnInteraction: false }
-              : false
-          }
-        >
-          {localHeroImages.map((imageSrc, index) => (
-            <SwiperSlide key={`${imageSrc.src}-${index}`} className="h-full w-full">
-              <Image
-                src={imageSrc}
-                alt={hero.imageAlt}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                className="h-full w-full object-cover"
-                style={{
-                  transform: `translateY(${parallaxOffset}px) scale(1.08)`,
-                }}
-              />
-            </SwiperSlide>
-          ))}
-        </Swiper>
+        <div className="absolute inset-0 z-0 h-full w-full overflow-hidden" data-testid="hero-carousel">
+          <div key={activeHeroImage.src} className="ceis-hero-slide-motion absolute inset-0">
+            <Image
+              src={activeHeroImage}
+              alt={hero.imageAlt}
+              fill
+              priority={activeHeroIndex === 0}
+              sizes="100vw"
+              className="h-full w-full object-cover"
+              style={{
+                transform: `translateY(${parallaxOffset}px) scale(1.08)`,
+              }}
+            />
+          </div>
+        </div>
 
-        <div className="pointer-events-none absolute inset-0 z-10 bg-[#27441d]/35" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[#0f4c36]/35" />
         <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(39,68,29,0.22)_0%,rgba(39,68,29,0.52)_54%,rgba(255,255,255,0)_84%,#ffffff_100%)]" />
       </div>
 
-      <div className="relative z-20 mx-auto flex min-h-[870px] max-w-5xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6">
+      <div className="relative z-20 mx-auto flex min-h-[620px] max-w-6xl flex-col items-center justify-center px-4 pb-12 pt-24 text-center sm:px-6 lg:min-h-[640px]">
         <h1
-          className={`font-hero mt-6 text-[clamp(3.8rem,8vw,5.25rem)] font-bold leading-[0.9] text-white sm:text-[clamp(4.4rem,8vw,5.8rem)] md:text-[84px] ${
-            singleLineHeroTitle ? 'max-w-[20ch]' : 'max-w-[11ch]'
+          className={`font-hero mt-2 text-[clamp(2.75rem,5.2vw,4.6rem)] font-bold leading-[1.02] text-white ${
+            singleLineHeroTitle ? 'max-w-[24ch]' : 'max-w-[21ch]'
           }`}
         >
           {singleLineHeroTitle ? (
-            <span className="block text-[#9dc44d]">{heroTitlePieces[0] || hero.titleLine1}</span>
+            <span className="ceis-hero-title-line block text-[#9dc44d]" style={{ '--motion-delay': '240ms' } as CSSProperties}>{heroTitlePieces[0] || hero.titleLine1}</span>
           ) : (
             <>
-              <span className="block">{hero.titleLine1}</span>
-              <span className="block text-white">{hero.titleLine2}</span>
+              <span className="ceis-hero-title-line block" style={{ '--motion-delay': '180ms' } as CSSProperties}>{hero.titleLine1}</span>
+              <span className="ceis-hero-title-line block text-white" style={{ '--motion-delay': '300ms' } as CSSProperties}>{hero.titleLine2}</span>
               {hero.titleLine3 === 'da Serra' ? (
-                <span className="block"><span className="text-white">da</span> <span className="text-[#9dc44d]">Serra</span></span>
+                <span className="ceis-hero-title-line block" style={{ '--motion-delay': '420ms' } as CSSProperties}><span className="text-white">da</span> <span className="text-[#9dc44d]">Serra</span></span>
               ) : (
-                <span className="block text-[#9dc44d]">{hero.titleLine3}</span>
+                <span className="ceis-hero-title-line block text-[#9dc44d]" style={{ '--motion-delay': '420ms' } as CSSProperties}>{hero.titleLine3}</span>
               )}
-              <span className="block text-[#9dc44d]">{hero.titleLine4}</span>
+              <span className="ceis-hero-title-line block text-[#9dc44d]" style={{ '--motion-delay': '540ms' } as CSSProperties}>{hero.titleLine4}</span>
             </>
           )}
         </h1>

@@ -4,6 +4,7 @@ const isExportBuild =
 
 const nextConfig = {
   output: isExportBuild ? 'export' : undefined,
+  outputFileTracingRoot: __dirname,
   images: {
     remotePatterns: [
       {

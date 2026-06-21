@@ -34,6 +34,14 @@ export function getAssetUrl(value?: string | null): string {
     return value;
   }
 
+  if (value.startsWith('/uploads/backoffice/')) {
+    return value;
+  }
+
+  if (value.startsWith('uploads/backoffice/')) {
+    return `/${value}`;
+  }
+
   if (value.startsWith('/uploads/')) {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 
@@ -41,7 +49,7 @@ export function getAssetUrl(value?: string | null): string {
       return `${apiBaseUrl.replace(/\/+$/, '')}${value}`;
     }
 
-    return '/placeholder.svg';
+    return value;
   }
 
   return value;

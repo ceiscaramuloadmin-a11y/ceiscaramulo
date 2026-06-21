@@ -12,6 +12,7 @@ const contentAssetsSource = readFileSync(
 );
 const sectionRouteSource = readFileSync(resolve(process.cwd(), 'app/api/[section]/route.ts'), 'utf8');
 const gallerySource = readFileSync(resolve(process.cwd(), 'app/api/_lib/cms.ts'), 'utf8');
+const cacheHeadersSource = readFileSync(resolve(process.cwd(), 'lib/cache-headers.ts'), 'utf8');
 
 describe('origin transfer optimization', () => {
   it('keeps Next image optimization enabled on Vercel with long optimized image cache', () => {
@@ -24,9 +25,10 @@ describe('origin transfer optimization', () => {
   it('uses resized webp hero slides through next/image instead of full-size jpg img tags', () => {
     expect(homeHeroSource).toContain("import Image from 'next/image'");
     expect(homeHeroSource).toContain("hero-img.webp");
-    expect(homeHeroSource).toContain("hero-img2.webp");
-    expect(homeHeroSource).toContain('priority={index === 0}');
+    expect(homeHeroSource).toContain('priority={activeHeroIndex === 0}');
     expect(homeHeroSource).not.toContain("hero-img.jpg'");
+    expect(homeHeroSource).not.toContain("hero-img-7710.webp");
+    expect(homeHeroSource).not.toContain("hero-img2.webp");
     expect(homeHeroSource).not.toContain("hero-img2.jpg'");
   });
 
@@ -35,6 +37,13 @@ describe('origin transfer optimization', () => {
     expect(contentAssetsSource).toContain('PUBLIC_MEDIA_CACHE_HEADERS');
     expect(sectionRouteSource).toContain('withPublicContentAsset');
     expect(sectionRouteSource).toContain('PUBLIC_DATA_CACHE_HEADERS');
+  });
+
+  it('keeps public CMS data responses uncached so backoffice edits appear immediately', () => {
+    expect(cacheHeadersSource).toContain("'Cache-Control': 'no-store, max-age=0'");
+    expect(cacheHeadersSource).toContain("'CDN-Cache-Control': 'no-store'");
+    expect(cacheHeadersSource).toContain("'Vercel-CDN-Cache-Control': 'no-store'");
+    expect(cacheHeadersSource).toContain('PUBLIC_MEDIA_CACHE_HEADERS');
   });
 
   it('normalizes public gallery data URLs to cached asset URLs', () => {

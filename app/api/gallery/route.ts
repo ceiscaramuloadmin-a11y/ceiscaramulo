@@ -16,16 +16,22 @@ import type { GalleryMediaType } from '@/types';
 export const runtime = 'nodejs';
 
 function normalizeType(value: unknown): GalleryMediaType {
-  return value === 'video' || value === 'audio' ? value : 'photo';
+  return value === 'video' || value === 'audio' || value === 'document' ? value : 'photo';
 }
 
 function normalizeBoolean(value: unknown) {
   return value === true || value === 'true' || value === 'on' || value === '1';
 }
 
+function normalizeGalleryContext(value: unknown) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized.replace(/[^a-z0-9-]/g, '-') || 'global';
+}
+
 export async function GET(request: NextRequest) {
   try {
     const scope = request.nextUrl.searchParams.get('scope') === 'admin' ? 'admin' : 'public';
+    const context = normalizeGalleryContext(request.nextUrl.searchParams.get('context'));
 
     if (scope === 'admin') {
       const authError = await requireAdminFromRequest(request);
@@ -35,7 +41,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const items = await listGalleryMedia(scope);
+    const items = await listGalleryMedia(scope, context);
 
     if (scope === 'public') {
       return NextResponse.json(items.map(withPublicGalleryAssets), {
@@ -62,6 +68,7 @@ export async function POST(request: NextRequest) {
     const title = String(formData.get('title') || '').trim();
     const description = String(formData.get('description') || '').trim() || null;
     const type = normalizeType(formData.get('type'));
+    const galleryContext = normalizeGalleryContext(formData.get('context'));
     const published = normalizeBoolean(formData.get('published'));
     const sourceUrl = String(formData.get('sourceUrl') || '').trim();
     const thumbUrl = String(formData.get('thumbnailUrl') || '').trim();
@@ -83,14 +90,11 @@ export async function POST(request: NextRequest) {
       return jsonError('Título é obrigatório.', 400);
     }
 
-    if (!source) {
-      return jsonError('Origem do media é obrigatória.', 400);
-    }
-
     const created = await createGalleryMedia({
       title,
       description,
       type,
+      context: galleryContext,
       source,
       thumbnail,
       mimeType: sourceFile?.type || null,

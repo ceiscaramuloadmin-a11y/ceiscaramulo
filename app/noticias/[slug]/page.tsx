@@ -10,10 +10,12 @@ import { newsArticles as fallbackNewsArticles } from '@/data/content';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { publicAssetValue, withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
+import { prepareRichTextForRender } from '@/lib/richText';
 import { formatDate, getAssetUrl } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const dynamicParams = true;
 
 interface Props {
@@ -178,21 +180,13 @@ export default async function NoticiaDetalhePage({ params }: Props) {
             {article.title}
           </h1>
 
-          <div className="mt-8 overflow-hidden rounded-lg">
-            <img
-              src={getAssetUrl(article.image)}
-              alt={article.title}
-              className="h-auto w-full object-cover"
-            />
-          </div>
-
           <div className="mt-8 prose prose-lg max-w-none">
             <p className="text-lg leading-relaxed text-muted-foreground">
               {article.excerpt}
             </p>
             <div
               className="mt-6 rich-text-content"
-              dangerouslySetInnerHTML={{ __html: article.content }}
+              dangerouslySetInnerHTML={{ __html: prepareRichTextForRender(article.content, { resolveMediaUrl: getAssetUrl }) }}
             />
           </div>
 

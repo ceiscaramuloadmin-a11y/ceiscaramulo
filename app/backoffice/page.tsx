@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
@@ -27,48 +27,152 @@ import type {
   AuditLogEntry,
   ContactMessage,
   ContentSection,
+  FooterContactSettings,
   GalleryMediaItem,
   GalleryMediaType,
   LayoutIconName,
   NewsArticle,
-  Project,
   Publication,
   SiteLayoutSettings,
 } from '@/types';
 
-type SectionId = 'overview' | 'admins' | 'audit' | 'layout' | 'gallery' | 'contacts' | ContentSection;
+type ProgrammeGallerySectionId =
+  | 'gallery-oficina-do-burel'
+  | 'gallery-pon-do-jueus'
+  | 'gallery-escola-dos-nossos-avos'
+  | 'gallery-biblioteca-jrs'
+  | 'gallery-oficinas-de-formacao'
+  | 'gallery-publicacoes'
+  | 'gallery-biblioteca';
+type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
+type SectionId = 'overview' | 'profile' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
+type AppearanceTab = 'hero' | 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
+type AppearancePageKey = keyof SiteLayoutSettings['pages'];
+type DashboardStats = {
+  news: number;
+  activities: number;
+  publications: number;
+  contacts: number;
+};
+
 const ADMIN_PERMISSION_OPTIONS: Array<{ id: AdminPermission; label: string }> = [
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
-  { id: 'projects', label: 'Projetos' },
-  { id: 'publications', label: 'Biblioteca' },
-  { id: 'contacts', label: 'Contactos' },
-  { id: 'gallery', label: 'Galeria' },
+  { id: 'publications', label: 'Publicações' },
+  { id: 'contacts', label: 'Mensagens' },
+  { id: 'gallery', label: 'Media das páginas' },
   { id: 'layout', label: 'Layout' },
   { id: 'admins', label: 'Admins' },
-  { id: 'audit', label: 'Auditoria' },
+  { id: 'audit', label: 'Histórico' },
 ];
 
 const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'overview', label: 'Visão geral' },
+  { id: 'profile', label: 'Perfil' },
+  { id: 'about', label: 'Sobre Nós' },
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
-  { id: 'projects', label: 'Projetos' },
-  { id: 'publications', label: 'Biblioteca' },
-  { id: 'contacts', label: 'Contactos' },
-  { id: 'gallery', label: 'Galeria' },
-  { id: 'admins', label: 'Admins' },
-  { id: 'audit', label: 'Auditoria' },
+  { id: 'publications', label: 'Recursos' },
+  { id: 'gallery-oficina-do-burel', label: 'Oficina do Burel' },
+  { id: 'gallery-biblioteca-jrs', label: 'Biblioteca JRS' },
+  { id: 'gallery-pon-do-jueus', label: 'PON do Jueus' },
+  { id: 'gallery-escola-dos-nossos-avos', label: 'Escola dos Nossos Avós' },
+  { id: 'gallery-oficinas-de-formacao', label: 'Oficinas de formação' },
+  { id: 'gallery-publicacoes', label: 'Publicações' },
   { id: 'layout', label: 'Aparência' },
+  { id: 'admins', label: 'Admins' },
+  { id: 'contacts', label: 'Mensagens' },
+  { id: 'audit', label: 'Histórico' },
 ];
+
+const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
+  { id: 'hero', label: 'Hero' },
+  { id: 'pages', label: 'Páginas' },
+  { id: 'footer', label: 'Footer' },
+  { id: 'seo', label: 'SEO e Metadados' },
+];
+
+const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
+  { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
+  { id: 'biblioteca', label: 'Recursos', hasEmptyMessage: true },
+  { id: 'bibliotecaJrs', label: 'Biblioteca JRS' },
+  { id: 'contactos', label: 'Contactos' },
+  { id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' },
+  { id: 'galeria', label: 'Galeria' },
+  { id: 'noticias', label: 'Notícias', hasEmptyMessage: true },
+  { id: 'oficinaDoBurel', label: 'Oficina do Burel' },
+  { id: 'oficinasDeFormacao', label: 'Oficinas de formação' },
+  { id: 'ponDoJueus', label: 'PON do Jueus' },
+  { id: 'publicacoes', label: 'Publicações' },
+  { id: 'serra', label: 'Serra do Caramulo' },
+  { id: 'sobre', label: 'Sobre Nós' },
+];
+
+const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: string; context: string; description: string }> = {
+  'gallery-oficina-do-burel': {
+    label: 'Oficina do Burel',
+    context: 'oficina-do-burel',
+    description: 'PDFs, vídeos e outros media associados à página Oficina do Burel.',
+  },
+  'gallery-biblioteca-jrs': {
+    label: 'Biblioteca JRS',
+    context: 'biblioteca-jrs',
+    description: 'PDFs, vídeos e outros media associados à página Biblioteca JRS.',
+  },
+  'gallery-pon-do-jueus': {
+    label: 'PON do Jueus',
+    context: 'pon-do-jueus',
+    description: 'PDFs, vídeos e outros media associados à página PON do Jueus.',
+  },
+  'gallery-escola-dos-nossos-avos': {
+    label: 'Escola dos Nossos Avós',
+    context: 'escola-dos-nossos-avos',
+    description: 'PDFs, vídeos e outros media associados à página Escola dos Nossos Avós.',
+  },
+  'gallery-oficinas-de-formacao': {
+    label: 'Oficinas de formação',
+    context: 'oficinas-de-formacao',
+    description: 'PDFs, vídeos e outros media associados à página Oficinas de formação.',
+  },
+  'gallery-publicacoes': {
+    label: 'Publicações',
+    context: 'publicacoes',
+    description: 'PDFs, vídeos e outros media associados à página Publicações.',
+  },
+  'gallery-biblioteca': {
+    label: 'Recursos',
+    context: 'biblioteca',
+    description: 'PDFs, vídeos e outros media associados à página Recursos.',
+  },
+};
+
+function galleryTypeLabel(type: GalleryMediaType) {
+  if (type === 'photo') return 'Foto';
+  if (type === 'video') return 'Vídeo';
+  if (type === 'audio') return 'Áudio';
+  return 'Documento';
+}
+
+function galleryAcceptForType(type: GalleryMediaType) {
+  if (type === 'photo') return 'image/*';
+  if (type === 'video') return 'video/*';
+  if (type === 'audio') return 'audio/*';
+  return 'application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
+}
+
+function isProgrammeGallerySection(value: SectionId): value is ProgrammeGallerySectionId {
+  return value in PROGRAMME_GALLERY_SECTIONS;
+}
 
 export default function BackofficePage() {
   const router = useRouter();
   const exportAuthMode = isExportAdminAuthMode();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
+  const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('hero');
   const [busy, setBusy] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isLoadingDashboardStats, setIsLoadingDashboardStats] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [isLoadingGovernance, setIsLoadingGovernance] = useState(true);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
@@ -77,13 +181,13 @@ export default function BackofficePage() {
 
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryMediaItem[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [currentAdmin, setCurrentAdmin] = useState<{ email: string; role: AdminRole; permissions: AdminPermission[] } | null>(null);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -100,8 +204,7 @@ export default function BackofficePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null as File | null, removeImage: false });
-  const [projectForm, setProjectForm] = useState({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null as File | null, removeImage: false });
-  const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null as File | null, removeImage: false });
+  const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null as File | null, published: true, coverImageFile: null as File | null, removeImage: false });
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
     title: '',
@@ -113,6 +216,8 @@ export default function BackofficePage() {
     thumbnailFile: null as File | null,
     published: true,
   });
+  const [galleryFormResetKey, setGalleryFormResetKey] = useState(0);
+  const galleryIndividualFormRef = useRef<HTMLFormElement | null>(null);
   const [galleryBatchType, setGalleryBatchType] = useState<GalleryMediaType>('photo');
   const [galleryBatchItems, setGalleryBatchItems] = useState<Array<{
     id: string;
@@ -127,46 +232,78 @@ export default function BackofficePage() {
 
   const stats = useMemo(
     () => ({
-      news: news.length,
-      activities: activities.length,
-      projects: projects.length,
-      publications: publications.length,
-      contacts: contactMessages.length,
-      gallery: galleryItems.length,
+      news: isLoadingContent && dashboardStats ? dashboardStats.news : news.length,
+      activities: isLoadingContent && dashboardStats ? dashboardStats.activities : activities.length,
+      publications: isLoadingContent && dashboardStats ? dashboardStats.publications : publications.length,
+      contacts: isLoadingContacts && dashboardStats ? dashboardStats.contacts : contactMessages.length,
     }),
-    [news.length, activities.length, projects.length, publications.length, contactMessages.length, galleryItems.length]
+    [
+      activities.length,
+      contactMessages.length,
+      dashboardStats,
+      isLoadingContacts,
+      isLoadingContent,
+      news.length,
+      publications.length,
+    ]
   );
   const groupedGalleryItems = useMemo(
     () => ({
       photo: galleryItems.filter((item) => item.type === 'photo'),
       video: galleryItems.filter((item) => item.type === 'video'),
       audio: galleryItems.filter((item) => item.type === 'audio'),
+      document: galleryItems.filter((item) => item.type === 'document'),
     }),
     [galleryItems]
   );
+  const visibleGalleryIds = useMemo(() => new Set(galleryItems.map((item) => item.id)), [galleryItems]);
+  const selectedVisibleGalleryIds = useMemo(
+    () => selectedGalleryIds.filter((id) => visibleGalleryIds.has(id)),
+    [selectedGalleryIds, visibleGalleryIds]
+  );
+  const activeGalleryConfig = useMemo(() => {
+    if (activeSection === 'gallery') {
+      return {
+        label: 'Galeria multimédia',
+        context: 'global',
+        description: 'Fotos, vídeos e áudios separados por tipo com preview e seleção múltipla.',
+      };
+    }
+
+    if (isProgrammeGallerySection(activeSection)) {
+      return PROGRAMME_GALLERY_SECTIONS[activeSection];
+    }
+
+    return null;
+  }, [activeSection]);
   const availableSections = useMemo(() => {
     if (!currentAdmin) {
       return [] as SectionId[];
     }
 
-    if (exportAuthMode) {
-      return ['overview'] as SectionId[];
-    }
+    const sections: SectionId[] = ['overview', 'profile'];
 
-    const sections: SectionId[] = ['overview'];
+    if (exportAuthMode) {
+      return sections;
+    }
     const permissionSet = new Set(currentAdmin.permissions);
 
-    for (const section of ['news', 'activities', 'projects', 'publications'] as ContentSection[]) {
+    for (const section of ['news', 'activities', 'publications'] as ContentSection[]) {
       if (currentAdmin.role === 'owner' || permissionSet.has(section)) {
         sections.push(section);
       }
     }
 
     if (currentAdmin.role === 'owner' || permissionSet.has('contacts')) sections.push('contacts');
-    if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) sections.push('gallery');
+    if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) {
+      sections.push(...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]));
+    }
     if (currentAdmin.role === 'owner' || permissionSet.has('admins')) sections.push('admins');
     if (currentAdmin.role === 'owner' || permissionSet.has('audit')) sections.push('audit');
-    if (currentAdmin.role === 'owner' || permissionSet.has('layout')) sections.push('layout');
+    if (currentAdmin.role === 'owner' || permissionSet.has('layout')) {
+      sections.push('about');
+      sections.push('layout');
+    }
 
     return sections;
   }, [currentAdmin, exportAuthMode]);
@@ -229,6 +366,34 @@ export default function BackofficePage() {
     [authHeaders]
   );
 
+  const uploadRichTextMedia = useCallback(
+    async (section: ContentSection, file: File, kind: 'image' | 'audio' | 'video') => {
+      const fd = new FormData();
+      fd.append('section', section);
+      fd.append('kind', kind);
+      fd.append('file', file);
+
+      const payload = await fetchAdminEndpoint<{ url: string }>('/api/content-assets/rich-text', {
+        method: 'POST',
+        body: fd,
+      });
+
+      if (!payload.url) {
+        throw new Error('Não foi possível guardar o ficheiro.');
+      }
+
+      return payload.url;
+    },
+    [fetchAdminEndpoint]
+  );
+
+  const refreshDashboardStats = useCallback(async () => {
+    setIsLoadingDashboardStats(true);
+    const data = await fetchAdminEndpoint<DashboardStats>('/api/admin/stats').catch(() => null);
+    setDashboardStats(data);
+    setIsLoadingDashboardStats(false);
+  }, [fetchAdminEndpoint]);
+
   const refreshAll = useCallback(async () => {
     setIsLoadingContent(true);
     const safeFetchSection = async <T,>(section: ContentSection) => {
@@ -239,16 +404,14 @@ export default function BackofficePage() {
       }
     };
 
-    const [newsData, activitiesData, projectsData, publicationsData] = await Promise.all([
+    const [newsData, activitiesData, publicationsData] = await Promise.all([
       safeFetchSection<NewsArticle>('news'),
       safeFetchSection<Activity>('activities'),
-      safeFetchSection<Project>('projects'),
       safeFetchSection<Publication>('publications'),
     ]);
 
     setNews(newsData);
     setActivities(activitiesData);
-    setProjects(projectsData);
     setPublications(publicationsData);
     setIsLoadingContent(false);
   }, [fetchAdminCollection]);
@@ -281,11 +444,12 @@ export default function BackofficePage() {
 
   const refreshGallery = useCallback(async () => {
     setIsLoadingGallery(true);
-    const data = await fetchAdminEndpoint<GalleryMediaItem[]>('/api/gallery?scope=admin').catch(() => []);
+    const galleryContext = activeGalleryConfig?.context || 'global';
+    const data = await fetchAdminEndpoint<GalleryMediaItem[]>(`/api/gallery?scope=admin&context=${encodeURIComponent(galleryContext)}`).catch(() => []);
     setGalleryItems(data);
     setSelectedGalleryIds([]);
     setIsLoadingGallery(false);
-  }, [fetchAdminEndpoint]);
+  }, [activeGalleryConfig, fetchAdminEndpoint]);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -306,6 +470,7 @@ export default function BackofficePage() {
         setIsCheckingSession(false);
 
         if (exportAuthMode) {
+          setIsLoadingDashboardStats(false);
           setIsLoadingContent(false);
           setIsLoadingGovernance(false);
           setIsLoadingContacts(false);
@@ -317,7 +482,7 @@ export default function BackofficePage() {
         const me = await fetchAdminEndpoint<{ email: string; role: AdminRole; permissions: AdminPermission[] }>('/api/admin/me');
         setCurrentAdmin(me);
 
-        await Promise.allSettled([refreshAll(), refreshGovernance(), refreshLayout(), refreshGallery(), refreshContactMessages()]);
+        await refreshDashboardStats();
       } catch (error) {
         if (error instanceof Error && (error.message.includes('Sessão administrativa expirada') || error.message.includes('401'))) {
           await adminAuthClient.adapter.signOut().catch(() => undefined);
@@ -327,6 +492,7 @@ export default function BackofficePage() {
 
         toast.error(error instanceof Error ? error.message : 'Falha ao carregar o backoffice.');
         setIsCheckingSession(false);
+        setIsLoadingDashboardStats(false);
         setIsLoadingContent(false);
         setIsLoadingGovernance(false);
         setIsLoadingContacts(false);
@@ -336,7 +502,7 @@ export default function BackofficePage() {
     };
 
     void bootstrap();
-  }, [exportAuthMode, fetchAdminEndpoint, refreshAll, refreshGovernance, refreshLayout, refreshGallery, refreshContactMessages, router]);
+  }, [exportAuthMode, fetchAdminEndpoint, refreshDashboardStats, router]);
 
   async function updateContactMessage(id: string, read: boolean) {
     setBusy(true);
@@ -360,6 +526,45 @@ export default function BackofficePage() {
       setActiveSection('overview');
     }
   }, [activeSection, availableSections]);
+
+  useEffect(() => {
+    if (exportAuthMode) {
+      return;
+    }
+
+    if (['news', 'activities', 'publications'].includes(activeSection)) {
+      void refreshAll();
+      return;
+    }
+
+    if (activeSection === 'contacts') {
+      void refreshContactMessages();
+      return;
+    }
+
+    if (activeSection === 'admins' || activeSection === 'audit') {
+      void refreshGovernance();
+      return;
+    }
+
+    if (activeSection === 'layout' || activeSection === 'about') {
+      void refreshLayout();
+      return;
+    }
+
+    if (activeGalleryConfig) {
+      void refreshGallery();
+    }
+  }, [
+    activeGalleryConfig,
+    activeSection,
+    exportAuthMode,
+    refreshAll,
+    refreshContactMessages,
+    refreshGallery,
+    refreshGovernance,
+    refreshLayout,
+  ]);
 
   async function saveLayoutSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -391,12 +596,148 @@ export default function BackofficePage() {
     }
   }
 
+  function updateFooterContact(updates: Partial<Omit<FooterContactSettings, 'socialMedia'>>) {
+    setLayoutSettings((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        contactInfo: {
+          ...current.footer.contactInfo,
+          ...updates,
+        },
+      },
+    }));
+  }
+
+  function updateFooterSocialMedia(key: keyof FooterContactSettings['socialMedia'], value: string) {
+    setLayoutSettings((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        contactInfo: {
+          ...current.footer.contactInfo,
+          socialMedia: {
+            ...current.footer.contactInfo.socialMedia,
+            [key]: value,
+          },
+        },
+      },
+    }));
+  }
+
+  function updateVisualColor(key: keyof SiteLayoutSettings['visualIdentity']['colors'], value: string) {
+    setLayoutSettings((current) => ({
+      ...current,
+      visualIdentity: {
+        ...current.visualIdentity,
+        colors: {
+          ...current.visualIdentity.colors,
+          [key]: value,
+        },
+      },
+    }));
+  }
+
+  function updateLogo(key: keyof SiteLayoutSettings['visualIdentity']['logos'], value: string) {
+    setLayoutSettings((current) => ({
+      ...current,
+      visualIdentity: {
+        ...current.visualIdentity,
+        logos: {
+          ...current.visualIdentity.logos,
+          [key]: value,
+        },
+      },
+    }));
+  }
+
+  function updateSeo(updates: Partial<SiteLayoutSettings['seo']>) {
+    setLayoutSettings((current) => ({
+      ...current,
+      seo: {
+        ...current.seo,
+        ...updates,
+      },
+    }));
+  }
+
+  function updateAppearancePage<Key extends AppearancePageKey>(
+    key: Key,
+    updates: Partial<SiteLayoutSettings['pages'][Key]>
+  ) {
+    setLayoutSettings((current) => ({
+      ...current,
+      pages: {
+        ...current.pages,
+        [key]: {
+          ...current.pages[key],
+          ...updates,
+        },
+      },
+    }));
+  }
+
+  function textToEditableLines(value: string) {
+    return value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  function updateAboutPage(updates: Partial<SiteLayoutSettings['aboutPage']>) {
+    // Esta seccao guarda o corpo da pagina "Sobre Nos" dentro do mesmo objeto
+    // de layout que ja e auditado pelo backoffice. Assim evitamos criar outro
+    // endpoint ou outra tabela so para uma pagina institucional pequena.
+    setLayoutSettings((current) => ({
+      ...current,
+      aboutPage: {
+        ...current.aboutPage,
+        ...updates,
+      },
+    }));
+  }
+
+  function updateAboutParagraphs(key: 'whoWeAreParagraphs' | 'originParagraphs' | 'foundersParagraphs', value: string) {
+    updateAboutPage({ [key]: textToEditableLines(value) } as Partial<SiteLayoutSettings['aboutPage']>);
+  }
+
+  function updateAboutSocialBodies(value: string) {
+    // Formato editorial simples:
+    // - uma linha sem ":" abre um grupo, por exemplo "Direcao";
+    // - as linhas seguintes com cargos ficam como membros ate ao proximo grupo.
+    // Isto permite editar corpos sociais num textarea sem uma UI pesada.
+    const groups: SiteLayoutSettings['aboutPage']['socialBodies'] = [];
+
+    for (const line of textToEditableLines(value)) {
+      if (!line.includes(':')) {
+        groups.push({ title: line, members: [] });
+        continue;
+      }
+
+      const lastGroup = groups.at(-1);
+      if (lastGroup) {
+        lastGroup.members.push(line);
+      }
+    }
+
+    updateAboutPage({ socialBodies: groups });
+  }
+
+  function moveExploreLink(index: number, direction: -1 | 1) {
+    setLayoutSettings((current) => {
+      const links = [...current.home.explore.links];
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= links.length) return current;
+      [links[index], links[nextIndex]] = [links[nextIndex], links[index]];
+      return { ...current, home: { ...current.home, explore: { ...current.home.explore, links } } };
+    });
+  }
+
   function resetCurrentForm() {
     setEditingId(null);
     if (activeSection === 'news') setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
     if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false });
-    if (activeSection === 'projects') setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false });
-    if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false });
+    if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false });
   }
 
   async function saveSection(section: ContentSection, formData: FormData) {
@@ -451,6 +792,16 @@ export default function BackofficePage() {
       thumbnailFile: null,
       published: true,
     });
+    setGalleryFormResetKey((value) => value + 1);
+  }
+
+  function startNewGalleryItem() {
+    resetGalleryForm();
+    setSelectedGalleryIds([]);
+    clearGalleryBatchItems();
+    window.requestAnimationFrame(() => {
+      galleryIndividualFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   function clearGalleryBatchItems() {
@@ -465,8 +816,12 @@ export default function BackofficePage() {
       return;
     }
 
-    const acceptedPrefix =
-      galleryBatchType === 'photo' ? 'image/' : galleryBatchType === 'video' ? 'video/' : 'audio/';
+    const acceptsFile = (file: File) => {
+      if (galleryBatchType === 'photo') return file.type.startsWith('image/');
+      if (galleryBatchType === 'video') return file.type.startsWith('video/');
+      if (galleryBatchType === 'audio') return file.type.startsWith('audio/');
+      return Boolean(file.type === 'application/pdf' || file.name.match(/\.(pdf|docx?|xlsx?|pptx?|txt)$/i));
+    };
 
     const rejectedLargeAudio = Array.from(files).some(
       (file) => galleryBatchType === 'audio' && file.type.startsWith('audio/') && file.size > MAX_INLINE_AUDIO_UPLOAD_BYTES
@@ -478,7 +833,7 @@ export default function BackofficePage() {
     }
 
     const nextItems = Array.from(files)
-      .filter((file) => file.type.startsWith(acceptedPrefix))
+      .filter(acceptsFile)
       .map((file) => ({
         id: crypto.randomUUID(),
         file,
@@ -490,6 +845,11 @@ export default function BackofficePage() {
       }));
 
     if (nextItems.length === 0) {
+      if (galleryBatchType === 'document') {
+        toast.error('Seleciona apenas PDFs ou documentos para este carregamento em massa.');
+        return;
+      }
+
       toast.error(
         galleryBatchType === 'photo'
           ? 'Seleciona apenas ficheiros de imagem para este carregamento em massa.'
@@ -527,8 +887,10 @@ export default function BackofficePage() {
   }
 
   function startEditGallery(item: GalleryMediaItem) {
-    setActiveSection('gallery');
     setGalleryEditingId(item.id);
+    setSelectedGalleryIds([]);
+    clearGalleryBatchItems();
+    setGalleryFormResetKey((value) => value + 1);
     setGalleryForm({
       title: item.title,
       description: item.description || '',
@@ -539,6 +901,9 @@ export default function BackofficePage() {
       thumbnailFile: null,
       published: item.published,
     });
+    window.requestAnimationFrame(() => {
+      galleryIndividualFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   async function saveGalleryItem(event: FormEvent<HTMLFormElement>) {
@@ -547,6 +912,7 @@ export default function BackofficePage() {
 
     try {
       const fd = new FormData();
+      fd.append('context', activeGalleryConfig?.context || 'global');
       fd.append('title', galleryForm.title);
       fd.append('description', galleryForm.description);
       fd.append('type', galleryForm.type);
@@ -603,8 +969,9 @@ export default function BackofficePage() {
   }
 
   async function deleteSelectedGalleryItems(type?: GalleryMediaType) {
-    const ids = (type ? groupedGalleryItems[type].map((item) => item.id) : selectedGalleryIds).filter((id) =>
-      selectedGalleryIds.includes(id)
+    const visibleSelectedIds = selectedGalleryIds.filter((id) => visibleGalleryIds.has(id));
+    const ids = (type ? groupedGalleryItems[type].map((item) => item.id) : visibleSelectedIds).filter((id) =>
+      visibleSelectedIds.includes(id)
     );
 
     if (ids.length === 0) {
@@ -624,10 +991,9 @@ export default function BackofficePage() {
 
     setBusy(true);
     try {
-      for (const id of ids) {
-        await fetchAdminEndpoint<null>(`/api/gallery/${id}`, { method: 'DELETE' });
-      }
+      await Promise.all(ids.map((id) => fetchAdminEndpoint<null>(`/api/gallery/${id}`, { method: 'DELETE' })));
 
+      setSelectedGalleryIds((current) => current.filter((id) => !ids.includes(id)));
       toast.success(ids.length === 1 ? 'Item eliminado com sucesso.' : `${ids.length} itens eliminados com sucesso.`);
       await refreshGallery();
     } catch (error) {
@@ -655,18 +1021,26 @@ export default function BackofficePage() {
     setBusy(true);
 
     try {
-      for (const item of galleryBatchItems) {
+      const galleryContext = activeGalleryConfig?.context || 'global';
+      const uploadOne = (item: (typeof galleryBatchItems)[number]) => {
         const fd = new FormData();
         fd.append('title', item.title.trim());
         fd.append('description', item.description.trim());
         fd.append('type', item.type);
+        fd.append('context', galleryContext);
         fd.append('published', String(item.published));
         fd.append('sourceFile', item.file);
 
-        await fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
+        return fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
           method: 'POST',
           body: fd,
         });
+      };
+
+      const uploadConcurrency = 3;
+
+      for (let index = 0; index < galleryBatchItems.length; index += uploadConcurrency) {
+        await Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne));
       }
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
@@ -814,9 +1188,9 @@ export default function BackofficePage() {
     fd.append('excerpt', newsForm.excerpt);
     fd.append('content', newsForm.content);
     fd.append('author', newsForm.author);
-    fd.append('published', String(newsForm.published));
+    fd.append('published', 'true');
     fd.append('publishedAt', newsForm.publishedAt);
-    fd.append('removeImage', String(newsForm.removeImage));
+    fd.append('removeImage', 'false');
     if (newsForm.imageFile) fd.append('image', newsForm.imageFile);
     await saveSection('news', fd);
   }
@@ -829,25 +1203,10 @@ export default function BackofficePage() {
     fd.append('date', activityForm.date);
     fd.append('endDate', activityForm.endDate);
     fd.append('location', activityForm.location);
-    fd.append('published', String(activityForm.published));
-    fd.append('removeImage', String(activityForm.removeImage));
+    fd.append('published', 'true');
+    fd.append('removeImage', 'false');
     if (activityForm.imageFile) fd.append('image', activityForm.imageFile);
     await saveSection('activities', fd);
-  }
-
-  async function handleProjectSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fd = new FormData();
-    fd.append('title', projectForm.title);
-    fd.append('description', projectForm.description);
-    fd.append('status', projectForm.status);
-    fd.append('startDate', projectForm.startDate);
-    fd.append('endDate', projectForm.endDate);
-    fd.append('partners', projectForm.partners);
-    fd.append('published', String(projectForm.published));
-    fd.append('removeImage', String(projectForm.removeImage));
-    if (projectForm.imageFile) fd.append('image', projectForm.imageFile);
-    await saveSection('projects', fd);
   }
 
   async function handlePublicationSubmit(event: FormEvent<HTMLFormElement>) {
@@ -862,10 +1221,11 @@ export default function BackofficePage() {
     fd.append('published', String(publicationForm.published));
     fd.append('removeImage', String(publicationForm.removeImage));
     if (publicationForm.coverImageFile) fd.append('coverImage', publicationForm.coverImageFile);
+    if (publicationForm.documentFile) fd.append('document', publicationForm.documentFile);
     await saveSection('publications', fd);
   }
 
-  function startEdit(section: ContentSection, item: NewsArticle | Activity | Project | Publication) {
+  function startEdit(section: ContentSection, item: NewsArticle | Activity | Publication) {
     setActiveSection(section);
     setEditingId(item.id);
 
@@ -877,13 +1237,9 @@ export default function BackofficePage() {
       const v = item as Activity;
       setActivityForm({ title: v.title || '', description: v.description || '', date: v.date ? new Date(v.date).toISOString().slice(0, 10) : '', endDate: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : '', location: v.location || '', published: v.published, imageFile: null, removeImage: false });
     }
-    if (section === 'projects') {
-      const v = item as Project;
-      setProjectForm({ title: v.title || '', description: v.description || '', status: v.status || 'planeado', startDate: v.startDate ? new Date(v.startDate).toISOString().slice(0, 10) : '', endDate: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : '', partners: v.partners?.join(', ') || '', published: v.published, imageFile: null, removeImage: false });
-    }
     if (section === 'publications') {
       const v = item as Publication;
-      setPublicationForm({ title: v.title || '', author: v.author || '', year: String(v.year || new Date().getFullYear()), type: v.type || 'documento', description: v.description || '', downloadUrl: v.downloadUrl || '', published: v.published, coverImageFile: null, removeImage: false });
+      setPublicationForm({ title: v.title || '', author: v.author || '', year: String(v.year || new Date().getFullYear()), type: v.type || 'documento', description: v.description || '', downloadUrl: v.downloadUrl || '', documentFile: null, published: v.published, coverImageFile: null, removeImage: false });
     }
   }
 
@@ -901,7 +1257,7 @@ export default function BackofficePage() {
         aria-label="Navegação do backoffice"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className={cn('text-sm font-semibold uppercase tracking-[0.16em] text-[#27441d]', isSidebarCollapsed && 'sr-only')}>
+          <span className={cn('text-sm font-semibold uppercase tracking-[0.16em] text-[#0f4c36]', isSidebarCollapsed && 'sr-only')}>
             Backoffice
           </span>
           <button
@@ -915,7 +1271,7 @@ export default function BackofficePage() {
           </button>
         </div>
 
-        <nav className="mt-6 grid gap-2" aria-label="Secções do backoffice">
+        <nav className="mt-6 grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1" aria-label="Secções do backoffice">
           {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id)).map((item) => (
             <button
               key={item.id}
@@ -924,7 +1280,7 @@ export default function BackofficePage() {
               title={item.label}
               className={sidebarNavClass(activeSection === item.id, isSidebarCollapsed)}
             >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-stone-100 text-xs font-semibold text-[#27441d]">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-stone-100 text-xs font-semibold text-[#0f4c36]">
                 {item.label.charAt(0)}
               </span>
               <span className={cn(isSidebarCollapsed && 'sr-only')}>{item.label}</span>
@@ -942,7 +1298,7 @@ export default function BackofficePage() {
         <div className="mx-auto w-full max-w-7xl">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="font-display text-4xl text-[#27441d]">Backoffice CEISCaramulo</h1>
+              <h1 className="font-display text-4xl text-[#0f4c36]">Backoffice CEISCaramulo</h1>
               <p className="mt-2 text-sm text-stone-600">
                 {exportAuthMode
                   ? 'Modo export: sessão local para aceder ao painel estático.'
@@ -974,22 +1330,104 @@ export default function BackofficePage() {
 
       {activeSection === 'overview' ? (
         <section className="mt-8 space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card title="Notícias" value={stats.news} loading={isLoadingContent} />
-            <Card title="Atividades" value={stats.activities} loading={isLoadingContent} />
-            <Card title="Projetos" value={stats.projects} loading={isLoadingContent} />
-            <Card title="Biblioteca" value={stats.publications} loading={isLoadingContent} />
-            <Card title="Contactos" value={stats.contacts} loading={isLoadingContacts} />
-            <Card title="Galeria" value={stats.gallery} loading={isLoadingGallery} />
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#0f4c36]">Painel de visão geral</p>
+            <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-stone-900">Resumo do backoffice</h2>
+                <p className="mt-1 max-w-2xl text-sm text-stone-600">
+                  Acompanha os conteúdos principais, consulta mensagens recentes e entra rapidamente nas áreas disponíveis.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSection('profile')}
+                className="inline-flex w-fit items-center justify-center rounded-lg border border-[#0f4c36]/20 px-4 py-2 text-sm font-semibold text-[#0f4c36] transition hover:bg-[#0f4c36]/10"
+              >
+                Ver perfil
+              </button>
+            </div>
           </div>
 
-          {!exportAuthMode ? (
-            <div className="max-w-2xl rounded-xl border border-stone-200 bg-white p-5">
-              <h2 className="text-xl font-semibold text-[#27441d]">Segurança da conta</h2>
-              <p className="mt-1 text-sm text-stone-600">
-                Altere a sua palavra-passe sempre que precisar.
-              </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card title="Notícias" value={stats.news} loading={isLoadingDashboardStats} />
+            <Card title="Atividades" value={stats.activities} loading={isLoadingDashboardStats} />
+            <Card title="Recursos" value={stats.publications} loading={isLoadingDashboardStats} />
+            <Card title="Mensagens" value={stats.contacts} loading={isLoadingDashboardStats} />
+          </div>
 
+          <div className="grid gap-6">
+            <div className="rounded-xl border border-stone-200 bg-white p-5">
+              <h2 className="text-xl font-semibold text-[#0f4c36]">Ações rápidas</h2>
+              <p className="mt-1 text-sm text-stone-600">
+                Abre diretamente as áreas que podes gerir nesta sessão.
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id) && !['overview', 'profile'].includes(item.id))
+                  .slice(0, 9)
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveSection(item.id)}
+                      className="rounded-lg border border-stone-200 px-4 py-3 text-left text-sm font-semibold text-stone-700 transition hover:border-[#0f4c36]/30 hover:bg-[#0f4c36]/5 hover:text-[#0f4c36]"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {activeSection === 'profile' ? (
+        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)]">
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Perfil do utilizador</h2>
+            <p className="mt-1 text-sm text-stone-600">
+              Consulta os dados da tua conta administrativa e gere a segurança de acesso ao backoffice.
+            </p>
+
+            <dl className="mt-6 grid gap-4 text-sm">
+              <div className="rounded-lg bg-stone-50 p-4">
+                <dt className="font-semibold text-stone-500">Email</dt>
+                <dd className="mt-1 text-stone-800">{currentAdmin?.email || 'Sessão sem email associado'}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-4">
+                <dt className="font-semibold text-stone-500">Função</dt>
+                <dd className="mt-1 text-stone-800">{currentAdmin?.role === 'owner' ? 'Owner' : 'Editor'}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-4">
+                <dt className="font-semibold text-stone-500">Permissões</dt>
+                <dd className="mt-2 flex flex-wrap gap-2">
+                  {currentAdmin?.role === 'owner' ? (
+                    <span className="rounded-full bg-[#0f4c36]/10 px-3 py-1 text-xs font-medium text-[#0f4c36]">Acesso total</span>
+                  ) : currentAdmin?.permissions.length ? (
+                    currentAdmin.permissions.map((permission) => (
+                      <span key={permission} className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
+                        {ADMIN_PERMISSION_OPTIONS.find((option) => option.id === permission)?.label || permission}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-stone-500">Sem permissões atribuídas.</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Segurança da conta</h2>
+            <p className="mt-1 text-sm text-stone-600">
+              Altera a tua palavra-passe sempre que for necessário reforçar a segurança.
+            </p>
+
+            {exportAuthMode ? (
+              <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                A alteração de palavra-passe exige o modo servidor do backoffice.
+              </p>
+            ) : (
               <form className="mt-5 grid gap-3" onSubmit={(event) => void updateOwnPassword(event)}>
                 <Input
                   label="Nova palavra-passe"
@@ -1006,14 +1444,14 @@ export default function BackofficePage() {
                   required
                 />
                 <button
-                  className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+                  className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white"
                   disabled={busy}
                 >
                   {backofficePrimaryActionLabel(busy, 'Atualizar palavra-passe')}
                 </button>
               </form>
-            </div>
-          ) : null}
+            )}
+          </div>
         </section>
       ) : null}
 
@@ -1030,13 +1468,11 @@ export default function BackofficePage() {
             <form className="space-y-3" onSubmit={(event) => void handleNewsSubmit(event)}>
               <Input label="Título" value={newsForm.title} onChange={(v) => setNewsForm((c) => ({ ...c, title: v }))} required />
               <Input label="Resumo" value={newsForm.excerpt} onChange={(v) => setNewsForm((c) => ({ ...c, excerpt: v }))} required />
-              <RichTextEditor label="Conteúdo" value={newsForm.content} onChange={(v) => setNewsForm((c) => ({ ...c, content: v }))} />
+              <RichTextEditor label="Conteúdo" value={newsForm.content} onChange={(v) => setNewsForm((c) => ({ ...c, content: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)} fullscreenEnabled />
               <Input label="Autor" value={newsForm.author} onChange={(v) => setNewsForm((c) => ({ ...c, author: v }))} required />
               <Input label="Data de publicação" type="date" value={newsForm.publishedAt} onChange={(v) => setNewsForm((c) => ({ ...c, publishedAt: v }))} />
               <FileInput label="Imagem" onFile={(file) => setNewsForm((c) => ({ ...c, imageFile: file }))} />
-              <Check label="Remover imagem atual" checked={newsForm.removeImage} onChange={(checked) => setNewsForm((c) => ({ ...c, removeImage: checked }))} />
-              <Check label="Publicado" checked={newsForm.published} onChange={(checked) => setNewsForm((c) => ({ ...c, published: checked }))} />
-              <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+              <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                 {backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar notícia')}
               </button>
             </form>
@@ -1053,33 +1489,20 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={activityForm.published} onChange={(checked) => setActivityForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
-        />
-      ) : null}
-
-      {activeSection === 'projects' ? (
-        <SectionLayout
-          title="Projetos"
-          list={projects}
-          loading={isLoadingContent}
-          busy={busy}
-          onNew={() => { setEditingId(null); setProjectForm({ title: '', description: '', status: 'planeado', startDate: '', endDate: '', partners: '', published: true, imageFile: null, removeImage: false }); }}
-          onEdit={(item) => startEdit('projects', item as Project)}
-          onDelete={(id) => void deleteSectionItem('projects', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleProjectSubmit(event)}><Input label="Título" value={projectForm.title} onChange={(v) => setProjectForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={projectForm.description} onChange={(v) => setProjectForm((c) => ({ ...c, description: v }))} /><Input label="Estado" value={projectForm.status} onChange={(v) => setProjectForm((c) => ({ ...c, status: v }))} required /><Input label="Data início" type="date" value={projectForm.startDate} onChange={(v) => setProjectForm((c) => ({ ...c, startDate: v }))} required /><Input label="Data fim" type="date" value={projectForm.endDate} onChange={(v) => setProjectForm((c) => ({ ...c, endDate: v }))} /><Input label="Parceiros (separados por vírgula)" value={projectForm.partners} onChange={(v) => setProjectForm((c) => ({ ...c, partners: v }))} /><FileInput label="Imagem" onFile={(file) => setProjectForm((c) => ({ ...c, imageFile: file }))} /><Check label="Remover imagem atual" checked={projectForm.removeImage} onChange={(checked) => setProjectForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={projectForm.published} onChange={(checked) => setProjectForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar projeto')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
         />
       ) : null}
 
       {activeSection === 'publications' ? (
         <SectionLayout
-          title="Biblioteca"
+          title="Recursos"
           list={publications}
           loading={isLoadingContent}
           busy={busy}
-          onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', published: true, coverImageFile: null, removeImage: false }); }}
+          onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar publicação')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 
@@ -1088,7 +1511,7 @@ export default function BackofficePage() {
           <div className="rounded-xl border border-stone-200 bg-white p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-[#27441d]">Mensagens de contacto</h2>
+                <h2 className="text-xl font-semibold text-[#0f4c36]">Mensagens de contacto</h2>
                 <p className="mt-1 text-sm text-stone-600">
                   Mensagens enviadas pelo formulário público de contactos.
                 </p>
@@ -1109,7 +1532,7 @@ export default function BackofficePage() {
                 <article key={message.id} className="rounded-2xl border border-stone-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-lg font-semibold text-[#27441d]">{message.subject}</p>
+                      <p className="text-lg font-semibold text-[#0f4c36]">{message.subject}</p>
                       <p className="mt-1 text-sm text-stone-600">
                         {message.name} · {message.email}
                       </p>
@@ -1142,7 +1565,7 @@ export default function BackofficePage() {
                     <button
                       type="button"
                       onClick={() => void updateContactMessage(message.id, !message.read)}
-                      className="rounded-lg bg-[#27441d] px-3 py-2 text-sm text-white"
+                      className="rounded-lg bg-[#0f4c36] px-3 py-2 text-sm text-white"
                       disabled={busy}
                     >
                       {message.read ? 'Marcar como não lida' : 'Marcar como lida'}
@@ -1161,21 +1584,21 @@ export default function BackofficePage() {
         </section>
       ) : null}
 
-      {activeSection === 'gallery' ? (
+      {activeGalleryConfig ? (
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-xl border border-stone-200 bg-white p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-[#27441d]">Galeria multimédia</h2>
-                <p className="mt-1 text-sm text-stone-600">Fotos, vídeos e áudios separados por tipo com preview e seleção múltipla.</p>
+                <h2 className="text-xl font-semibold text-[#0f4c36]">{activeGalleryConfig.label}</h2>
+                <p className="mt-1 text-sm text-stone-600">{activeGalleryConfig.description}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={resetGalleryForm} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
+                <button type="button" onClick={startNewGalleryItem} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">Novo</button>
                 <button
                   type="button"
                   onClick={() => void deleteSelectedGalleryItems()}
                   className="rounded-lg border border-rose-300 px-3 py-2 text-sm text-rose-700"
-                  disabled={busy || selectedGalleryIds.length === 0}
+                  disabled={busy || selectedVisibleGalleryIds.length === 0}
                 >
                   Eliminar selecionados
                 </button>
@@ -1186,6 +1609,7 @@ export default function BackofficePage() {
               {isLoadingGallery ? (
                 <>
                   <GalleryGroupSkeleton title="Fotos" />
+                  <GalleryGroupSkeleton title="Documentos" />
                   <GalleryGroupSkeleton title="Vídeos" />
                   <GalleryGroupSkeleton title="Áudios" />
                 </>
@@ -1202,6 +1626,18 @@ export default function BackofficePage() {
                 onEdit={startEditGallery}
                 onDelete={(id) => void deleteGalleryItem(id)}
                 onDeleteSelected={() => void deleteSelectedGalleryItems('photo')}
+              />
+              <GalleryGroup
+                title="Documentos"
+                type="document"
+                items={groupedGalleryItems.document}
+                selectedIds={selectedGalleryIds}
+                busy={busy}
+                onToggleTypeSelection={toggleGalleryTypeSelection}
+                onToggleSelection={toggleGallerySelection}
+                onEdit={startEditGallery}
+                onDelete={(id) => void deleteGalleryItem(id)}
+                onDeleteSelected={() => void deleteSelectedGalleryItems('document')}
               />
               <GalleryGroup
                 title="Vídeos"
@@ -1233,10 +1669,10 @@ export default function BackofficePage() {
           </div>
           <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
             <div className={busy ? 'pointer-events-none opacity-70' : ''}>
-              <div className="space-y-6">
-              <form className="space-y-4 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryBatch(event)}>
+              <div className="flex flex-col gap-6">
+              <form className={`${galleryEditingId ? 'order-2' : 'order-1'} space-y-4 rounded-xl border border-stone-200 p-4`} onSubmit={(event) => void saveGalleryBatch(event)}>
                 <div>
-                  <h3 className="text-base font-semibold text-[#27441d]">Carregamento em massa</h3>
+                  <h3 className="text-base font-semibold text-[#0f4c36]">Carregamento em massa</h3>
                   <p className="mt-1 text-sm text-stone-600">
                     Escolhe o tipo no dropdown, seleciona vários ficheiros e ajusta os dados de cada um antes de gravar.
                   </p>
@@ -1252,6 +1688,7 @@ export default function BackofficePage() {
                     <option value="photo">Fotos</option>
                     <option value="video">Vídeos</option>
                     <option value="audio">Áudios</option>
+                    <option value="document">Documentos/PDFs</option>
                   </select>
                 </label>
 
@@ -1259,7 +1696,7 @@ export default function BackofficePage() {
                   Ficheiros
                   <input
                     type="file"
-                    accept={galleryBatchType === 'photo' ? 'image/*' : galleryBatchType === 'video' ? 'video/*' : 'audio/*'}
+                    accept={galleryAcceptForType(galleryBatchType)}
                     multiple
                     onChange={(event) => {
                       handleGalleryBatchFiles(event.target.files);
@@ -1294,9 +1731,14 @@ export default function BackofficePage() {
                               Áudio
                             </div>
                           ) : null}
+                          {item.type === 'document' ? (
+                            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-stone-100 px-2 text-center text-xs font-medium text-stone-600">
+                              Documento
+                            </div>
+                          ) : null}
                           <div className="min-w-0 flex-1 space-y-3">
                             <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
-                              {item.type === 'photo' ? 'Foto' : item.type === 'video' ? 'Vídeo' : 'Áudio'} {index + 1}
+                              {galleryTypeLabel(item.type)} {index + 1}
                             </p>
                             <Input
                               label="Título"
@@ -1336,7 +1778,7 @@ export default function BackofficePage() {
 
                 <div className="flex gap-3">
                   <button
-                    className="flex-1 rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+                    className="flex-1 rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white"
                     disabled={busy || galleryBatchItems.length === 0}
                   >
                     {backofficePrimaryActionLabel(busy, 'Guardar lote')}
@@ -1352,11 +1794,15 @@ export default function BackofficePage() {
                 </div>
               </form>
 
-              <form className="space-y-3 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void saveGalleryItem(event)}>
+              <form ref={galleryIndividualFormRef} className={`${galleryEditingId ? 'order-1 ring-2 ring-[#0f4c36]/20' : 'order-2'} space-y-3 rounded-xl border border-stone-200 p-4`} onSubmit={(event) => void saveGalleryItem(event)}>
                 <div>
-                  <h3 className="text-base font-semibold text-[#27441d]">Media individual</h3>
+                  <h3 className="text-base font-semibold text-[#0f4c36]">
+                    {galleryEditingId ? 'Editar media individual' : 'Media individual'}
+                  </h3>
                   <p className="mt-1 text-sm text-stone-600">
-                    Continua disponível para criar ou editar um item específico da galeria.
+                    {galleryEditingId
+                      ? `A editar "${galleryForm.title || 'media selecionado'}". Guarda as alterações ou limpa o formulário para criar outro item.`
+                      : 'Continua disponível para criar ou editar um item específico da galeria.'}
                   </p>
                 </div>
 
@@ -1373,23 +1819,37 @@ export default function BackofficePage() {
                     <option value="photo">Foto</option>
                     <option value="video">Vídeo</option>
                     <option value="audio">Áudio</option>
+                    <option value="document">Documento/PDF</option>
                   </select>
                 </label>
 
                 <Input label="Fonte URL (opcional)" value={galleryForm.sourceUrl} onChange={(v) => setGalleryForm((c) => ({ ...c, sourceUrl: v }))} />
                 <FileInput
+                  key={`source-${galleryFormResetKey}`}
                   label="Fonte ficheiro"
-                  accept={galleryForm.type === 'photo' ? 'image/*' : galleryForm.type === 'video' ? 'video/*' : 'audio/*'}
+                  accept={galleryAcceptForType(galleryForm.type)}
                   onFile={(file) => setGalleryForm((c) => ({ ...c, sourceFile: file }))}
                 />
 
                 <Input label="Thumbnail URL (opcional)" value={galleryForm.thumbnailUrl} onChange={(v) => setGalleryForm((c) => ({ ...c, thumbnailUrl: v }))} />
-                <FileInput label="Thumbnail ficheiro (opcional)" accept="image/*" onFile={(file) => setGalleryForm((c) => ({ ...c, thumbnailFile: file }))} />
+                <FileInput key={`thumbnail-${galleryFormResetKey}`} label="Thumbnail ficheiro (opcional)" accept="image/*" onFile={(file) => setGalleryForm((c) => ({ ...c, thumbnailFile: file }))} />
                 <Check label="Publicado" checked={galleryForm.published} onChange={(checked) => setGalleryForm((c) => ({ ...c, published: checked }))} />
 
-                <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-                  {backofficePrimaryActionLabel(busy, galleryEditingId ? 'Guardar alterações' : 'Criar media')}
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button className="flex-1 rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
+                    {backofficePrimaryActionLabel(busy, galleryEditingId ? 'Guardar alterações' : 'Criar media')}
+                  </button>
+                  {galleryEditingId ? (
+                    <button
+                      type="button"
+                      onClick={resetGalleryForm}
+                      className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
+                      disabled={busy}
+                    >
+                      Cancelar edição
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </div>
             </div>
@@ -1400,7 +1860,7 @@ export default function BackofficePage() {
       {activeSection === 'admins' ? (
         <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_1fr]">
           <div className="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 className="text-xl font-semibold text-[#27441d]">Gestão de utilizadores admin</h2>
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Gestão de utilizadores admin</h2>
             <p className="mt-1 text-sm text-stone-600">Controla quem pode aceder ao backoffice e com que papel.</p>
 
             {currentAdmin?.role === 'owner' ? (
@@ -1424,14 +1884,14 @@ export default function BackofficePage() {
                       <button
                         type="button"
                         onClick={() => setNewAdminPasswordMode('generated')}
-                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'generated' ? 'bg-[#27441d] text-white' : 'text-stone-700'}`}
+                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'generated' ? 'bg-[#0f4c36] text-white' : 'text-stone-700'}`}
                       >
                         Gerar automaticamente
                       </button>
                       <button
                         type="button"
                         onClick={() => setNewAdminPasswordMode('manual')}
-                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'manual' ? 'bg-[#27441d] text-white' : 'text-stone-700'}`}
+                        className={`flex-1 rounded-md px-3 py-2 text-sm ${newAdminPasswordMode === 'manual' ? 'bg-[#0f4c36] text-white' : 'text-stone-700'}`}
                       >
                         Definir manualmente
                       </button>
@@ -1450,7 +1910,7 @@ export default function BackofficePage() {
                       O sistema vai gerar uma palavra-passe segura aleatória e mostrá-la após a criação da conta.
                     </p>
                   )}
-                  <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
+                  <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
                     {backofficePrimaryActionLabel(busy, 'Adicionar admin')}
                   </button>
                 </form>
@@ -1479,13 +1939,13 @@ export default function BackofficePage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white p-5">
-            <h2 className="text-xl font-semibold text-[#27441d]">Admins existentes</h2>
+            <h2 className="text-xl font-semibold text-[#0f4c36]">Admins existentes</h2>
 
             <div className="mt-4 space-y-3">
               {isLoadingGovernance ? <AdminListSkeleton /> : null}
               {admins.map((admin) => (
                 <article key={admin.id} className="rounded-lg border border-stone-200 p-3">
-                  <p className="font-medium text-[#27441d]">{admin.email}</p>
+                  <p className="font-medium text-[#0f4c36]">{admin.email}</p>
                   <p className="mt-1 text-xs text-stone-500">
                     Papel: {admin.role} · Estado: {admin.active ? 'ativo' : 'inativo'}
                   </p>
@@ -1494,13 +1954,6 @@ export default function BackofficePage() {
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="rounded border px-2 py-1 text-xs"
-                      onClick={() => void updateAdminUser(admin.email, { role: admin.role === 'owner' ? 'editor' : 'owner' })}
-                    >
-                      Alternar papel
-                    </button>
                     <button
                       type="button"
                       className="rounded border px-2 py-1 text-xs"
@@ -1552,7 +2005,7 @@ export default function BackofficePage() {
           {selectedAdmin ? (
             <div className="space-y-4">
               <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
-                <p className="font-medium text-[#27441d]">{selectedAdmin.email}</p>
+                <p className="font-medium text-[#0f4c36]">{selectedAdmin.email}</p>
                 <p className="mt-1">Papel atual: {selectedAdmin.role}</p>
               </div>
 
@@ -1607,7 +2060,7 @@ export default function BackofficePage() {
             <button
               type="button"
               onClick={() => void saveSelectedAdminPermissions()}
-              className="rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white"
+              className="rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white"
               disabled={busy || !selectedAdmin || selectedAdmin.role === 'owner'}
             >
               {backofficePrimaryActionLabel(busy, 'Guardar permissões')}
@@ -1618,14 +2071,16 @@ export default function BackofficePage() {
 
       {activeSection === 'audit' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Registo de auditoria</h2>
-          <p className="mt-1 text-sm text-stone-600">Histórico de alterações administrativas com ator, ação e timestamp.</p>
+          <h2 className="text-xl font-semibold text-[#0f4c36]">Histórico de alterações</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            Registo das alterações feitas no backoffice, com autor, ação e data. Os eventos com mais de 15 dias são apagados automaticamente para não encher a base de dados.
+          </p>
 
           <div className="mt-4 space-y-3">
             {isLoadingGovernance ? <AuditListSkeleton /> : null}
             {auditLogs.map((entry) => (
               <article key={entry.id} className="rounded-lg border border-stone-200 p-3">
-                <p className="text-sm font-medium text-[#27441d]">{entry.summary}</p>
+                <p className="text-sm font-medium text-[#0f4c36]">{entry.summary}</p>
                 <p className="mt-1 text-xs text-stone-500">
                   {new Date(entry.createdAt).toLocaleString('pt-PT')} · {entry.actorEmail} ({entry.actorRole})
                 </p>
@@ -1636,14 +2091,67 @@ export default function BackofficePage() {
               </article>
             ))}
 
-            {!isLoadingGovernance && auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos de auditoria.</p> : null}
+            {!isLoadingGovernance && auditLogs.length === 0 ? <p className="text-sm text-stone-500">Sem eventos no histórico.</p> : null}
           </div>
+        </section>
+      ) : null}
+
+      {activeSection === 'about' ? (
+        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
+          <h2 className="text-xl font-semibold text-[#0f4c36]">Editar página Sobre Nós</h2>
+          <p className="mt-1 text-sm text-stone-600">Atualiza o conteúdo institucional publicado em /sobre-nos.</p>
+
+          {isLoadingLayout ? (
+            <div className="mt-5">
+              <LayoutFormSkeleton />
+            </div>
+          ) : (
+            <form className="mt-5 grid gap-5" onSubmit={(event) => void saveLayoutSettings(event)}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input label="Hero · Título" value={layoutSettings.pages.sobre.title} onChange={(value) => updateAppearancePage('sobre', { title: value })} />
+                <TextArea label="Hero · Subtítulo" value={layoutSettings.pages.sobre.description} onChange={(value) => updateAppearancePage('sobre', { description: value })} />
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <Input label="Secção · Quem Somos" value={layoutSettings.aboutPage.whoWeAreTitle} onChange={(value) => updateAboutPage({ whoWeAreTitle: value })} />
+                  <TextArea label="Parágrafos · Quem Somos" value={layoutSettings.aboutPage.whoWeAreParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('whoWeAreParagraphs', value)} />
+                </div>
+                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <Input label="Secção · Como Nasceu" value={layoutSettings.aboutPage.originTitle} onChange={(value) => updateAboutPage({ originTitle: value })} />
+                  <TextArea label="Parágrafos · Como Nasceu" value={layoutSettings.aboutPage.originParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('originParagraphs', value)} />
+                </div>
+                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <Input label="Secção · Fundadores" value={layoutSettings.aboutPage.foundersTitle} onChange={(value) => updateAboutPage({ foundersTitle: value })} />
+                  <TextArea label="Parágrafos · Fundadores" value={layoutSettings.aboutPage.foundersParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('foundersParagraphs', value)} />
+                </div>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                <Input label="Secção · Corpos Sociais" value={layoutSettings.aboutPage.socialBodiesTitle} onChange={(value) => updateAboutPage({ socialBodiesTitle: value })} />
+                <TextArea
+                  label="Corpos sociais · Uma linha para o grupo, depois membros com cargo: nome"
+                  value={layoutSettings.aboutPage.socialBodies.map((group) => [group.title, ...group.members].join('\n')).join('\n\n')}
+                  onChange={updateAboutSocialBodies}
+                />
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-stone-200 p-3 md:grid-cols-2">
+                <Input label="CTA contacto · Título" value={layoutSettings.aboutPage.contactTitle} onChange={(value) => updateAboutPage({ contactTitle: value })} />
+                <TextArea label="CTA contacto · Descrição" value={layoutSettings.aboutPage.contactDescription} onChange={(value) => updateAboutPage({ contactDescription: value })} />
+              </div>
+
+              <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
+                {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
+              </button>
+            </form>
+          )}
         </section>
       ) : null}
 
       {activeSection === 'layout' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-          <h2 className="text-xl font-semibold text-[#27441d]">Layout do site</h2>
+          <h2 className="text-xl font-semibold text-[#0f4c36]">Aparência</h2>
           <p className="mt-1 text-sm text-stone-600">Edita hero, footer, textos de páginas e ícones visuais.</p>
 
           {isLoadingLayout ? (
@@ -1652,6 +2160,26 @@ export default function BackofficePage() {
             </div>
           ) : (
           <form className="mt-5 grid gap-6" onSubmit={(event) => void saveLayoutSettings(event)}>
+            <div className="sticky top-4 z-10 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="Separadores da aparência">
+                {APPEARANCE_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={appearanceTab === tab.id}
+                    onClick={() => setAppearanceTab(tab.id)}
+                    className={appearanceTab === tab.id ? 'rounded-lg bg-[#0f4c36] px-3 py-2 text-sm text-white' : 'rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700'}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {appearanceTab === 'hero' ? (
+            <>
+            <AppearanceSectionTitle title="Hero da Página Inicial" description="Gere o título, botões e imagem do primeiro ecrã." />
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="Hero · Eyebrow" value={layoutSettings.home.hero.eyebrow} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, eyebrow: v } } }))} />
               <Input label="Hero · Linha 1" value={layoutSettings.home.hero.titleLine1} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine1: v } } }))} />
@@ -1666,24 +2194,152 @@ export default function BackofficePage() {
               <Input label="CTA secundário · Link" value={layoutSettings.home.hero.secondaryCtaHref} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, secondaryCtaHref: v } } }))} />
             </div>
 
-            <TextArea label="Hero · Descrição" value={layoutSettings.home.hero.description} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, description: v } } }))} />
+            </>
+            ) : null}
 
-            <div className="grid gap-3 md:grid-cols-2">
-              <Input label="Página Sobre · Título" value={layoutSettings.pages.sobre.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, sobre: { ...c.pages.sobre, title: v } } }))} />
-              <Input label="Página Serra · Título" value={layoutSettings.pages.serra.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, serra: { ...c.pages.serra, title: v } } }))} />
-              <Input label="Página Atividades · Título" value={layoutSettings.pages.atividades.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, atividades: { ...c.pages.atividades, title: v } } }))} />
-              <Input label="Página Notícias · Título" value={layoutSettings.pages.noticias.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, noticias: { ...c.pages.noticias, title: v } } }))} />
-              <Input label="Página Projetos · Título" value={layoutSettings.pages.projetos.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, projetos: { ...c.pages.projetos, title: v } } }))} />
-              <Input label="Página Biblioteca · Título" value={layoutSettings.pages.biblioteca.title} onChange={(v) => setLayoutSettings((c) => ({ ...c, pages: { ...c.pages, biblioteca: { ...c.pages.biblioteca, title: v } } }))} />
+            {appearanceTab === 'pages' ? (
+            <>
+            <AppearanceSectionTitle title="Conteúdo das Páginas" description="Edita títulos, descrições e mensagens públicas das páginas principais." />
+            <div className="grid max-h-[70vh] gap-3 overflow-y-auto pr-2 md:grid-cols-2">
+              {APPEARANCE_PAGE_FIELDS.map((page) => {
+                const pageSettings = layoutSettings.pages[page.id];
+
+                return (
+                  <div key={page.id} className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                    <Input
+                      label={`Página ${page.label} · Título`}
+                      value={pageSettings.title}
+                      onChange={(value) => updateAppearancePage(page.id, { title: value })}
+                    />
+                    <TextArea
+                      label={`Página ${page.label} · Subtítulo`}
+                      value={pageSettings.description}
+                      onChange={(value) => updateAppearancePage(page.id, { description: value })}
+                    />
+                    {page.hasEmptyMessage ? (
+                      <TextArea
+                        label={`Página ${page.label} · Mensagem sem conteúdos`}
+                        value={pageSettings.emptyMessage || ''}
+                        onChange={(value) =>
+                          updateAppearancePage(page.id, { emptyMessage: value } as Partial<(typeof pageSettings)>)
+                        }
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'footer' ? (
+            <>
+            <AppearanceSectionTitle title="Footer" description="Edita apenas os campos que aparecem no footer público: contactos, redes sociais, navegação, sócio e rodapé legal." />
+
+            <div className="rounded-lg border border-stone-200 p-3">
+              <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Contactos</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <Input label="Footer · Morada" value={layoutSettings.footer.contactInfo.address} onChange={(v) => updateFooterContact({ address: v })} />
+                <Input label="Footer · Código postal" value={layoutSettings.footer.contactInfo.postalCode} onChange={(v) => updateFooterContact({ postalCode: v })} />
+                <Input label="Footer · Localidade" value={layoutSettings.footer.contactInfo.city} onChange={(v) => updateFooterContact({ city: v })} />
+                <Input label="Footer · Telefone" value={layoutSettings.footer.contactInfo.phone} onChange={(v) => updateFooterContact({ phone: v })} />
+                <Input label="Footer · Email" type="email" value={layoutSettings.footer.contactInfo.email} onChange={(v) => updateFooterContact({ email: v })} />
+              </div>
             </div>
 
-            <TextArea label="Footer · Descrição da marca" value={layoutSettings.footer.brandDescription} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, brandDescription: v } }))} />
-            <Input label="Footer · Copyright" value={layoutSettings.footer.copyrightLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, copyrightLine: v } }))} />
-            <Input label="Footer · Linha legal" value={layoutSettings.footer.legalLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, legalLine: v } }))} />
+            <div className="rounded-lg border border-stone-200 p-3">
+              <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Redes sociais</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <Input label="Título da secção" value={layoutSettings.footer.socialTitle} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, socialTitle: v } }))} />
+                <Input label="Facebook" value={layoutSettings.footer.contactInfo.socialMedia.facebook || ''} onChange={(v) => updateFooterSocialMedia('facebook', v)} />
+                <Input label="Instagram" value={layoutSettings.footer.contactInfo.socialMedia.instagram || ''} onChange={(v) => updateFooterSocialMedia('instagram', v)} />
+                <Input label="LinkedIn" value={layoutSettings.footer.contactInfo.socialMedia.linkedin || ''} onChange={(v) => updateFooterSocialMedia('linkedin', v)} />
+                <Input label="YouTube" value={layoutSettings.footer.contactInfo.socialMedia.youtube || ''} onChange={(v) => updateFooterSocialMedia('youtube', v)} />
+              </div>
+            </div>
 
+            <div className="rounded-lg border border-stone-200 p-3">
+              <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Navegação visível</h3>
+              <p className="mt-1 text-xs leading-5 text-stone-500">
+                A coluna Conhecer é fixa no frontend e mostra Atividades e Notícias. A coluna de iniciativas pode ser ajustada abaixo.
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm text-stone-600">
+                  <p className="font-semibold text-[#0f4c36]">Conhecer</p>
+                  <ul className="mt-3 grid gap-2">
+                    <li>Atividades · /atividades</li>
+                    <li>Notícias · /noticias</li>
+                  </ul>
+                </div>
+                {layoutSettings.footer.columns
+                  .map((column, columnIndex) => ({ column, columnIndex }))
+                  .filter(
+                    ({ column, columnIndex }) =>
+                      columnIndex > 0 &&
+                      !column.title.toLowerCase().includes('restrita') &&
+                      column.links.some((link) => !link.href.startsWith('/backoffice'))
+                  )
+                  .map(({ column, columnIndex }) => (
+                    <div key={`${column.title}-${columnIndex}`} className="rounded-lg border border-stone-100 p-3">
+                      <Input label="Título da coluna" value={column.title} onChange={(value) => setLayoutSettings((current) => {
+                        const columns = [...current.footer.columns];
+                        columns[columnIndex] = { ...columns[columnIndex], title: value };
+                        return { ...current, footer: { ...current.footer, columns } };
+                      })} />
+                      {column.links.map((link, linkIndex) => (
+                        <div key={`${link.href}-${linkIndex}`} className="mt-3 grid gap-2 rounded border border-stone-100 p-2">
+                          <Input label="Texto do link" value={link.label} onChange={(value) => setLayoutSettings((current) => {
+                            const columns = [...current.footer.columns];
+                            const links = [...columns[columnIndex].links];
+                            links[linkIndex] = { ...links[linkIndex], label: value };
+                            columns[columnIndex] = { ...columns[columnIndex], links };
+                            return { ...current, footer: { ...current.footer, columns } };
+                          })} />
+                          <Input label="URL do link" value={link.href} onChange={(value) => setLayoutSettings((current) => {
+                            const columns = [...current.footer.columns];
+                            const links = [...columns[columnIndex].links];
+                            links[linkIndex] = { ...links[linkIndex], href: value };
+                            columns[columnIndex] = { ...columns[columnIndex], links };
+                            return { ...current, footer: { ...current.footer, columns } };
+                          })} />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-stone-200 p-3">
+                <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Tornar-se sócio</h3>
+                <div className="mt-3 grid gap-3">
+                  <Input label="Título" value={layoutSettings.footer.membership.title} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, title: value } } }))} />
+                  <TextArea label="Descrição" value={layoutSettings.footer.membership.description} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, description: value } } }))} />
+                  <Input label="Texto do botão" value={layoutSettings.footer.membership.ctaLabel} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, ctaLabel: value } } }))} />
+                  <Input label="Link do botão" value={layoutSettings.footer.membership.ctaHref} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, ctaHref: value } } }))} />
+                </div>
+              </div>
+              <div className="rounded-lg border border-stone-200 p-3">
+                <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Rodapé legal</h3>
+                <div className="mt-3 grid gap-3">
+                  <Input label="Copyright" value={layoutSettings.footer.copyrightLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, copyrightLine: v } }))} />
+                  <Input label="Linha legal" value={layoutSettings.footer.legalLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, legalLine: v } }))} />
+                </div>
+              </div>
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'icons' ? (
+            <>
+            <AppearanceSectionTitle title="Ícones e Elementos Visuais" description="Seleciona ícones através de preview visual e reorganiza cartões quando aplicável." />
             <div className="grid gap-4 md:grid-cols-2">
               {layoutSettings.home.explore.links.slice(0, 6).map((link, index) => (
                 <div key={`${link.href}-${index}`} className="rounded-lg border border-stone-200 p-3">
+                  <div className="mb-3 flex gap-2">
+                    <button type="button" onClick={() => moveExploreLink(index, -1)} className="rounded border px-2 py-1 text-xs" disabled={index === 0}>Subir</button>
+                    <button type="button" onClick={() => moveExploreLink(index, 1)} className="rounded border px-2 py-1 text-xs" disabled={index === layoutSettings.home.explore.links.length - 1}>Descer</button>
+                  </div>
                   <Input label={`Explore ${index + 1} · Título`} value={link.title} onChange={(v) => setLayoutSettings((c) => {
                     const links = [...c.home.explore.links];
                     links[index] = { ...links[index], title: v };
@@ -1719,9 +2375,43 @@ export default function BackofficePage() {
                 </div>
               ))}
             </div>
+            </>
+            ) : null}
 
-            <button className="w-full rounded-lg bg-[#27441d] px-4 py-2 text-sm text-white" disabled={busy}>
-              {backofficePrimaryActionLabel(busy, 'Guardar layout')}
+            {appearanceTab === 'colors' ? (
+            <>
+            <AppearanceSectionTitle title="Cores e Identidade Visual" description="Define as cores base que alimentam as variáveis visuais globais do website." />
+            <div className="grid gap-3 md:grid-cols-2">
+              {Object.entries(layoutSettings.visualIdentity.colors).map(([key, value]) => (
+                <Input key={key} type="color" label={`Cor · ${key}`} value={value} onChange={(next) => updateVisualColor(key as keyof SiteLayoutSettings['visualIdentity']['colors'], next)} />
+              ))}
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'logos' ? (
+            <>
+            <AppearanceSectionTitle title="Logótipos" description="Regista os logótipos institucionais usados pelo website e materiais públicos." />
+            <div className="grid gap-3 md:grid-cols-2">
+              <Input label="Logótipo principal" value={layoutSettings.visualIdentity.logos.primary} onChange={(v) => updateLogo('primary', v)} />
+              <Input label="Logótipo do footer" value={layoutSettings.visualIdentity.logos.footer} onChange={(v) => updateLogo('footer', v)} />
+              <Input label="Logótipo institucional" value={layoutSettings.visualIdentity.logos.institutional} onChange={(v) => updateLogo('institutional', v)} />
+            </div>
+            </>
+            ) : null}
+
+            {appearanceTab === 'seo' ? (
+            <>
+            <AppearanceSectionTitle title="SEO e Metadados" description="Campos centrais para título, descrição, palavras-chave e imagem social." />
+            <Input label="SEO · Título" value={layoutSettings.seo.title} onChange={(v) => updateSeo({ title: v })} />
+            <TextArea label="SEO · Descrição" value={layoutSettings.seo.description} onChange={(v) => updateSeo({ description: v })} />
+            <TextArea label="SEO · Palavras-chave" value={layoutSettings.seo.keywords} onChange={(v) => updateSeo({ keywords: v })} />
+            <Input label="SEO · Imagem Open Graph" value={layoutSettings.seo.ogImage} onChange={(v) => updateSeo({ ogImage: v })} />
+            </>
+            ) : null}
+
+            <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
+              {backofficePrimaryActionLabel(busy, 'Publicar Alterações')}
             </button>
           </form>
           )}
@@ -1742,6 +2432,15 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
   );
 }
 
+function AppearanceSectionTitle({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="border-b border-stone-200 pb-3">
+      <h3 className="text-lg font-semibold text-[#0f4c36]">{title}</h3>
+      <p className="mt-1 text-sm text-stone-600">{description}</p>
+    </div>
+  );
+}
+
 function IconPicker({ label, value, onChange }: { label: string; value: LayoutIconName; onChange: (value: LayoutIconName) => void }) {
   return (
     <label className="grid gap-2 text-sm text-stone-700">
@@ -1756,7 +2455,7 @@ function IconPicker({ label, value, onChange }: { label: string; value: LayoutIc
               key={name}
               type="button"
               onClick={() => onChange(iconName)}
-              className={selected ? 'rounded-md border border-[#27441d] bg-[#eef4ec] p-2 text-[#27441d]' : 'rounded-md border border-stone-200 p-2 text-stone-600'}
+              className={selected ? 'rounded-md border border-[#0f4c36] bg-[#eef4ec] p-2 text-[#0f4c36]' : 'rounded-md border border-stone-200 p-2 text-stone-600'}
               aria-label={name}
             >
               <Icon className="mx-auto h-4 w-4" />
@@ -1803,7 +2502,7 @@ function sidebarNavClass(active: boolean, collapsed: boolean) {
     'flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors',
     collapsed && 'justify-center px-2',
     active
-      ? 'bg-[#27441d] font-medium text-white [&_span:first-child]:bg-white/15 [&_span:first-child]:text-white'
+      ? 'bg-[#0f4c36] font-medium text-white [&_span:first-child]:bg-white/15 [&_span:first-child]:text-white'
       : 'text-stone-700 hover:bg-stone-100'
   );
 }
@@ -1812,7 +2511,7 @@ function Card({ title, value, loading = false }: { title: string; value: number 
   return (
     <article className="rounded-xl border border-stone-200 bg-white p-5">
       <p className="text-sm text-stone-500">{title}</p>
-      {loading ? <Skeleton className="mt-3 h-9 w-20" /> : <p className="mt-2 text-3xl font-semibold text-[#27441d]">{value ?? '—'}</p>}
+      {loading ? <Skeleton className="mt-3 h-9 w-20" /> : <p className="mt-2 text-3xl font-semibold text-[#0f4c36]">{value ?? '—'}</p>}
     </article>
   );
 }
@@ -1836,12 +2535,21 @@ function SectionLayout({
   busy: boolean;
   loading?: boolean;
 }) {
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
+
+  function handleNewClick() {
+    onNew();
+    window.requestAnimationFrame(() => {
+      formContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   return (
     <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div className="rounded-xl border border-stone-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-[#27441d]">{title}</h2>
-          <button type="button" onClick={onNew} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
+          <h2 className="text-xl font-semibold text-[#0f4c36]">{title}</h2>
+          <button type="button" onClick={handleNewClick} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
             Novo
           </button>
         </div>
@@ -1849,7 +2557,7 @@ function SectionLayout({
           {loading ? <SectionListSkeleton /> : null}
           {list.map((item) => (
             <article key={item.id} className="rounded-lg border border-stone-200 p-3">
-              <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
+              <p className="font-medium text-[#0f4c36]">{item.title || item.id}</p>
               <div className="mt-2 flex gap-2">
                 <button type="button" onClick={() => onEdit(item)} disabled={busy} className="rounded border px-2 py-1 text-xs disabled:opacity-50">
                   Editar
@@ -1868,7 +2576,7 @@ function SectionLayout({
           {!loading && list.length === 0 ? <p className="text-sm text-stone-500">Sem registos.</p> : null}
         </div>
       </div>
-      <div className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
+      <div ref={formContainerRef} className="rounded-xl border border-stone-200 bg-white p-5 opacity-100">
         <div className={busy ? 'pointer-events-none opacity-70' : ''} aria-busy={busy}>
           {form}
         </div>
@@ -1907,7 +2615,7 @@ function GalleryGroup({
     <section className="rounded-xl border border-stone-200 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-[#27441d]">{title}</h3>
+          <h3 className="text-base font-semibold text-[#0f4c36]">{title}</h3>
           <p className="text-sm text-stone-500">{items.length} item(ns)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1945,7 +2653,7 @@ function GalleryGroup({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium text-[#27441d]">{item.title || item.id}</p>
+                      <p className="font-medium text-[#0f4c36]">{item.title || item.id}</p>
                       <p className="mt-1 text-xs text-stone-500">
                         {item.published ? 'Publicado' : 'Rascunho'} · {new Date(item.updatedAt).toLocaleDateString('pt-PT')}
                       </p>
@@ -1978,11 +2686,27 @@ function GalleryGroup({
 }
 
 function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
+  if (!item.source && !item.thumbnail) {
+    return (
+      <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-stone-100 px-2 text-center text-xs text-stone-500">
+        Sem origem
+      </div>
+    );
+  }
+
   if (item.type === 'photo') {
-    return <img src={item.thumbnail || item.source} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />;
+    return <img src={item.thumbnail || item.source || '/placeholder.svg'} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />;
   }
 
   if (item.type === 'video') {
+    if (!item.source) {
+      return (
+        <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-stone-900 px-2 text-center text-xs text-white">
+          Sem vídeo
+        </div>
+      );
+    }
+
     return (
       <video
         src={item.source}
@@ -1995,10 +2719,25 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
     );
   }
 
+  if (item.type === 'document') {
+    return (
+      <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
+        <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Documento</div>
+        {item.source ? (
+          <a href={item.source} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#0f4c36] underline">
+            Abrir ficheiro
+          </a>
+        ) : (
+          <p className="text-sm text-stone-500">Sem ficheiro associado.</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
       <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Preview áudio</div>
-      <audio controls preload="metadata" className="w-full" src={item.source} />
+      {item.source ? <audio controls preload="metadata" className="w-full" src={item.source} /> : <p className="text-sm text-stone-500">Sem áudio associado.</p>}
     </div>
   );
 }
@@ -2075,7 +2814,7 @@ function GalleryGroupSkeleton({ title }: { title: string }) {
     <section className="rounded-xl border border-stone-200 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-2">
-          <h3 className="text-base font-semibold text-[#27441d]">{title}</h3>
+          <h3 className="text-base font-semibold text-[#0f4c36]">{title}</h3>
           <Skeleton className="h-4 w-20" />
         </div>
         <div className="flex gap-2">

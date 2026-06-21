@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ActivitiesMonthCalendar from '@/components/activities/ActivitiesMonthCalendar';
 
 const push = vi.fn();
@@ -10,13 +10,19 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-06-08T12:00:00.000Z'));
+});
+
 afterEach(() => {
   cleanup();
   push.mockClear();
+  vi.useRealTimers();
 });
 
 describe('ActivitiesMonthCalendar', () => {
-  it('renders the first activity month and opens the matching activity when its day is clicked', () => {
+  it('opens on the current month and can navigate to an activity month', () => {
     render(
       <ActivitiesMonthCalendar
         entries={[
@@ -29,6 +35,10 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
+    expect(
+      screen.getByText(new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }))
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/fevereiro de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /15: Caminhada no Caramulo/i }));
@@ -49,7 +59,7 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '10' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '10' })[0]);
 
     expect(push).not.toHaveBeenCalled();
   });
@@ -72,15 +82,19 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
+    expect(
+      screen.getByText(new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }))
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/janeiro de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Última data/i }));
     expect(screen.getByText(/março de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Hoje/i }));
-    expect(
-      screen.getByText(new Date().toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }))
-    ).toBeInTheDocument();
+    expect(screen.getAllByText(/junho de 2026/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Hoje: 8 de junho de 2026')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hoje, 8 de junho de 2026' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/janeiro de 2026/i)).toBeInTheDocument();
@@ -99,6 +113,7 @@ describe('ActivitiesMonthCalendar', () => {
       />
     );
 
+    fireEvent.click(screen.getByRole('button', { name: /Mais antigo/i }));
     expect(screen.getByText(/fevereiro de 2026/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Mês anterior/i }));
