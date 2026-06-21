@@ -32,6 +32,14 @@ function localBackofficeUploadUrlFromBlob(value: string) {
   }
 }
 
+function localBackofficeUploadUrlFromFilename(section: PublicContentSection, value: string) {
+  if (!/^[a-z0-9][a-z0-9._-]+\.(?:avif|gif|jpe?g|png|webp)$/i.test(value)) {
+    return null;
+  }
+
+  return `/uploads/backoffice/${section}/${encodeURIComponent(value)}`;
+}
+
 export function publicAssetValue(section: PublicContentSection, id: string, value?: string | null) {
   const normalized = (value || '').trim();
 
@@ -43,6 +51,12 @@ export function publicAssetValue(section: PublicContentSection, id: string, valu
 
   if (localBackofficeUploadUrl) {
     return localBackofficeUploadUrl;
+  }
+
+  const localBackofficeUploadFilenameUrl = localBackofficeUploadUrlFromFilename(section, normalized);
+
+  if (localBackofficeUploadFilenameUrl) {
+    return localBackofficeUploadFilenameUrl;
   }
 
   return normalized.startsWith('data:') ? publicContentAssetUrl(section, id) : normalized;

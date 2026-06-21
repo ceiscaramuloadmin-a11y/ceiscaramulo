@@ -20,6 +20,12 @@ describe('public content asset URLs', () => {
     );
   });
 
+  it('serves legacy filename-only activity covers through the local uploads route', () => {
+    expect(
+      publicAssetValue('activities', 'a1', '1781821868406-5a2e5355-47d8-48cc-b87f-0a3e9925bc22.jpg')
+    ).toBe('/uploads/backoffice/activities/1781821868406-5a2e5355-47d8-48cc-b87f-0a3e9925bc22.jpg');
+  });
+
   it('keeps unrelated external images unchanged', () => {
     expect(publicAssetValue('news', 'n1', 'https://cdn.example.com/capa.png')).toBe(
       'https://cdn.example.com/capa.png'
