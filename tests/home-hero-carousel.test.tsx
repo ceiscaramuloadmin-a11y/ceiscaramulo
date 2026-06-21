@@ -1,5 +1,7 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import HomeHero from '@/components/HomeHero';
 
 vi.mock('next/link', () => ({
@@ -63,6 +65,14 @@ describe('HomeHero image', () => {
     expect(screen.queryByRole('button', { name: /imagem anterior/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /imagem seguinte/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /Mostrar imagem/i })).toBeNull();
+  });
+
+  it('includes the requested new homepage carousel images', () => {
+    const source = readFileSync(resolve(process.cwd(), 'components/HomeHero.tsx'), 'utf8');
+
+    expect(source).toContain('hero-mar-de-nuvens.jpg');
+    expect(source).toContain('hero-oficina-burel-sapatos.jpg');
+    expect(source).toContain('hero-narcissus-cyclamineus.jpg');
   });
 
   it('advances the single mounted hero image on an interval', async () => {
