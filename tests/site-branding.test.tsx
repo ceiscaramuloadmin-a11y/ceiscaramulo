@@ -244,7 +244,7 @@ describe('site branding', () => {
     expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
     expect(footerGrid).toHaveClass('xl:grid-cols-6');
     expect(screen.getByRole('heading', { name: 'Tornar-se sócio' })).toBeInTheDocument();
-    expect(screen.getByText('Quem se torna sócio ajuda a preservar, estudar e divulgar a Serra do Caramulo.')).toBeInTheDocument();
+    expect(screen.queryByText('Quem se torna sócio ajuda a preservar, estudar e divulgar a Serra do Caramulo.')).not.toBeInTheDocument();
 
     const membershipButton = screen.getByRole('link', { name: 'Preencher formulário' });
 

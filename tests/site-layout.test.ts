@@ -56,7 +56,7 @@ describe('site-layout', () => {
 
   it('keeps the footer membership call to action editable in layout settings', () => {
     expect(defaultSiteLayoutSettings.footer.membership.title).toBe('Tornar-se sócio');
-    expect(defaultSiteLayoutSettings.footer.membership.description).toContain('preservar, estudar e divulgar');
+    expect(defaultSiteLayoutSettings.footer.membership.description).toBe('');
     expect(defaultSiteLayoutSettings.footer.membership.ctaLabel).toBe('Preencher formulário');
     expect(defaultSiteLayoutSettings.footer.membership.ctaHref).toBe('https://forms.gle/KQKtyjGUPhF5DNRJ8');
   });
