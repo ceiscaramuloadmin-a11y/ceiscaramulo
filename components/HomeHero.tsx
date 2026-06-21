@@ -12,6 +12,9 @@ import heroPonJueus2 from '@/src/assets/hero-imgs/hero-pon-jueus-2.webp';
 import heroEscolaAvos1 from '@/src/assets/hero-imgs/hero-escola-avos-1.webp';
 import heroEscolaAvos2 from '@/src/assets/hero-imgs/hero-escola-avos-2.webp';
 import heroEscolaAvos3 from '@/src/assets/hero-imgs/hero-escola-avos-3.webp';
+import heroMarDeNuvens from '@/src/assets/hero-imgs/hero-mar-de-nuvens.jpg';
+import heroNarcissusCyclamineus from '@/src/assets/hero-imgs/hero-narcissus-cyclamineus.jpg';
+import heroOficinaBurelSapatos from '@/src/assets/hero-imgs/hero-oficina-burel-sapatos.jpg';
 import { navBarElevatedClasses } from '@/lib/nav-scroll-accent';
 import { cn } from '@/lib/utils';
 import type { NavItem, SiteLayoutSettings } from '@/types';
@@ -39,6 +42,9 @@ const localHeroImages = [
   heroEscolaAvos1,
   heroEscolaAvos2,
   heroEscolaAvos3,
+  heroMarDeNuvens,
+  heroOficinaBurelSapatos,
+  heroNarcissusCyclamineus,
 ];
 
 export default function HomeHero({ hero, navigationItems }: HeroProps) {
