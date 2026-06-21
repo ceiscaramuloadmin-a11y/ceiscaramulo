@@ -18,6 +18,10 @@ dist-ssr
 .env.*.local
 .next
 uploads
+!app/uploads/
+!app/uploads/backoffice/
+!app/uploads/backoffice/[...path]/
+!app/uploads/backoffice/[...path]/route.ts
 
 # Editor directories and files
 .vscode/*

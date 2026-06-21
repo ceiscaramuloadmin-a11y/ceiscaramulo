@@ -126,6 +126,8 @@ export function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
 }
 
+const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:';
+
 // Converte ficheiro recebido para Data URL (compatível com implementação atual).
 export async function fileToDataUrl(file: File) {
   const mimeType = file.type || 'application/octet-stream';
@@ -211,6 +213,19 @@ async function setSiteSettingValue(key: string, value: string) {
 }
 
 // Faz parse seguro de JSON vindo das definições persistidas.
+export async function getStoredUploadedFile(relativePathSegments: string[]) {
+  const relativePath = relativePathSegments
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join('/');
+
+  if (!relativePath || relativePath.includes('..') || !/^[a-z0-9-]+\/[a-z0-9._-]+$/i.test(relativePath)) {
+    return null;
+  }
+
+  return getSiteSettingValue(`${UPLOAD_STORAGE_KEY_PREFIX}${relativePath}`);
+}
+
 function safeJsonParse<T>(value: string | null, fallback: T) {
   if (!value) {
     return fallback;
