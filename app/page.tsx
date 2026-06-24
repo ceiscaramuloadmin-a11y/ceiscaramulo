@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import CoverImage from '@/components/CoverImage';
 import Footer from '@/components/Footer';
 import HomeHero from '@/components/HomeHero';
 import MotionReveal from '@/components/MotionReveal';
@@ -191,7 +192,7 @@ export default async function HomePage() {
                 className="group flex h-full flex-col rounded-lg border border-[#f1f3f5] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-30px_rgba(0,0,0,0.35)]"
               >
                 <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-[#f4f5f7]">
-                    <img
+                    <CoverImage
                       src={getAssetUrl(activity.image)}
                       alt={activity.title}
                       loading="lazy"
@@ -243,7 +244,7 @@ export default async function HomePage() {
                 className="group flex h-full flex-col rounded-lg border border-[#f1f3f5] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_-30px_rgba(0,0,0,0.35)]"
               >
                 <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-[#f4f5f7]">
-                    <img
+                    <CoverImage
                       src={getAssetUrl(article.image)}
                       alt={article.title}
                       loading="lazy"

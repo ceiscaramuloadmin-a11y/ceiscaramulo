@@ -8,6 +8,8 @@ const homePageSource = readFileSync(resolve(process.cwd(), 'app/page.tsx'), 'utf
 
 describe('homepage cards', () => {
   it('renders cover images for activity and news cards', () => {
+    expect(homePageSource).toContain("import CoverImage from '@/components/CoverImage'");
+    expect(homePageSource).toContain('<CoverImage');
     expect(homePageSource).toContain('src={getAssetUrl(activity.image)}');
     expect(homePageSource).toContain('src={getAssetUrl(article.image)}');
   });

@@ -154,7 +154,7 @@ function galleryTypeLabel(type: GalleryMediaType) {
 }
 
 function galleryAcceptForType(type: GalleryMediaType) {
-  if (type === 'photo') return 'image/*';
+  if (type === 'photo') return WEB_IMAGE_ACCEPT;
   if (type === 'video') return 'video/*';
   if (type === 'audio') return 'audio/*';
   return 'application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
@@ -1356,28 +1356,6 @@ export default function BackofficePage() {
             <Card title="Mensagens" value={stats.contacts} loading={isLoadingDashboardStats} />
           </div>
 
-          <div className="grid gap-6">
-            <div className="rounded-xl border border-stone-200 bg-white p-5">
-              <h2 className="text-xl font-semibold text-[#0f4c36]">Ações rápidas</h2>
-              <p className="mt-1 text-sm text-stone-600">
-                Abre diretamente as áreas que podes gerir nesta sessão.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {BACKOFFICE_NAV_ITEMS.filter((item) => availableSections.includes(item.id) && !['overview', 'profile'].includes(item.id))
-                  .slice(0, 9)
-                  .map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setActiveSection(item.id)}
-                      className="rounded-lg border border-stone-200 px-4 py-3 text-left text-sm font-semibold text-stone-700 transition hover:border-[#0f4c36]/30 hover:bg-[#0f4c36]/5 hover:text-[#0f4c36]"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          </div>
         </section>
       ) : null}
 
@@ -2751,7 +2729,9 @@ function Input({ label, value, onChange, required, type = 'text' }: { label: str
   );
 }
 
-function FileInput({ label, onFile, accept = 'image/*' }: { label: string; onFile: (file: File | null) => void; accept?: string }) {
+const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
+
+function FileInput({ label, onFile, accept = WEB_IMAGE_ACCEPT }: { label: string; onFile: (file: File | null) => void; accept?: string }) {
   return (
     <label className="grid gap-1 text-sm text-stone-700">
       {label}
