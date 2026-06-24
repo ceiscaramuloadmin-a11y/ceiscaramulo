@@ -200,6 +200,13 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Hero · Upload de imagem');
   });
 
+  it('does not expose the hidden homepage hero CTA fields in appearance management', () => {
+    expect(backofficePageSource).not.toContain('CTA principal · Label');
+    expect(backofficePageSource).not.toContain('CTA principal · Link');
+    expect(backofficePageSource).not.toContain('CTA secundário · Label');
+    expect(backofficePageSource).not.toContain('CTA secundário · Link');
+  });
+
   it('does not expose the homepage hero description field in appearance management', () => {
     expect(backofficePageSource).not.toContain('Hero · Descrição');
     expect(backofficePageSource).toContain('Hero · Subtítulo');
