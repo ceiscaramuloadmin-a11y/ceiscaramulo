@@ -2156,10 +2156,6 @@ export default function BackofficePage() {
               <Input label="Hero · Linha 4" value={layoutSettings.home.hero.titleLine4} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine4: v } } }))} />
               <FileInput label="Hero · Upload de imagem" onFile={setHeroImageFile} />
               <Input label="Hero · Alt da imagem" value={layoutSettings.home.hero.imageAlt} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, imageAlt: v } } }))} />
-              <Input label="CTA principal · Label" value={layoutSettings.home.hero.primaryCtaLabel} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, primaryCtaLabel: v } } }))} />
-              <Input label="CTA principal · Link" value={layoutSettings.home.hero.primaryCtaHref} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, primaryCtaHref: v } } }))} />
-              <Input label="CTA secundário · Label" value={layoutSettings.home.hero.secondaryCtaLabel} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, secondaryCtaLabel: v } } }))} />
-              <Input label="CTA secundário · Link" value={layoutSettings.home.hero.secondaryCtaHref} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, secondaryCtaHref: v } } }))} />
             </div>
 
             </>
