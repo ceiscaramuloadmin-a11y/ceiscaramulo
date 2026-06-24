@@ -232,7 +232,7 @@ describe('backoffice page guards', () => {
 
   it('aligns the footer appearance editor with the public footer structure', () => {
     expect(backofficePageSource).toContain('Footer · Navegação visível');
-    expect(backofficePageSource).toContain('A coluna Conhecer é fixa no frontend');
+    expect(backofficePageSource).toContain('A coluna CEISCaramulo em ação é fixa no frontend');
     expect(backofficePageSource).toContain('Atividades · /atividades');
     expect(backofficePageSource).toContain('Notícias · /noticias');
     expect(backofficePageSource).toContain('Footer · Tornar-se sócio');
@@ -286,6 +286,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("'escolaDosNossosAvos'");
     expect(backofficePageSource).toContain("'galeria'");
     expect(backofficePageSource).toContain("'oficinaDoBurel'");
+    expect(backofficePageSource).toContain("'artigosParaVenda'");
     expect(backofficePageSource).toContain("'oficinasDeFormacao'");
     expect(backofficePageSource).toContain("'ponDoJueus'");
     expect(backofficePageSource).toContain("'publicacoes'");
@@ -293,6 +294,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'bibliotecaJrs', label: 'Biblioteca JRS' }");
     expect(backofficePageSource).toContain("{ id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' }");
     expect(backofficePageSource).toContain("{ id: 'oficinaDoBurel', label: 'Oficina do Burel' }");
+    expect(backofficePageSource).toContain("{ id: 'artigosParaVenda', label: 'Artigos para venda' }");
     expect(backofficePageSource).toContain("{ id: 'oficinasDeFormacao', label: 'Oficinas de formação' }");
     expect(backofficePageSource).toContain("{ id: 'ponDoJueus', label: 'PON do Jueus' }");
     expect(backofficePageSource).toContain("{ id: 'publicacoes', label: 'Publicações' }");
@@ -309,6 +311,7 @@ describe('backoffice page guards', () => {
 
     expect(navigationBlock).not.toContain("id: 'gallery'");
     expect(navigationBlock).toContain("id: 'gallery-oficina-do-burel'");
+    expect(navigationBlock).toContain("id: 'gallery-artigos-para-venda'");
     expect(navigationBlock).toContain("id: 'gallery-biblioteca-jrs'");
     expect(navigationBlock).toContain("id: 'gallery-pon-do-jueus'");
     expect(navigationBlock).toContain("id: 'gallery-escola-dos-nossos-avos'");

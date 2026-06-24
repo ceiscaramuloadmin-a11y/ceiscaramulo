@@ -14,6 +14,7 @@ const FOOTER_MAIN_LINKS = [
   { label: 'Atividades', href: '/atividades' },
   { label: 'Notícias', href: '/noticias' },
 ];
+const FOOTER_MAIN_COLUMN_TITLE = 'CEISCaramulo em ação';
 
 const SocialIcon = ({ label }: { label: string }) => {
   if (label === 'Facebook') {
@@ -47,6 +48,7 @@ const Footer: React.FC = () => {
   const pathname = usePathname();
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
   const footerColumns = getPublicFooterColumns(layoutSettings);
+  const mainFooterColumn = footerColumns[0] ?? { title: FOOTER_MAIN_COLUMN_TITLE, links: FOOTER_MAIN_LINKS };
   const footerContact = layoutSettings.footer.contactInfo;
   const footerMembership = layoutSettings.footer.membership ?? defaultSiteLayoutSettings.footer.membership;
   const socialLinks = [
@@ -88,38 +90,35 @@ const Footer: React.FC = () => {
   return (
     <footer className="relative overflow-hidden border-t border-stone-200/60 bg-[#f5f5f4]">
       <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-6">
-          <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center" aria-label="CEISCaramulo - Página inicial">
-              <SiteLogo imageClassName="h-20 w-auto sm:h-24" />
+        <div className="grid gap-12 md:grid-cols-2 xl:grid-cols-7">
+          <div>
+            <Link href="/" className="inline-flex w-full items-start" aria-label="CEISCaramulo - Página inicial">
+              <SiteLogo className="w-full max-w-[11rem] sm:max-w-[12rem]" imageClassName="h-auto w-full object-contain" />
             </Link>
-            <NewsletterSignup />
           </div>
 
-          {footerColumns.map((column) => (
-            <div key={column.title}>
-              <h3 className="text-sm font-bold text-[#0f4c36]">{column.title}</h3>
-              <div className="mt-6 grid gap-4">
-                {column.links.map((item) => {
-                  const isActive = pathname === item.href;
+          <div>
+            <h3 className="text-sm font-bold text-[#0f4c36]">{FOOTER_MAIN_COLUMN_TITLE}</h3>
+            <div className="mt-6 grid gap-4">
+              {mainFooterColumn.links.map((item) => {
+                const isActive = pathname === item.href;
 
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={
-                        isActive
-                          ? 'text-sm font-semibold text-[#0f4c36] underline'
-                          : 'text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'
-                      }
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={
+                      isActive
+                        ? 'text-sm font-semibold text-[#0f4c36] underline'
+                        : 'text-sm text-stone-500 underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </div>
-          ))}
+          </div>
 
           <div>
             <h3 className="text-sm font-bold text-[#0f4c36]">Contactos</h3>
@@ -132,9 +131,8 @@ const Footer: React.FC = () => {
                     : 'underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline'
                 }
               >
-                Como nos contactar
+                Contacte-nos
               </Link>
-              {footerAddress ? <p>{footerAddress}</p> : null}
               {footerContact.phone ? (
                 <a className="underline-offset-4 transition-colors hover:text-[#0f4c36] hover:underline" href={`tel:${footerContact.phone.replace(/\s+/g, '')}`}>
                   {footerContact.phone}
@@ -145,6 +143,13 @@ const Footer: React.FC = () => {
                   {footerContact.email}
                 </a>
               ) : null}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-[#0f4c36]">Morada</h3>
+            <div className="mt-6 grid gap-3 text-sm text-stone-500">
+              {footerAddress ? <p>{footerAddress}</p> : null}
             </div>
           </div>
 
@@ -168,10 +173,17 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-[#0f4c36]">{footerMembership.title}</h3>
-            <p className="mt-6 text-sm leading-relaxed text-stone-500">
-              {footerMembership.description}
-            </p>
+            <Link
+              href="/artigos-para-venda"
+              className="text-sm font-bold text-[#0f4c36] underline-offset-4 transition-colors hover:text-[#0b3d2b] hover:underline"
+            >
+              Artigos para venda
+            </Link>
+          </div>
+
+          <div>
+            <NewsletterSignup />
+            <h3 className="mt-8 text-sm font-bold text-[#0f4c36]">Quero ser sócio</h3>
             <a
               href={footerMembership.ctaHref}
               target="_blank"

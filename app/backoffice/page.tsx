@@ -38,6 +38,7 @@ import type {
 
 type ProgrammeGallerySectionId =
   | 'gallery-oficina-do-burel'
+  | 'gallery-artigos-para-venda'
   | 'gallery-pon-do-jueus'
   | 'gallery-escola-dos-nossos-avos'
   | 'gallery-biblioteca-jrs'
@@ -74,6 +75,7 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'activities', label: 'Atividades' },
   { id: 'publications', label: 'Recursos' },
   { id: 'gallery-oficina-do-burel', label: 'Oficina do Burel' },
+  { id: 'gallery-artigos-para-venda', label: 'Artigos para venda' },
   { id: 'gallery-biblioteca-jrs', label: 'Biblioteca JRS' },
   { id: 'gallery-pon-do-jueus', label: 'PON do Jueus' },
   { id: 'gallery-escola-dos-nossos-avos', label: 'Escola dos Nossos Avós' },
@@ -101,6 +103,7 @@ const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasE
   { id: 'galeria', label: 'Galeria' },
   { id: 'noticias', label: 'Notícias', hasEmptyMessage: true },
   { id: 'oficinaDoBurel', label: 'Oficina do Burel' },
+  { id: 'artigosParaVenda', label: 'Artigos para venda' },
   { id: 'oficinasDeFormacao', label: 'Oficinas de formação' },
   { id: 'ponDoJueus', label: 'PON do Jueus' },
   { id: 'publicacoes', label: 'Publicações' },
@@ -113,6 +116,11 @@ const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: str
     label: 'Oficina do Burel',
     context: 'oficina-do-burel',
     description: 'PDFs, vídeos e outros media associados à página Oficina do Burel.',
+  },
+  'gallery-artigos-para-venda': {
+    label: 'Artigos para venda',
+    context: 'artigos-para-venda',
+    description: 'Fotografias, vídeos e documentos associados à página Artigos para venda.',
   },
   'gallery-biblioteca-jrs': {
     label: 'Biblioteca JRS',
@@ -2225,11 +2233,11 @@ export default function BackofficePage() {
             <div className="rounded-lg border border-stone-200 p-3">
               <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Navegação visível</h3>
               <p className="mt-1 text-xs leading-5 text-stone-500">
-                A coluna Conhecer é fixa no frontend e mostra Atividades e Notícias. A coluna de iniciativas pode ser ajustada abaixo.
+                A coluna CEISCaramulo em ação é fixa no frontend e mostra Atividades e Notícias. A coluna de iniciativas pode ser ajustada abaixo.
               </p>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div className="rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm text-stone-600">
-                  <p className="font-semibold text-[#0f4c36]">Conhecer</p>
+                  <p className="font-semibold text-[#0f4c36]">CEISCaramulo em ação</p>
                   <ul className="mt-3 grid gap-2">
                     <li>Atividades · /atividades</li>
                     <li>Notícias · /noticias</li>

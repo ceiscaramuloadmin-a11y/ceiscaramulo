@@ -48,6 +48,11 @@ describe('site-layout', () => {
     );
   });
 
+  it('defines the public sales articles page for footer and backoffice editing', () => {
+    expect(defaultSiteLayoutSettings.pages.artigosParaVenda.title).toBe('Artigos para venda');
+    expect(defaultSiteLayoutSettings.pages.artigosParaVenda.description).toContain('Amostra de artigos');
+  });
+
   it('keeps footer contact details in editable layout settings', () => {
     expect(defaultSiteLayoutSettings.footer.contactInfo.email).toBe('ceiscaramulo@gmail.com');
     expect(defaultSiteLayoutSettings.footer.contactInfo.phone).toBe('+351 966 717 360');
@@ -79,7 +84,7 @@ describe('site-layout', () => {
       },
     });
 
-    expect(settings.footer.columns[0].title).toBe('Conhecer');
+    expect(settings.footer.columns[0].title).toBe('CEISCaramulo em ação');
     expect(settings.footer.columns[1].title).toBe('Explorar');
   });
 

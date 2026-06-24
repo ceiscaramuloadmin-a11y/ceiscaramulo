@@ -187,7 +187,7 @@ describe('site branding', () => {
     expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveClass('xl:hidden');
   });
 
-  it('hides restricted admin topics from fetched footer settings', async () => {
+  it('keeps fetched footer settings on the fixed public footer structure', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -217,9 +217,11 @@ describe('site branding', () => {
 
     render(<Footer />);
 
-    await waitFor(() => expect(screen.getByText('Ligacao publica')).toBeInTheDocument());
+    expect(screen.getByRole('heading', { name: 'CEISCaramulo em ação' })).toBeInTheDocument();
 
+    expect(screen.queryByText('Ligacao publica')).not.toBeInTheDocument();
     expect(screen.queryByText('Área Restrita')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Misto' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Backoffice' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Login Administrativo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Backoffice direto' })).not.toBeInTheDocument();
@@ -231,19 +233,26 @@ describe('site branding', () => {
 
     expect(screen.getByRole('link', { name: 'Atividades' })).toHaveAttribute('href', '/atividades');
     expect(screen.getByRole('link', { name: 'Notícias' })).toHaveAttribute('href', '/noticias');
-    expect(screen.getByRole('heading', { name: 'Iniciativas' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Oficina do Burel' })).toHaveAttribute('href', '/oficina-do-burel');
-    expect(screen.getByRole('link', { name: 'Escola dos Nossos Avós' })).toHaveAttribute('href', '/escola-dos-nossos-avos');
-    expect(screen.getByRole('link', { name: 'PON do Jueus' })).toHaveAttribute('href', '/pon-do-jueus');
-    expect(screen.getByRole('link', { name: 'Como nos contactar' })).toHaveAttribute('href', '/contactos');
+    expect(screen.getByRole('heading', { name: 'CEISCaramulo em ação' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Conhecer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Iniciativas' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Oficina do Burel' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Escola dos Nossos Avós' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'PON do Jueus' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Contacte-nos' })).toHaveAttribute('href', '/contactos');
+    expect(screen.getByRole('link', { name: 'Artigos para venda' })).toHaveAttribute('href', '/artigos-para-venda');
+    expect(screen.getByRole('heading', { name: 'Morada' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Redes Sociais' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Newsletter' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Quero ser sócio' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Sobre Nós' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Projetos' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Biblioteca' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Recursos' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'A Serra do Caramulo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
-    expect(footerGrid).toHaveClass('xl:grid-cols-6');
-    expect(screen.getByRole('heading', { name: 'Tornar-se sócio' })).toBeInTheDocument();
+    expect(footerGrid).toHaveClass('xl:grid-cols-7');
+    expect(screen.queryByRole('heading', { name: 'Tornar-se sócio' })).not.toBeInTheDocument();
     expect(screen.queryByText('Quem se torna sócio ajuda a preservar, estudar e divulgar a Serra do Caramulo.')).not.toBeInTheDocument();
 
     const membershipButton = screen.getByRole('link', { name: 'Preencher formulário' });
@@ -252,6 +261,28 @@ describe('site branding', () => {
     expect(membershipButton).toHaveClass('bg-[#0f4c36]', 'hover:bg-[#0b3d2b]');
     expect(membershipButton).toHaveClass('whitespace-nowrap');
     expect(membershipButton.closest('section')).not.toBeInTheDocument();
+  });
+
+  it('orders footer columns from logo to newsletter and places membership below newsletter', () => {
+    const { container } = render(<Footer />);
+    const logo = screen.getByRole('img', { name: 'CEISCaramulo' });
+    const actionHeading = screen.getByRole('heading', { name: 'CEISCaramulo em ação' });
+    const contactsHeading = screen.getByRole('heading', { name: 'Contactos' });
+    const addressHeading = screen.getByRole('heading', { name: 'Morada' });
+    const socialHeading = screen.getByRole('heading', { name: 'Redes Sociais' });
+    const salesLink = screen.getByRole('link', { name: 'Artigos para venda' });
+    const newsletterHeading = screen.getByRole('heading', { name: 'Newsletter' });
+    const membershipHeading = screen.getByRole('heading', { name: 'Quero ser sócio' });
+
+    expect(logo.closest('div')).not.toHaveTextContent('Newsletter');
+    expect(logo.compareDocumentPosition(actionHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(actionHeading.compareDocumentPosition(contactsHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(contactsHeading.compareDocumentPosition(addressHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(addressHeading.compareDocumentPosition(socialHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(socialHeading.compareDocumentPosition(salesLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(salesLink.compareDocumentPosition(newsletterHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(newsletterHeading.compareDocumentPosition(membershipHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector('footer')).toHaveTextContent(defaultSiteLayoutSettings.footer.contactInfo.address);
   });
 
   it('filters outdated fetched footer links that the contact column now owns', async () => {
@@ -284,7 +315,7 @@ describe('site branding', () => {
     expect(screen.queryByRole('link', { name: 'Recursos' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'A Serra do Caramulo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Contactos' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Como nos contactar' })).toHaveAttribute('href', '/contactos');
+    expect(screen.getByRole('link', { name: 'Contacte-nos' })).toHaveAttribute('href', '/contactos');
   });
 
   it('renders footer social links as green standalone icons', () => {
@@ -380,9 +411,16 @@ describe('site branding', () => {
     expect(screen.getAllByRole('link', { name: 'Sobre Nós' })[0]).toHaveClass('px-2', '2xl:px-3', 'text-[11px]', 'hover:text-[#0f4c36]');
   });
 
-  it('uses a larger footer logo', () => {
+  it('keeps the footer logo proportional without overlapping footer text', () => {
     render(<Footer />);
 
-    expect(screen.getByRole('img', { name: 'CEISCaramulo' })).toHaveClass('h-20', 'sm:h-24');
+    const logo = screen.getByRole('img', { name: 'CEISCaramulo' });
+    const logoLink = screen.getByRole('link', { name: 'CEISCaramulo - Página inicial' });
+    const logoColumn = logoLink.parentElement;
+
+    expect(logo).toHaveClass('h-auto', 'w-full', 'object-contain');
+    expect(logo.closest('span')).toHaveClass('w-full', 'max-w-[11rem]', 'sm:max-w-[12rem]');
+    expect(logoLink).toHaveClass('w-full', 'items-start');
+    expect(logoColumn).not.toHaveClass('xl:-ml-40', '2xl:-ml-52');
   });
 });
