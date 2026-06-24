@@ -8,6 +8,7 @@ const sobreNosPageSource = readFileSync(resolve(process.cwd(), 'app/sobre-nos/pa
 const serraPageSource = readFileSync(resolve(process.cwd(), 'app/serra-do-caramulo/page.tsx'), 'utf8');
 const backofficePageSource = readFileSync(resolve(process.cwd(), 'app/backoffice/page.tsx'), 'utf8');
 const oficinaDoBurelPageSource = readFileSync(resolve(process.cwd(), 'app/oficina-do-burel/page.tsx'), 'utf8');
+const artigosParaVendaPageSource = readFileSync(resolve(process.cwd(), 'app/artigos-para-venda/page.tsx'), 'utf8');
 const escolaDosNossosAvosPageSource = readFileSync(resolve(process.cwd(), 'app/escola-dos-nossos-avos/page.tsx'), 'utf8');
 const ponDoJueusPageSource = readFileSync(resolve(process.cwd(), 'app/pon-do-jueus/page.tsx'), 'utf8');
 const bibliotecaJrsPageSource = readFileSync(resolve(process.cwd(), 'app/biblioteca-jrs/page.tsx'), 'utf8');
@@ -20,6 +21,7 @@ const institutionalProgrammePageSource = readFileSync(resolve(process.cwd(), 'co
 
 const requestedProgrammePages = [
   ['oficinaDoBurel', 'app/oficina-do-burel/page.tsx'],
+  ['artigosParaVenda', 'app/artigos-para-venda/page.tsx'],
   ['ponDoJueus', 'app/pon-do-jueus/page.tsx'],
   ['escolaDosNossosAvos', 'app/escola-dos-nossos-avos/page.tsx'],
   ['bibliotecaJrs', 'app/biblioteca-jrs/page.tsx'],
@@ -68,6 +70,7 @@ describe('institutional pages', () => {
     [
       ['public/internal-pages/escola-dos-nossos-avos.jpg', escolaDosNossosAvosPageSource, 'heroImage="/internal-pages/escola-dos-nossos-avos.jpg"'],
       ['public/internal-pages/oficina-do-burel.jpg', oficinaDoBurelPageSource, 'heroImage="/internal-pages/oficina-do-burel.jpg"'],
+      ['src/assets/hero-imgs/hero-oficina-burel-sapatos.jpg', artigosParaVendaPageSource, 'heroImage={salesHeroImage.src}'],
       ['public/internal-pages/pon-do-jueus.jpg', ponDoJueusPageSource, 'heroImage="/internal-pages/pon-do-jueus.jpg"'],
       ['public/internal-pages/sobre-nos.jpg', sobreNosPageSource, "const aboutHeroImage = '/internal-pages/sobre-nos.jpg'"],
       ['public/internal-pages/biblioteca.jpg', bibliotecaPageSource, "const bibliotecaHeroImage = '/internal-pages/biblioteca.jpg'"],
@@ -128,6 +131,7 @@ describe('institutional pages', () => {
   it('keeps the recently changed page section titles as plain green text', () => {
     [
       [oficinaDoBurelPageSource, 'Conteúdos da Oficina do Burel'],
+      [artigosParaVendaPageSource, 'Amostra de artigos para venda'],
       [ponDoJueusPageSource, 'Conteúdos do PON do Jueus'],
       [escolaDosNossosAvosPageSource, 'Conteúdos da Escola dos Nossos Avós'],
       [sobreNosPageSource, 'about.whoWeAreTitle'],
@@ -166,6 +170,7 @@ describe('institutional pages', () => {
   it('renders videos and PDFs from the recent page media contexts', () => {
     [
       [oficinaDoBurelPageSource, "listGalleryMedia('public', 'oficina-do-burel')"],
+      [artigosParaVendaPageSource, "listGalleryMedia('public', 'artigos-para-venda')"],
       [ponDoJueusPageSource, "listGalleryMedia('public', 'pon-do-jueus')"],
       [escolaDosNossosAvosPageSource, "listGalleryMedia('public', 'escola-dos-nossos-avos')"],
       [bibliotecaJrsPageSource, "listGalleryMedia('public', 'biblioteca-jrs')"],

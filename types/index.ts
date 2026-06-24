@@ -321,6 +321,7 @@ export interface SiteLayoutSettings {
     galeria: SitePageIntroSettings;
     bibliotecaJrs: SitePageIntroSettings;
     oficinaDoBurel: SitePageIntroSettings;
+    artigosParaVenda: SitePageIntroSettings;
     ponDoJueus: SitePageIntroSettings;
     escolaDosNossosAvos: SitePageIntroSettings;
     oficinasDeFormacao: SitePageIntroSettings;

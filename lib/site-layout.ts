@@ -107,6 +107,10 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
       title: 'Oficina do Burel',
       description: 'Espaço dedicado à valorização do burel, dos saberes tradicionais e das práticas ligadas à identidade da Serra do Caramulo.',
     },
+    artigosParaVenda: {
+      title: 'Artigos para venda',
+      description: 'Amostra de artigos, materiais e produtos associados ao CEISCaramulo e às iniciativas da Serra do Caramulo.',
+    },
     ponDoJueus: {
       title: 'PON do Jueus',
       description: 'Área de apresentação do PON do Jueus e das iniciativas associadas ao trabalho cultural e educativo do CEISCaramulo.',
@@ -230,7 +234,7 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     },
     columns: [
       {
-        title: 'Conhecer',
+        title: 'CEISCaramulo em ação',
         links: [
           { label: 'Atividades', href: '/atividades' },
           { label: 'Notícias', href: '/noticias' },
