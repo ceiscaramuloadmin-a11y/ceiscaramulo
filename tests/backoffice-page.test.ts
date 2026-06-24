@@ -57,14 +57,15 @@ describe('backoffice page guards', () => {
 
     expect(backofficePageSource).toContain('Painel de visão geral');
     expect(backofficePageSource).toContain('Resumo do backoffice');
+    expect(backofficePageSource).not.toContain('Acompanha os conteúdos principais, consulta mensagens recentes e entra rapidamente nas áreas disponíveis.');
     expect(backofficePageSource).not.toContain('Ações rápidas');
     expect(backofficePageSource).not.toContain('Abre diretamente as áreas que podes gerir nesta sessão.');
-    expect(overviewBlock).toContain('Ver perfil');
+    expect(overviewBlock).not.toContain('Ver perfil');
     expect(overviewBlock).not.toContain('Gerir perfil');
     expect(overviewBlock).not.toContain('<h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>');
     expect(backofficePageSource).not.toContain('<Card title="Projetos" value={stats.projects}');
     expect(backofficePageSource).toContain('<Card title="Mensagens" value={stats.contacts}');
-    expect(backofficePageSource).toContain("onClick={() => setActiveSection('profile')}");
+    expect(overviewBlock).not.toContain("onClick={() => setActiveSection('profile')}");
     expect(overviewBlock).not.toContain("!['overview', 'profile'].includes(item.id)");
     expect(backofficePageSource).toContain('lg:grid-cols-4');
   });
