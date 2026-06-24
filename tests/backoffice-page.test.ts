@@ -49,7 +49,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("fetchAdminEndpoint<{ success: boolean }>('/api/admin/password'");
   });
 
-  it('updates the overview dashboard with quick actions and profile access', () => {
+  it('updates the overview dashboard without quick actions and keeps profile access', () => {
     const overviewBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("activeSection === 'overview'"),
       backofficePageSource.indexOf("activeSection === 'profile'"),
@@ -57,14 +57,15 @@ describe('backoffice page guards', () => {
 
     expect(backofficePageSource).toContain('Painel de visão geral');
     expect(backofficePageSource).toContain('Resumo do backoffice');
-    expect(backofficePageSource).toContain('Ações rápidas');
+    expect(backofficePageSource).not.toContain('Ações rápidas');
+    expect(backofficePageSource).not.toContain('Abre diretamente as áreas que podes gerir nesta sessão.');
     expect(overviewBlock).toContain('Ver perfil');
     expect(overviewBlock).not.toContain('Gerir perfil');
     expect(overviewBlock).not.toContain('<h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>');
     expect(backofficePageSource).not.toContain('<Card title="Projetos" value={stats.projects}');
     expect(backofficePageSource).toContain('<Card title="Mensagens" value={stats.contacts}');
     expect(backofficePageSource).toContain("onClick={() => setActiveSection('profile')}");
-    expect(backofficePageSource).toContain("!['overview', 'profile'].includes(item.id)");
+    expect(overviewBlock).not.toContain("!['overview', 'profile'].includes(item.id)");
     expect(backofficePageSource).toContain('lg:grid-cols-4');
   });
 
@@ -149,6 +150,12 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('label="Documento PDF"');
     expect(backofficePageSource).toContain('accept="application/pdf"');
     expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
+  });
+
+  it('uses browser-safe image formats for public cover upload pickers', () => {
+    expect(backofficePageSource).toContain("const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'");
+    expect(backofficePageSource).toContain("if (type === 'photo') return WEB_IMAGE_ACCEPT");
+    expect(backofficePageSource).toContain('accept = WEB_IMAGE_ACCEPT');
   });
 
   it('keeps the news slug field hidden from the backoffice form flow', () => {

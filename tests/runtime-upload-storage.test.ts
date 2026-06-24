@@ -207,6 +207,17 @@ describe('runtime upload storage', () => {
     });
   });
 
+  it('rejects HEIC uploads before saving unusable public cover image URLs', async () => {
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['heic'], 'capa.heic', { type: 'image/heic' });
+
+    await expect(storeUploadedFile(file, 'activities')).rejects.toThrow(
+      'Usa uma imagem em JPG, PNG, WebP ou GIF para garantir compatibilidade no site.'
+    );
+    expect(blobPut).not.toHaveBeenCalled();
+    expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
   it('reads private Blob markers from upload metadata', async () => {
     const { getStoredUploadedFile } = await import('@/app/api/_lib/cms');
     siteSettingFindUnique.mockResolvedValueOnce({ value: 'blob-private:news/file.png' });

@@ -155,6 +155,18 @@ function extensionFromMimeType(mimeType: string) {
   return '';
 }
 
+function isUnsupportedBrowserImage(file: File, mimeType: string, extension: string) {
+  const normalizedMimeType = mimeType.toLowerCase();
+  const normalizedExtension = extension.toLowerCase();
+
+  return (
+    normalizedMimeType === 'image/heic' ||
+    normalizedMimeType === 'image/heif' ||
+    normalizedExtension === '.heic' ||
+    normalizedExtension === '.heif'
+  );
+}
+
 function bufferToDataUrl(buffer: Buffer, mimeType: string) {
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
 }
@@ -171,6 +183,11 @@ export async function storeUploadedFile(file: File, bucket = 'general') {
   const safeBucket = sanitizeUploadSegment(bucket);
   const originalExtension = extname(file.name || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
   const extension = originalExtension || extensionFromMimeType(mimeType);
+
+  if (isUnsupportedBrowserImage(file, mimeType, extension)) {
+    throw new Error('Usa uma imagem em JPG, PNG, WebP ou GIF para garantir compatibilidade no site.');
+  }
+
   const filename = `${Date.now()}-${crypto.randomUUID()}${extension}`;
   const relativePath = `${safeBucket}/${filename}`;
   const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });

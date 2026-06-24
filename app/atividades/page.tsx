@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Calendar, MapPin, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CoverImage from '@/components/CoverImage';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { activities as fallbackActivities } from '@/data/content';
@@ -125,7 +126,7 @@ export default async function AtividadesPage() {
                   className="group rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="mb-4 overflow-hidden rounded-lg">
-                    <img
+                    <CoverImage
                       src={getAssetUrl(activity.image)}
                       alt={activity.title}
                       className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"

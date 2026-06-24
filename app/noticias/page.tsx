@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Tag } from 'lucide-react';
 import Header from '@/components/Header';
+import CoverImage from '@/components/CoverImage';
 import Footer from '@/components/Footer';
 import MotionReveal from '@/components/MotionReveal';
 import { newsArticles as fallbackNewsArticles } from '@/data/content';
@@ -117,7 +118,7 @@ export default async function NoticiasPage() {
                     className="group flex h-full flex-col rounded-lg border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <div className="mb-3 aspect-[4/3] overflow-hidden rounded-md bg-muted">
-                      <img
+                      <CoverImage
                         src={getAssetUrl(article.image)}
                         alt={article.title}
                         loading="lazy"

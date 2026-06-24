@@ -27,6 +27,13 @@ describe('content image storage', () => {
     expect(cmsSource).toContain('coverImage: resolvedAsset');
   });
 
+  it('blocks browser-incompatible HEIC cover images before they are persisted', () => {
+    expect(cmsSource).toContain('function isUnsupportedBrowserImage');
+    expect(cmsSource).toContain("normalizedMimeType === 'image/heic'");
+    expect(cmsSource).toContain("normalizedExtension === '.heic'");
+    expect(cmsSource).toContain('Usa uma imagem em JPG, PNG, WebP ou GIF');
+  });
+
   it('stores uploaded publication PDFs and keeps using the downloadUrl contract', () => {
     expect(cmsSource).toContain("rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'");
     expect(cmsSource).toContain("storeUploadedFile(documentFile, 'publications-documents')");
