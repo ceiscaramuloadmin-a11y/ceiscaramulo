@@ -1335,17 +1335,7 @@ export default function BackofficePage() {
             <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-stone-900">Resumo do backoffice</h2>
-                <p className="mt-1 max-w-2xl text-sm text-stone-600">
-                  Acompanha os conteúdos principais, consulta mensagens recentes e entra rapidamente nas áreas disponíveis.
-                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveSection('profile')}
-                className="inline-flex w-fit items-center justify-center rounded-lg border border-[#0f4c36]/20 px-4 py-2 text-sm font-semibold text-[#0f4c36] transition hover:bg-[#0f4c36]/10"
-              >
-                Ver perfil
-              </button>
             </div>
           </div>
 
