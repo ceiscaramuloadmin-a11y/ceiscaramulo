@@ -60,6 +60,18 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain('Acompanha os conteúdos principais, consulta mensagens recentes e entra rapidamente nas áreas disponíveis.');
     expect(backofficePageSource).not.toContain('Ações rápidas');
     expect(backofficePageSource).not.toContain('Abre diretamente as áreas que podes gerir nesta sessão.');
+    expect(backofficePageSource).not.toContain('const OVERVIEW_PUBLIC_PAGES');
+    expect(overviewBlock).not.toContain('Páginas do site');
+    expect(overviewBlock).toContain('overviewProgrammeCards.map');
+    expect(backofficePageSource).toContain('galleryByContext?: Record<string, number>');
+    expect(backofficePageSource).toContain("value: dashboardStats?.galleryByContext?.[section.context] ?? 0");
+    expect(backofficePageSource).toContain("label: 'Artigos para venda'");
+    expect(backofficePageSource).toContain("label: 'Biblioteca JRS'");
+    expect(backofficePageSource).toContain("label: 'PON do Jueus'");
+    expect(backofficePageSource).toContain("label: 'Escola dos Nossos Avós'");
+    expect(backofficePageSource).toContain("label: 'Oficinas de formação'");
+    expect(backofficePageSource).toContain("label: 'Publicações'");
+    expect(overviewBlock).not.toContain("target=\"_blank\"");
     expect(overviewBlock).not.toContain('Ver perfil');
     expect(overviewBlock).not.toContain('Gerir perfil');
     expect(overviewBlock).not.toContain('<h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>');
@@ -165,22 +177,28 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain("fd.append('slug'");
   });
 
-  it('removes the broken checkboxes from news and activities forms', () => {
+  it('allows removing cover photos from news and activities without restoring publish toggles', () => {
     const newsBlock = backofficePageSource.slice(
-      backofficePageSource.indexOf("activeSection === 'news'"),
-      backofficePageSource.indexOf("activeSection === 'activities'")
+      backofficePageSource.indexOf("activeSection === 'news' ? ("),
+      backofficePageSource.indexOf("activeSection === 'activities' ? (")
     );
     const activitiesBlock = backofficePageSource.slice(
-      backofficePageSource.indexOf("activeSection === 'activities'"),
-      backofficePageSource.indexOf("activeSection === 'publications'")
+      backofficePageSource.indexOf("activeSection === 'activities' ? ("),
+      backofficePageSource.indexOf("activeSection === 'publications' ? (")
     );
 
-    expect(newsBlock).not.toContain('Check label="Remover imagem atual"');
+    expect(newsBlock).toContain('Check label="Remover foto de capa atual"');
+    expect(newsBlock).toContain('checked={newsForm.removeImage}');
+    expect(newsBlock).toContain('removeImage: checked, imageFile: checked ? null : c.imageFile');
     expect(newsBlock).not.toContain('Check label="Publicado"');
-    expect(activitiesBlock).not.toContain('Check label="Remover imagem atual"');
+    expect(activitiesBlock).toContain('Check label="Remover foto de capa atual"');
+    expect(activitiesBlock).toContain('checked={activityForm.removeImage}');
+    expect(activitiesBlock).toContain('removeImage: checked, imageFile: checked ? null : c.imageFile');
     expect(activitiesBlock).not.toContain('Check label="Publicado"');
     expect(backofficePageSource).toContain("fd.append('published', 'true')");
-    expect(backofficePageSource).toContain("fd.append('removeImage', 'false')");
+    expect(backofficePageSource).toContain("fd.append('removeImage', String(newsForm.removeImage))");
+    expect(backofficePageSource).toContain("fd.append('removeImage', String(activityForm.removeImage))");
+    expect(backofficePageSource).not.toContain("fd.append('removeImage', 'false')");
   });
 
   it('scrolls to the content form when creating a new section item', () => {

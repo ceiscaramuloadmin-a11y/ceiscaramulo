@@ -242,4 +242,53 @@ describe('news content API routes', () => {
       published: true,
     });
   });
+
+  it('PUT /api/[section]/[identifier] removes the current news cover image when requested', async () => {
+    newsFindUnique.mockResolvedValue({
+      id: 'id-cover',
+      title: 'Com capa',
+      slug: 'com-capa',
+      excerpt: '<p>Resumo</p>',
+      content: '<p>Corpo</p>',
+      author: 'Equipa',
+      published: true,
+      category: 'Geral',
+      publishedAt: new Date('2026-01-15T12:00:00.000Z'),
+      image: 'https://blob.example/backoffice/news/antiga.png',
+    });
+
+    newsUpdate.mockImplementation(async ({ data }) => ({
+      id: 'id-cover',
+      ...data,
+    }));
+
+    const { PUT } = await import('@/app/api/[section]/[identifier]/route');
+    const formData = newsForm({
+      title: 'Sem capa',
+      slug: 'sem-capa',
+      excerpt: '<p>Resumo</p>',
+      content: '<p>Corpo</p>',
+      published: 'true',
+      publishedAt: '2026-01-15T12:00:00.000Z',
+    });
+    formData.set('removeImage', 'true');
+
+    const request = new NextRequest('http://localhost/api/news/id-cover', {
+      method: 'PUT',
+      body: formData,
+    });
+
+    const response = await PUT(request, {
+      params: Promise.resolve({ section: 'news', identifier: 'id-cover' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(newsUpdate).toHaveBeenCalledWith({
+      where: { id: 'id-cover' },
+      data: expect.objectContaining({
+        image: null,
+      }),
+    });
+    expect(storePublicUpload).not.toHaveBeenCalled();
+  });
 });
