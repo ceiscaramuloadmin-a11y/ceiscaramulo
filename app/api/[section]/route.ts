@@ -11,7 +11,7 @@ import {
   sectionConfig,
 } from '@/app/api/_lib/cms';
 import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
-import { enqueueNewsPublishedNotifications } from '@/lib/newsletter-on-publish';
+import { enqueueActivityPublishedNotifications, enqueueNewsPublishedNotifications } from '@/lib/newsletter-on-publish';
 import { withPublicContentAsset, type PublicContentSection } from '@/lib/public-content-assets';
 
 // Estas rotas cobrem operações de coleção por secção:
@@ -114,6 +114,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           slug: draft.slug,
           title: draft.title,
           excerpt: draft.excerpt,
+          published: draft.published,
+        });
+      }
+    }
+
+    if (section === 'activities') {
+      const draft = created as { id?: string; title?: string; description?: string; published?: boolean };
+      if (
+        draft.id &&
+        draft.title &&
+        draft.description !== undefined &&
+        typeof draft.published === 'boolean'
+      ) {
+        await enqueueActivityPublishedNotifications(null, {
+          id: draft.id,
+          title: draft.title,
+          description: draft.description,
           published: draft.published,
         });
       }

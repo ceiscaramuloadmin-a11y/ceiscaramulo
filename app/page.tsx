@@ -87,7 +87,7 @@ function hasFindMany(delegate: unknown): delegate is {
 
 async function getPublicNews() {
   if (!hasFindMany(prisma.news)) {
-    return fallbackNewsArticles.slice(0, 2).map((article) => ({
+    return fallbackNewsArticles.slice(0, 3).map((article) => ({
       id: article.id,
       title: article.title,
       slug: article.slug,
@@ -103,12 +103,12 @@ async function getPublicNews() {
     const news = await prisma.news.findMany({
       where: { published: true },
       orderBy: [{ createdAt: 'desc' }, { publishedAt: 'desc' }],
-      take: 2,
+      take: 3,
     });
     return news.map((article) => withPublicContentAsset('news', article));
   } catch (error) {
     console.error('Error fetching news:', error);
-    return fallbackNewsArticles.slice(0, 2).map((article) => ({
+    return fallbackNewsArticles.slice(0, 3).map((article) => ({
       id: article.id,
       title: article.title,
       slug: article.slug,
@@ -138,7 +138,7 @@ async function getPublicActivities() {
     const activities = await prisma.activity.findMany({
       where: { published: true },
       orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
-      take: 6,
+      take: 3,
     });
     return activities.map((activity) => withPublicContentAsset('activities', activity));
   } catch (error) {

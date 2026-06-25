@@ -24,6 +24,6 @@ describe('activities calendar section', () => {
     expect(homeSource).not.toContain('Calendário de atividades na página inicial');
     expect(homeSource).not.toContain('Próximas');
     expect(homeSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
-    expect(homeSource).toContain('take: 6');
+    expect(homeSource).toContain('take: 3');
   });
 });
