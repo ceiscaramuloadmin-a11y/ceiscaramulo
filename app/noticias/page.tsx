@@ -63,7 +63,7 @@ async function getPublicNews() {
   try {
     const news = await prisma.news.findMany({
       where: { published: true },
-      orderBy: { publishedAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { publishedAt: 'desc' }],
     });
     return news.map((article) => withPublicContentAsset('news', article));
   } catch (error) {

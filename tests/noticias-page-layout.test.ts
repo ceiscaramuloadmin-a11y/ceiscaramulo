@@ -7,6 +7,10 @@ import { describe, expect, it } from 'vitest';
 const noticiasPageSource = readFileSync(resolve(process.cwd(), 'app/noticias/page.tsx'), 'utf8');
 
 describe('noticias page layout', () => {
+  it('lists the newest created news first on the public page', () => {
+    expect(noticiasPageSource).toContain("orderBy: [{ createdAt: 'desc' }, { publishedAt: 'desc' }]");
+  });
+
   it('uses compact responsive cards for the news listing', () => {
     expect(noticiasPageSource).toContain("import MotionReveal from '@/components/MotionReveal'");
     expect(noticiasPageSource).toContain('grid-cols-[repeat(auto-fit,minmax(240px,1fr))]');
