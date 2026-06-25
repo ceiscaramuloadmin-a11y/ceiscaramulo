@@ -21,6 +21,12 @@ export type ArticleEmailShape = {
   excerpt: string;
 };
 
+export type ActivityEmailShape = {
+  id: string;
+  title: string;
+  description: string;
+};
+
 export type NewsletterDeliveryResult = {
   attempted: boolean;
   sent: number;
@@ -41,8 +47,20 @@ export async function enqueueNewsPublishedNotifications(
   return notifySubscribersAboutPublishedArticle({ slug, title, excerpt });
 }
 
+export async function enqueueActivityPublishedNotifications(
+  previousPublished: boolean | null,
+  activity: ActivityEmailShape & { published: boolean }
+): Promise<NewsletterDeliveryResult> {
+  if (!shouldAnnounceNewsEmail(previousPublished, activity.published)) {
+    return { attempted: false, sent: 0, failed: 0, skippedReason: 'not_first_publish' };
+  }
+
+  const { id, title, description } = activity;
+  return notifySubscribersAboutPublishedActivity({ id, title, description });
+}
+
 function publicSiteOrigin() {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || process.env.VERCEL_URL;
+  const raw = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || process.env.APP_BASE_URL || process.env.VERCEL_URL;
   if (!raw?.trim()) {
     return 'https://ceiscaramulo.pt';
   }
@@ -57,6 +75,40 @@ function publicSiteOrigin() {
 }
 
 export async function notifySubscribersAboutPublishedArticle(article: ArticleEmailShape): Promise<NewsletterDeliveryResult> {
+  const origin = publicSiteOrigin();
+  const link = `${origin}/noticias/${encodeURIComponent(article.slug)}`;
+  const teaser = richTextToPlainText(article.excerpt).slice(0, 320);
+
+  return notifySubscribersAboutPublishedContent({
+    title: article.title,
+    teaser,
+    link,
+    subject: `Nova notícia: ${article.title}`,
+    ctaLabel: 'Ler notícia completa',
+  });
+}
+
+export async function notifySubscribersAboutPublishedActivity(activity: ActivityEmailShape): Promise<NewsletterDeliveryResult> {
+  const origin = publicSiteOrigin();
+  const link = `${origin}/atividades/${encodeURIComponent(activity.id)}`;
+  const teaser = richTextToPlainText(activity.description).slice(0, 320);
+
+  return notifySubscribersAboutPublishedContent({
+    title: activity.title,
+    teaser,
+    link,
+    subject: `Nova atividade: ${activity.title}`,
+    ctaLabel: 'Ver atividade',
+  });
+}
+
+async function notifySubscribersAboutPublishedContent(parts: {
+  title: string;
+  teaser: string;
+  link: string;
+  subject: string;
+  ctaLabel: string;
+}): Promise<NewsletterDeliveryResult> {
   const from = resolveMailSenderAddress();
 
   if (!from) {
@@ -72,11 +124,12 @@ export async function notifySubscribersAboutPublishedArticle(article: ArticleEma
     return { attempted: false, sent: 0, failed: 0, skippedReason: 'no_subscribers' };
   }
 
-  const origin = publicSiteOrigin();
-  const link = `${origin}/noticias/${encodeURIComponent(article.slug)}`;
-  const teaser = richTextToPlainText(article.excerpt).slice(0, 320);
-  const subject = `Nova notícia: ${article.title}`;
-  const html = buildNewsEmailHtml({ title: article.title, teaser, link });
+  const html = buildNewsEmailHtml({
+    title: parts.title,
+    teaser: parts.teaser,
+    link: parts.link,
+    ctaLabel: parts.ctaLabel,
+  });
   let sent = 0;
   let failed = 0;
 
@@ -84,9 +137,9 @@ export async function notifySubscribersAboutPublishedArticle(article: ArticleEma
     const outcome = await sendEmailViaResend({
       from,
       to: row.email,
-      subject,
+      subject: parts.subject,
       html,
-      text: `${article.title}\n\n${teaser}\n\nLer em: ${link}`,
+      text: `${parts.title}\n\n${parts.teaser}\n\nLer em: ${parts.link}`,
     });
 
     if (outcome.ok) {
@@ -126,7 +179,7 @@ export async function sendNewsletterSubscriptionConfirmation(email: string) {
   });
 }
 
-function buildNewsEmailHtml(parts: { title: string; teaser: string; link: string }) {
+function buildNewsEmailHtml(parts: { title: string; teaser: string; link: string; ctaLabel: string }) {
   return `
 <!DOCTYPE html>
 <html lang="pt">
@@ -139,7 +192,7 @@ function buildNewsEmailHtml(parts: { title: string; teaser: string; link: string
             <h1 style="margin:16px 0 12px;font-size:22px;line-height:1.2;">${escapeEmailAttr(parts.title)}</h1>
             <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${escapeEmailAttr(parts.teaser)}</p>
             <a href="${parts.link}" style="display:inline-block;background:#0f4c36;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">
-              Ler notícia completa
+              ${escapeEmailAttr(parts.ctaLabel)}
             </a>
             <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Se não quiseres estes avisos, responde pedindo remoção ou contacta CEISCaramulo.</p>
           </div>

@@ -29,6 +29,13 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
   });
 
+  it('limits homepage highlights to 3 activities and 3 news', () => {
+    expect(homePageSource).toContain('fallbackNewsArticles.slice(0, 3)');
+    expect(homePageSource).toContain('fallbackActivities.slice(0, 3)');
+    expect((homePageSource.match(/take: 3/g) || [])).toHaveLength(2);
+    expect(homePageSource).not.toContain('take: 6');
+  });
+
   it('uses compact responsive cards for homepage activities and news', () => {
     expect(homePageSource).toContain("import MotionReveal from '@/components/MotionReveal'");
     expect(homePageSource).toContain('grid-cols-[repeat(auto-fit,minmax(220px,300px))]');

@@ -48,12 +48,14 @@ describe('notifySubscribersAboutPublishedArticle', () => {
     process.env.NEXT_PUBLIC_SITE_URL = 'https://mysite.pt';
     process.env.RESEND_API_KEY = 're_test';
     delete process.env.SITE_URL;
+    delete process.env.APP_BASE_URL;
     delete process.env.VERCEL_URL;
   });
 
   afterEach(() => {
     delete process.env.RESEND_API_KEY;
     delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.APP_BASE_URL;
   });
 
   it('sends one email per subscriber with the expected public link', async () => {
@@ -108,6 +110,41 @@ describe('notifySubscribersAboutPublishedArticle', () => {
   });
 });
 
+describe('notifySubscribersAboutPublishedActivity', () => {
+  beforeEach(() => {
+    findMany.mockReset();
+    vi.mocked(mailResend.sendEmailViaResend).mockReset().mockResolvedValue({ ok: true });
+    vi.mocked(mailResend.resolveMailSenderAddress).mockReset().mockReturnValue('Boletim <noreply@test.pt>');
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://mysite.pt';
+    process.env.RESEND_API_KEY = 're_test';
+  });
+
+  afterEach(() => {
+    delete process.env.RESEND_API_KEY;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+  });
+
+  it('sends activity emails with the expected public activity link', async () => {
+    findMany.mockResolvedValue([{ email: 'a@test.pt' }]);
+
+    const result = await newsletter.notifySubscribersAboutPublishedActivity({
+      id: 'act-123',
+      title: 'Caminhada',
+      description: '<p>Vamos caminhar na Serra.</p>',
+    });
+
+    expect(result).toEqual({ attempted: true, sent: 1, failed: 0 });
+    const firstPayload = vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0];
+    expect(firstPayload).toMatchObject({
+      from: 'Boletim <noreply@test.pt>',
+      to: 'a@test.pt',
+      subject: 'Nova atividade: Caminhada',
+    });
+    expect(firstPayload.html).toContain('https://mysite.pt/atividades/act-123');
+    expect(firstPayload.text).toContain('https://mysite.pt/atividades/act-123');
+  });
+});
+
 describe('enqueueNewsPublishedNotifications', () => {
   beforeEach(() => {
     vi.mocked(mailResend.sendEmailViaResend).mockReset().mockResolvedValue({ ok: true });
@@ -146,5 +183,63 @@ describe('enqueueNewsPublishedNotifications', () => {
 
     expect(result).toMatchObject({ attempted: false, skippedReason: 'not_first_publish' });
     expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
+  });
+});
+
+describe('enqueueActivityPublishedNotifications', () => {
+  beforeEach(() => {
+    vi.mocked(mailResend.sendEmailViaResend).mockReset().mockResolvedValue({ ok: true });
+    vi.mocked(mailResend.resolveMailSenderAddress).mockReturnValue('Boletim <noreply@test.pt>');
+    findMany.mockReset();
+    findMany.mockResolvedValue([{ email: 'sub@test.pt' }]);
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://enqueue.test';
+    process.env.RESEND_API_KEY = 're_enqueue';
+  });
+
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.RESEND_API_KEY;
+  });
+
+  it('sends an activity announcement on first publication only', async () => {
+    const result = await newsletter.enqueueActivityPublishedNotifications(false, {
+      id: 'a1',
+      title: 'Atividade nova',
+      description: '<p>Resumo</p>',
+      published: true,
+    });
+
+    expect(result).toEqual({ attempted: true, sent: 1, failed: 0 });
+    expect(vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0].subject).toBe('Nova atividade: Atividade nova');
+
+    vi.mocked(mailResend.sendEmailViaResend).mockClear();
+
+    const skipped = await newsletter.enqueueActivityPublishedNotifications(true, {
+      id: 'a1',
+      title: 'Atividade nova',
+      description: '<p>Resumo</p>',
+      published: true,
+    });
+
+    expect(skipped).toMatchObject({ attempted: false, skippedReason: 'not_first_publish' });
+    expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
+  });
+
+  it('uses APP_BASE_URL as a fallback when newsletter site URL variables are absent', async () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.SITE_URL;
+    delete process.env.VERCEL_URL;
+    process.env.APP_BASE_URL = 'https://app-base.test/';
+    findMany.mockResolvedValue([{ email: 'a@test.pt' }]);
+
+    await newsletter.notifySubscribersAboutPublishedArticle({
+      slug: 'fallback-link',
+      title: 'Titulo',
+      excerpt: '<p>Resumo</p>',
+    });
+
+    const firstPayload = vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0];
+    expect(firstPayload.html).toContain('https://app-base.test/noticias/fallback-link');
+    expect(firstPayload.text).toContain('https://app-base.test/noticias/fallback-link');
   });
 });
