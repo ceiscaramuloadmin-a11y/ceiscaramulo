@@ -97,6 +97,21 @@ const ACTIVITY_CATEGORY_OPTIONS: Array<{ value: ActivityCategory; label: string 
   { value: 'formacao', label: 'Formação' },
 ];
 
+function getEmptyPublicationForm() {
+  return {
+    title: '',
+    author: '',
+    year: '',
+    type: '',
+    description: '',
+    downloadUrl: '',
+    documentFile: null as File | null,
+    published: true,
+    coverImageFile: null as File | null,
+    removeImage: false,
+  };
+}
+
 const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
   { id: 'hero', label: 'Hero' },
   { id: 'pages', label: 'Páginas' },
@@ -222,7 +237,8 @@ export default function BackofficePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento' as ActivityCategory, published: true, imageFile: null as File | null, removeImage: false });
-  const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null as File | null, published: true, coverImageFile: null as File | null, removeImage: false });
+  const [publicationForm, setPublicationForm] = useState(getEmptyPublicationForm);
+  const [publicationFormResetKey, setPublicationFormResetKey] = useState(0);
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
     title: '',
@@ -765,7 +781,13 @@ export default function BackofficePage() {
     setEditingId(null);
     if (activeSection === 'news') setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
     if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento', published: true, imageFile: null, removeImage: false });
-    if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false });
+    if (activeSection === 'publications') resetPublicationForm();
+  }
+
+  function resetPublicationForm() {
+    setEditingId(null);
+    setPublicationForm(getEmptyPublicationForm());
+    setPublicationFormResetKey((value) => value + 1);
   }
 
   async function saveSection(section: ContentSection, formData: FormData) {
@@ -1247,7 +1269,7 @@ export default function BackofficePage() {
     fd.append('type', publicationForm.type);
     fd.append('description', publicationForm.description);
     fd.append('downloadUrl', publicationForm.downloadUrl);
-    fd.append('published', String(publicationForm.published));
+    fd.append('published', 'true');
     fd.append('removeImage', String(publicationForm.removeImage));
     if (publicationForm.coverImageFile) fd.append('coverImage', publicationForm.coverImageFile);
     if (publicationForm.documentFile) fd.append('document', publicationForm.documentFile);
@@ -1268,7 +1290,8 @@ export default function BackofficePage() {
     }
     if (section === 'publications') {
       const v = item as Publication;
-      setPublicationForm({ title: v.title || '', author: v.author || '', year: String(v.year || new Date().getFullYear()), type: v.type || 'documento', description: v.description || '', downloadUrl: v.downloadUrl || '', documentFile: null, published: v.published, coverImageFile: null, removeImage: false });
+      setPublicationForm({ title: v.title || '', author: v.author || '', year: String(v.year || ''), type: v.type || '', description: v.description || '', downloadUrl: v.downloadUrl || '', documentFile: null, published: true, coverImageFile: null, removeImage: false });
+      setPublicationFormResetKey((value) => value + 1);
     }
   }
 
@@ -1530,10 +1553,10 @@ export default function BackofficePage() {
           list={publications}
           loading={isLoadingContent}
           busy={busy}
-          onNew={() => { setEditingId(null); setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false }); }}
+          onNew={resetPublicationForm}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><Check label="Publicado" checked={publicationForm.published} onChange={(checked) => setPublicationForm((c) => ({ ...c, published: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 

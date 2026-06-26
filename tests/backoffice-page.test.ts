@@ -167,6 +167,24 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
   });
 
+  it('keeps resources always public and clears the resources form when creating a new item', () => {
+    const resourcesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'contacts' ? (")
+    );
+
+    expect(backofficePageSource).toContain('function getEmptyPublicationForm()');
+    expect(backofficePageSource).toContain("year: ''");
+    expect(backofficePageSource).toContain("type: ''");
+    expect(backofficePageSource).toContain('setPublicationForm(getEmptyPublicationForm())');
+    expect(resourcesBlock).toContain('onNew={resetPublicationForm}');
+    expect(resourcesBlock).toContain('key={`publication-document-${publicationFormResetKey}`}');
+    expect(resourcesBlock).toContain('key={`publication-cover-${publicationFormResetKey}`}');
+    expect(resourcesBlock).not.toContain('Check label="Publicado"');
+    expect(backofficePageSource).toContain("fd.append('published', 'true')");
+    expect(backofficePageSource).not.toContain("fd.append('published', String(publicationForm.published))");
+  });
+
   it('uses browser-safe image formats for public cover upload pickers', () => {
     expect(backofficePageSource).toContain("const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'");
     expect(backofficePageSource).toContain("if (type === 'photo') return WEB_IMAGE_ACCEPT");
