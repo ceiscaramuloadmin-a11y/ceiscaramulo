@@ -1503,7 +1503,7 @@ export default function BackofficePage() {
               <Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} />
               <Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} />
               <label className="grid gap-1 text-sm text-stone-700">
-                Categoria
+                Categoria da atividade
                 <select
                   value={activityForm.category}
                   onChange={(event) => setActivityForm((c) => ({ ...c, category: event.target.value as ActivityCategory }))}

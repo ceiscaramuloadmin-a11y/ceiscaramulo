@@ -196,7 +196,8 @@ describe('backoffice page guards', () => {
     expect(activitiesBlock).toContain('Check label="Remover foto de capa atual"');
     expect(activitiesBlock).toContain('checked={activityForm.removeImage}');
     expect(activitiesBlock).toContain('removeImage: checked, imageFile: checked ? null : c.imageFile');
-    expect(activitiesBlock).toContain('Categoria');
+    expect(activitiesBlock).toContain('Categoria da atividade');
+    expect(activitiesBlock).toContain('value={activityForm.category}');
     expect(activitiesBlock).toContain('ACTIVITY_CATEGORY_OPTIONS.map');
     expect(backofficePageSource).toContain("fd.append('category', activityForm.category)");
     expect(backofficePageSource).toContain("category: v.category || 'evento'");
