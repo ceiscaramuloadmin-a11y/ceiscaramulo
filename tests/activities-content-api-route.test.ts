@@ -11,6 +11,7 @@ const {
   appendAuditLog,
   hasAdminPermission,
   enqueueActivityPublishedNotifications,
+  storePublicUpload,
 } = vi.hoisted(() => ({
   activityCreate: vi.fn(),
   activityFindUnique: vi.fn(),
@@ -19,6 +20,7 @@ const {
   appendAuditLog: vi.fn(),
   hasAdminPermission: vi.fn(),
   enqueueActivityPublishedNotifications: vi.fn(),
+  storePublicUpload: vi.fn(),
 }));
 
 vi.mock('@/lib/auth0', () => ({
@@ -48,7 +50,7 @@ vi.mock('@/lib/newsletter-on-publish', () => ({
 }));
 
 vi.mock('@/lib/upload-storage', () => ({
-  storePublicUpload: vi.fn(),
+  storePublicUpload,
 }));
 
 vi.mock('@/app/api/_lib/cms', async (importOriginal) => {
@@ -68,6 +70,7 @@ function activityForm(overrides: Record<string, string> = {}) {
   formData.set('date', overrides.date ?? '2026-07-10T10:00:00.000Z');
   formData.set('endDate', overrides.endDate ?? '');
   formData.set('location', overrides.location ?? 'Caramulo');
+  formData.set('category', overrides.category ?? 'caminhada');
   formData.set('published', overrides.published ?? 'true');
   return formData;
 }
@@ -81,6 +84,7 @@ describe('activities content API routes', () => {
     });
     hasAdminPermission.mockReturnValue(true);
     appendAuditLog.mockResolvedValue(undefined);
+    storePublicUpload.mockResolvedValue({ publicUrl: 'https://blob.example/backoffice/activities/capa.png' });
   });
 
   afterEach(() => {
@@ -95,6 +99,7 @@ describe('activities content API routes', () => {
       date: new Date('2026-07-10T10:00:00.000Z'),
       endDate: null,
       location: 'Caramulo',
+      category: 'caminhada',
       published: true,
       image: null,
     });
@@ -109,11 +114,44 @@ describe('activities content API routes', () => {
     );
 
     expect(response.status).toBe(201);
+    expect(activityCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        category: 'caminhada',
+      }),
+    });
     expect(enqueueActivityPublishedNotifications).toHaveBeenCalledWith(null, {
       id: 'activity-1',
       title: 'Atividade',
       description: '<p>Descricao</p>',
       published: true,
+    });
+  });
+
+  it('POST /api/[section] stores the activity cover image as a public upload URL', async () => {
+    activityCreate.mockImplementation(async ({ data }) => ({
+      id: 'activity-cover',
+      ...data,
+    }));
+
+    const formData = activityForm({ category: 'workshop' });
+    formData.set('image', new File(['cover'], 'capa.png', { type: 'image/png' }));
+
+    const { POST } = await import('@/app/api/[section]/route');
+    const response = await POST(
+      new NextRequest('http://localhost/api/activities', {
+        method: 'POST',
+        body: formData,
+      }),
+      { params: Promise.resolve({ section: 'activities' }) }
+    );
+
+    expect(response.status).toBe(201);
+    expect(storePublicUpload).toHaveBeenCalled();
+    expect(activityCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        category: 'workshop',
+        image: 'https://blob.example/backoffice/activities/capa.png',
+      }),
     });
   });
 
