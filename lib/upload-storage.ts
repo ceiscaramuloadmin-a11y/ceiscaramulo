@@ -49,9 +49,16 @@ function isPrivateStoreAccessError(error: unknown) {
 }
 
 function isMissingBlobCredentialsError(error: unknown) {
-  const message = String(error instanceof Error ? error.message : error);
+  const message = String(error instanceof Error ? error.message : error).toLowerCase();
 
-  return message.includes('No blob credentials found') || message.includes('No read-write token found');
+  return (
+    message.includes('no blob credentials found') ||
+    message.includes('no read-write token found') ||
+    message.includes('blob_read_write_token') ||
+    message.includes('read-write token') ||
+    message.includes('missing token') ||
+    message.includes('no token')
+  );
 }
 
 function databaseImageBackup(input: PublicUploadInput): PublicUploadResult | null {

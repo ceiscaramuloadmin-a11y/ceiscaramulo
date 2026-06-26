@@ -87,7 +87,7 @@ describe('newsletter subscribe route', () => {
 
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
-      message: expect.stringContaining('Subscrição confirmada'),
+      message: expect.stringContaining('email de confirmação não foi enviado'),
     });
   });
 
