@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   appendAuditLog,
   createGalleryMedia,
-  fileToDataUrl,
   jsonError,
   listGalleryMedia,
   requireAdminContextFromRequest,
   requireAdminFromRequest,
+  storeUploadedFile,
 } from '@/app/api/_lib/cms';
 import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
 import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
       return jsonError(getInlineAudioUploadErrorMessage(), 413);
     }
 
-    const source = sourceFile ? await fileToDataUrl(sourceFile) : sourceUrl;
-    const thumbnail = thumbnailFile ? await fileToDataUrl(thumbnailFile) : thumbUrl || null;
+    const source = sourceFile ? await storeUploadedFile(sourceFile, `gallery-${galleryContext}`) : sourceUrl;
+    const thumbnail = thumbnailFile ? await storeUploadedFile(thumbnailFile, `gallery-thumbnails-${galleryContext}`) : thumbUrl || null;
 
     if (!title) {
       return jsonError('Título é obrigatório.', 400);

@@ -286,6 +286,11 @@ export function parsePartners(value: unknown) {
     .filter(Boolean);
 }
 
+export function normalizeActivityCategory(value: unknown) {
+  const category = String(value || '').trim();
+  return ['caminhada', 'workshop', 'palestra', 'evento', 'formacao'].includes(category) ? category : 'evento';
+}
+
 const adminEmails = String(process.env.ADMIN_EMAILS || '')
   .split(',')
   .map((item) => item.trim().toLowerCase())
@@ -1045,7 +1050,7 @@ export async function parseSectionFormData(
       date: requiredDate(formData.get('date')),
       endDate: toDate(formData.get('endDate')),
       location: emptyToNull(formData.get('location')),
-      category: 'evento',
+      category: normalizeActivityCategory(formData.get('category')),
       published: booleanFromForm(formData.get('published')),
       image: resolvedAsset,
     };

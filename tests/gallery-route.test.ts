@@ -76,14 +76,14 @@ describe('gallery route', () => {
     expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus');
   });
 
-  it('stores programme gallery uploads inline to avoid production filesystem errors', async () => {
-    fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,eA==');
+  it('stores programme gallery uploads through public storage so sale photos work in production', async () => {
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png');
     createGalleryMedia.mockResolvedValueOnce({
       id: 'media-1',
       title: 'Foto',
       type: 'photo',
       context: 'escola-dos-nossos-avos',
-      source: 'data:image/png;base64,eA==',
+      source: '/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png',
       published: true,
     });
 
@@ -106,20 +106,20 @@ describe('gallery route', () => {
       context: 'escola-dos-nossos-avos',
       title: 'Foto',
       type: 'photo',
-      source: 'data:image/png;base64,eA==',
+      source: '/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png',
     }));
-    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
-    expect(storeUploadedFile).not.toHaveBeenCalled();
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-escola-dos-nossos-avos');
+    expect(fileToDataUrl).not.toHaveBeenCalled();
   });
 
   it('stores Biblioteca JRS document uploads with the dedicated context', async () => {
-    fileToDataUrl.mockResolvedValueOnce('data:application/pdf;base64,cGRm');
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-biblioteca-jrs/catalogo.pdf');
     createGalleryMedia.mockResolvedValueOnce({
       id: 'jrs-doc-1',
       title: 'Catálogo JRS',
       type: 'document',
       context: 'biblioteca-jrs',
-      source: 'data:application/pdf;base64,cGRm',
+      source: '/uploads/backoffice/gallery-biblioteca-jrs/catalogo.pdf',
       published: true,
     });
 
@@ -142,21 +142,21 @@ describe('gallery route', () => {
       context: 'biblioteca-jrs',
       title: 'Catálogo JRS',
       type: 'document',
-      source: 'data:application/pdf;base64,cGRm',
+      source: '/uploads/backoffice/gallery-biblioteca-jrs/catalogo.pdf',
       mimeType: 'application/pdf',
     }));
-    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
-    expect(storeUploadedFile).not.toHaveBeenCalled();
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-biblioteca-jrs');
+    expect(fileToDataUrl).not.toHaveBeenCalled();
   });
 
-  it('stores global gallery uploads inline to avoid production filesystem errors', async () => {
-    fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,global');
+  it('stores global gallery uploads through public storage', async () => {
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-global/foto.png');
     createGalleryMedia.mockResolvedValueOnce({
       id: 'media-global',
       title: 'Foto global',
       type: 'photo',
       context: 'global',
-      source: 'data:image/png;base64,global',
+      source: '/uploads/backoffice/gallery-global/foto.png',
       published: true,
     });
 
@@ -176,13 +176,13 @@ describe('gallery route', () => {
 
     expect(createGalleryMedia).toHaveBeenCalledWith(expect.objectContaining({
       context: 'global',
-      source: 'data:image/png;base64,global',
+      source: '/uploads/backoffice/gallery-global/foto.png',
     }));
-    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
-    expect(storeUploadedFile).not.toHaveBeenCalled();
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-global');
+    expect(fileToDataUrl).not.toHaveBeenCalled();
   });
 
-  it('stores programme gallery replacement uploads inline', async () => {
+  it('stores programme gallery replacement uploads through public storage', async () => {
     getGalleryMediaById.mockResolvedValueOnce({
       id: 'pon-1',
       title: 'Foto antiga',
@@ -194,13 +194,13 @@ describe('gallery route', () => {
       mimeType: 'image/png',
       published: true,
     });
-    fileToDataUrl.mockResolvedValueOnce('data:image/png;base64,new');
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-pon-do-jueus/foto-nova.png');
     updateGalleryMedia.mockResolvedValueOnce({
       id: 'pon-1',
       title: 'Foto nova',
       type: 'photo',
       context: 'pon-do-jueus',
-      source: 'data:image/png;base64,new',
+      source: '/uploads/backoffice/gallery-pon-do-jueus/foto-nova.png',
       published: true,
     });
 
@@ -221,10 +221,10 @@ describe('gallery route', () => {
 
     expect(updateGalleryMedia).toHaveBeenCalledWith('pon-1', expect.objectContaining({
       context: 'pon-do-jueus',
-      source: 'data:image/png;base64,new',
+      source: '/uploads/backoffice/gallery-pon-do-jueus/foto-nova.png',
     }));
-    expect(fileToDataUrl).toHaveBeenCalledWith(expect.any(File));
-    expect(storeUploadedFile).not.toHaveBeenCalled();
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-pon-do-jueus');
+    expect(fileToDataUrl).not.toHaveBeenCalled();
   });
 
   it('allows creating gallery media without a source URL or uploaded file', async () => {

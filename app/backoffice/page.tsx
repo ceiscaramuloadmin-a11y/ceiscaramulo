@@ -30,6 +30,7 @@ import type {
   FooterContactSettings,
   GalleryMediaItem,
   GalleryMediaType,
+  ActivityCategory,
   LayoutIconName,
   NewsArticle,
   Publication,
@@ -86,6 +87,14 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'admins', label: 'Admins' },
   { id: 'contacts', label: 'Mensagens' },
   { id: 'audit', label: 'Histórico' },
+];
+
+const ACTIVITY_CATEGORY_OPTIONS: Array<{ value: ActivityCategory; label: string }> = [
+  { value: 'evento', label: 'Evento' },
+  { value: 'caminhada', label: 'Caminhada' },
+  { value: 'workshop', label: 'Workshop' },
+  { value: 'palestra', label: 'Palestra' },
+  { value: 'formacao', label: 'Formação' },
 ];
 
 const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
@@ -212,7 +221,7 @@ export default function BackofficePage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null as File | null, removeImage: false });
-  const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null as File | null, removeImage: false });
+  const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento' as ActivityCategory, published: true, imageFile: null as File | null, removeImage: false });
   const [publicationForm, setPublicationForm] = useState({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null as File | null, published: true, coverImageFile: null as File | null, removeImage: false });
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
@@ -267,10 +276,12 @@ export default function BackofficePage() {
   );
   const overviewProgrammeCards = useMemo(
     () =>
-      Object.values(PROGRAMME_GALLERY_SECTIONS).map((section) => ({
-        title: section.label,
-        value: dashboardStats?.galleryByContext?.[section.context] ?? 0,
-      })),
+      Object.values(PROGRAMME_GALLERY_SECTIONS)
+        .filter((section) => section.context !== 'biblioteca')
+        .map((section) => ({
+          title: section.label,
+          value: dashboardStats?.galleryByContext?.[section.context] ?? 0,
+        })),
     [dashboardStats?.galleryByContext]
   );
   const visibleGalleryIds = useMemo(() => new Set(galleryItems.map((item) => item.id)), [galleryItems]);
@@ -753,7 +764,7 @@ export default function BackofficePage() {
   function resetCurrentForm() {
     setEditingId(null);
     if (activeSection === 'news') setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false });
-    if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false });
+    if (activeSection === 'activities') setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento', published: true, imageFile: null, removeImage: false });
     if (activeSection === 'publications') setPublicationForm({ title: '', author: '', year: String(new Date().getFullYear()), type: 'documento', description: '', downloadUrl: '', documentFile: null, published: true, coverImageFile: null, removeImage: false });
   }
 
@@ -1220,6 +1231,7 @@ export default function BackofficePage() {
     fd.append('date', activityForm.date);
     fd.append('endDate', activityForm.endDate);
     fd.append('location', activityForm.location);
+    fd.append('category', activityForm.category);
     fd.append('published', 'true');
     fd.append('removeImage', String(activityForm.removeImage));
     if (activityForm.imageFile) fd.append('image', activityForm.imageFile);
@@ -1252,7 +1264,7 @@ export default function BackofficePage() {
     }
     if (section === 'activities') {
       const v = item as Activity;
-      setActivityForm({ title: v.title || '', description: v.description || '', date: v.date ? new Date(v.date).toISOString().slice(0, 10) : '', endDate: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : '', location: v.location || '', published: v.published, imageFile: null, removeImage: false });
+      setActivityForm({ title: v.title || '', description: v.description || '', date: v.date ? new Date(v.date).toISOString().slice(0, 10) : '', endDate: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : '', location: v.location || '', category: v.category || 'evento', published: v.published, imageFile: null, removeImage: false });
     }
     if (section === 'publications') {
       const v = item as Publication;
@@ -1480,10 +1492,35 @@ export default function BackofficePage() {
           list={activities}
           loading={isLoadingContent}
           busy={busy}
-          onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', published: true, imageFile: null, removeImage: false }); }}
+          onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}><Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required /><RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled /><Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required /><Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} /><Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} /><FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file, removeImage: false }))} /><Check label="Remover foto de capa atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked, imageFile: checked ? null : c.imageFile }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button></form>}
+          form={
+            <form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}>
+              <Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required />
+              <RichTextEditor label="Descrição" value={activityForm.description} onChange={(v) => setActivityForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('activities', file, kind)} fullscreenEnabled />
+              <Input label="Data" type="date" value={activityForm.date} onChange={(v) => setActivityForm((c) => ({ ...c, date: v }))} required />
+              <Input label="Data fim" type="date" value={activityForm.endDate} onChange={(v) => setActivityForm((c) => ({ ...c, endDate: v }))} />
+              <Input label="Local" value={activityForm.location} onChange={(v) => setActivityForm((c) => ({ ...c, location: v }))} />
+              <label className="grid gap-1 text-sm text-stone-700">
+                Categoria
+                <select
+                  value={activityForm.category}
+                  onChange={(event) => setActivityForm((c) => ({ ...c, category: event.target.value as ActivityCategory }))}
+                  className="h-10 rounded-lg border border-stone-300 px-3"
+                >
+                  {ACTIVITY_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <FileInput label="Imagem" onFile={(file) => setActivityForm((c) => ({ ...c, imageFile: file, removeImage: false }))} />
+              <Check label="Remover foto de capa atual" checked={activityForm.removeImage} onChange={(checked) => setActivityForm((c) => ({ ...c, removeImage: checked, imageFile: checked ? null : c.imageFile }))} />
+              <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar atividade')}</button>
+            </form>
+          }
         />
       ) : null}
 

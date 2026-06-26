@@ -65,6 +65,7 @@ describe('backoffice page guards', () => {
     expect(overviewBlock).toContain('overviewProgrammeCards.map');
     expect(backofficePageSource).toContain('galleryByContext?: Record<string, number>');
     expect(backofficePageSource).toContain("value: dashboardStats?.galleryByContext?.[section.context] ?? 0");
+    expect(backofficePageSource).toContain(".filter((section) => section.context !== 'biblioteca')");
     expect(backofficePageSource).toContain("label: 'Artigos para venda'");
     expect(backofficePageSource).toContain("label: 'Biblioteca JRS'");
     expect(backofficePageSource).toContain("label: 'PON do Jueus'");
@@ -77,6 +78,7 @@ describe('backoffice page guards', () => {
     expect(overviewBlock).not.toContain('<h2 className="text-xl font-semibold text-[#0f4c36]">Conta</h2>');
     expect(backofficePageSource).not.toContain('<Card title="Projetos" value={stats.projects}');
     expect(backofficePageSource).toContain('<Card title="Mensagens" value={stats.contacts}');
+    expect((overviewBlock.match(/title=\"Recursos\"/g) || [])).toHaveLength(1);
     expect(overviewBlock).not.toContain("onClick={() => setActiveSection('profile')}");
     expect(overviewBlock).not.toContain("!['overview', 'profile'].includes(item.id)");
     expect(backofficePageSource).toContain('lg:grid-cols-4');
@@ -194,6 +196,10 @@ describe('backoffice page guards', () => {
     expect(activitiesBlock).toContain('Check label="Remover foto de capa atual"');
     expect(activitiesBlock).toContain('checked={activityForm.removeImage}');
     expect(activitiesBlock).toContain('removeImage: checked, imageFile: checked ? null : c.imageFile');
+    expect(activitiesBlock).toContain('Categoria');
+    expect(activitiesBlock).toContain('ACTIVITY_CATEGORY_OPTIONS.map');
+    expect(backofficePageSource).toContain("fd.append('category', activityForm.category)");
+    expect(backofficePageSource).toContain("category: v.category || 'evento'");
     expect(activitiesBlock).not.toContain('Check label="Publicado"');
     expect(backofficePageSource).toContain("fd.append('published', 'true')");
     expect(backofficePageSource).toContain("fd.append('removeImage', String(newsForm.removeImage))");
