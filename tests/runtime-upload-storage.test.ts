@@ -207,6 +207,26 @@ describe('runtime upload storage', () => {
     });
   });
 
+  it('falls back to database-backed uploads when Vercel Blob reports a missing token with another message', async () => {
+    process.env.VERCEL = '1';
+    blobPut.mockRejectedValueOnce(new Error('Vercel Blob: Missing token. Set BLOB_READ_WRITE_TOKEN to upload files.'));
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['pdf'], 'catalogo.pdf', { type: 'application/pdf' });
+
+    const url = await storeUploadedFile(file, 'gallery-biblioteca');
+
+    expect(url).toMatch(/^\/uploads\/backoffice\/gallery-biblioteca\/.+\.pdf$/);
+    expect(siteSettingUpsert).toHaveBeenCalledWith({
+      where: { key: expect.stringMatching(/^upload:backoffice:gallery-biblioteca\/.+\.pdf$/) },
+      create: {
+        key: expect.stringMatching(/^upload:backoffice:gallery-biblioteca\/.+\.pdf$/),
+        value: 'data:application/pdf;base64,cGRm',
+      },
+      update: { value: 'data:application/pdf;base64,cGRm' },
+    });
+  });
+
   it('rejects HEIC uploads before saving unusable public cover image URLs', async () => {
     const { storeUploadedFile } = await import('@/app/api/_lib/cms');
     const file = new File(['heic'], 'capa.heic', { type: 'image/heic' });

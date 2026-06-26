@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     ok: true,
     message: confirmation.ok
       ? 'Subscrição confirmada. Enviámos um email de confirmação para a tua caixa de correio.'
-      : 'Subscrição confirmada. Obrigado pelo interesse na newsletter.',
+      : 'Subscrição guardada, mas o email de confirmação não foi enviado porque o serviço de email ainda não está configurado.',
   });
 }
 
