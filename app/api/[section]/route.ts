@@ -138,7 +138,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return jsonError(error instanceof Error ? error.message : 'Ocorreu um erro inesperado.', 500);
+    const message = error instanceof Error ? error.message : 'Ocorreu um erro inesperado.';
+    const status = message.startsWith('Ano inválido.') || message.startsWith('Data inválida.') ? 400 : 500;
+    if (status === 500) {
+      console.error(error);
+    }
+    return jsonError(message, status);
   }
 }

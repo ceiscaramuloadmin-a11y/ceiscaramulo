@@ -185,6 +185,29 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain("fd.append('published', String(publicationForm.published))");
   });
 
+  it('limits resource types to values accepted by the database', () => {
+    const resourcesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'contacts' ? (")
+    );
+
+    expect(backofficePageSource).toContain('const PUBLICATION_TYPE_OPTIONS');
+    expect(backofficePageSource).toContain("{ value: 'documento', label: 'Documento' }");
+    expect(backofficePageSource).toContain("{ value: 'livro', label: 'Livro' }");
+    expect(backofficePageSource).toContain("{ value: 'artigo', label: 'Artigo' }");
+    expect(backofficePageSource).toContain("{ value: 'relatorio', label: 'Relatório' }");
+    expect(backofficePageSource).toContain("{ value: 'tese', label: 'Tese' }");
+    expect(resourcesBlock).toContain('PUBLICATION_TYPE_OPTIONS.map');
+    expect(resourcesBlock).toContain('Selecionar tipo');
+    expect(resourcesBlock).not.toContain('<Input label="Tipo"');
+  });
+
+  it('shows a specific message when resource uploads are too large', () => {
+    expect(backofficePageSource).toContain('const responseText = await response.text()');
+    expect(backofficePageSource).toContain('response.status === 413');
+    expect(backofficePageSource).toContain('O ficheiro é demasiado grande para ser enviado de uma vez');
+  });
+
   it('uses browser-safe image formats for public cover upload pickers', () => {
     expect(backofficePageSource).toContain("const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'");
     expect(backofficePageSource).toContain("if (type === 'photo') return WEB_IMAGE_ACCEPT");
