@@ -2217,6 +2217,12 @@ export default function BackofficePage() {
               <div className="grid gap-3 rounded-lg border border-stone-200 p-3 md:grid-cols-2">
                 <Input label="CTA contacto · Título" value={layoutSettings.aboutPage.contactTitle} onChange={(value) => updateAboutPage({ contactTitle: value })} />
                 <TextArea label="CTA contacto · Descrição" value={layoutSettings.aboutPage.contactDescription} onChange={(value) => updateAboutPage({ contactDescription: value })} />
+                <Input label="CTA contacto · Label da morada" value={layoutSettings.aboutPage.contactAddressLabel} onChange={(value) => updateAboutPage({ contactAddressLabel: value })} />
+                <TextArea label="CTA contacto · Morada" value={layoutSettings.aboutPage.contactAddress} onChange={(value) => updateAboutPage({ contactAddress: value })} />
+                <Input label="CTA contacto · Label do telefone" value={layoutSettings.aboutPage.contactPhoneLabel} onChange={(value) => updateAboutPage({ contactPhoneLabel: value })} />
+                <Input label="CTA contacto · Telefone" value={layoutSettings.aboutPage.contactPhone} onChange={(value) => updateAboutPage({ contactPhone: value })} />
+                <Input label="CTA contacto · Label do email" value={layoutSettings.aboutPage.contactEmailLabel} onChange={(value) => updateAboutPage({ contactEmailLabel: value })} />
+                <Input label="CTA contacto · Email" type="email" value={layoutSettings.aboutPage.contactEmail} onChange={(value) => updateAboutPage({ contactEmail: value })} />
               </div>
 
               <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
@@ -2298,6 +2304,45 @@ export default function BackofficePage() {
                           updateAppearancePage(page.id, { emptyMessage: value } as Partial<(typeof pageSettings)>)
                         }
                       />
+                    ) : null}
+                    {page.id === 'contactos' ? (
+                      <>
+                        <Input
+                          label="Página Contactos · Título das informações"
+                          value={layoutSettings.pages.contactos.institutionalTitle}
+                          onChange={(value) => updateAppearancePage('contactos', { institutionalTitle: value })}
+                        />
+                        <Input
+                          label="Página Contactos · Label do presidente"
+                          value={layoutSettings.pages.contactos.presidentLabel}
+                          onChange={(value) => updateAppearancePage('contactos', { presidentLabel: value })}
+                        />
+                        <Input
+                          label="Página Contactos · Nome do presidente"
+                          value={layoutSettings.pages.contactos.presidentName}
+                          onChange={(value) => updateAppearancePage('contactos', { presidentName: value })}
+                        />
+                        <Input
+                          label="Página Contactos · Label do telefone"
+                          value={layoutSettings.pages.contactos.phoneLabel}
+                          onChange={(value) => updateAppearancePage('contactos', { phoneLabel: value })}
+                        />
+                        <Input
+                          label="Página Contactos · Telefone"
+                          value={layoutSettings.pages.contactos.phone}
+                          onChange={(value) => updateAppearancePage('contactos', { phone: value })}
+                        />
+                        <Input
+                          label="Página Contactos · Label do email"
+                          value={layoutSettings.pages.contactos.emailLabel}
+                          onChange={(value) => updateAppearancePage('contactos', { emailLabel: value })}
+                        />
+                        <Input
+                          label="Página Contactos · Email"
+                          value={layoutSettings.pages.contactos.email}
+                          onChange={(value) => updateAppearancePage('contactos', { email: value })}
+                        />
+                      </>
                     ) : null}
                   </div>
                 );

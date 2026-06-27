@@ -172,6 +172,10 @@ describe('site-layout', () => {
 
   it('defines editable page intros for the public frontend pages', () => {
     expect(defaultSiteLayoutSettings.pages.contactos.title).toBe('Fale connosco.');
+    expect(defaultSiteLayoutSettings.pages.contactos.institutionalTitle).toBe('Informações institucionais');
+    expect(defaultSiteLayoutSettings.pages.contactos.presidentName).toBe('Prof. Luís Costa');
+    expect(defaultSiteLayoutSettings.pages.contactos.phone).toBe('966717360');
+    expect(defaultSiteLayoutSettings.pages.contactos.email).toBe('ceiscaramulo@gmail.com');
     expect(defaultSiteLayoutSettings.pages.galeria.title).toBe('Galeria Multimédia');
     expect(defaultSiteLayoutSettings.pages.bibliotecaJrs.title).toBe('Biblioteca JRS');
     expect(defaultSiteLayoutSettings.pages.oficinaDoBurel.title).toBe('Oficina do Burel');
@@ -193,6 +197,10 @@ describe('site-layout', () => {
         members: expect.arrayContaining(['Presidente: Luís Filipe Rodrigues da Costa']),
       })
     );
+    expect(defaultSiteLayoutSettings.aboutPage.contactAddressLabel).toBe('Morada');
+    expect(defaultSiteLayoutSettings.aboutPage.contactAddress).toContain('Caramulo');
+    expect(defaultSiteLayoutSettings.aboutPage.contactPhone).toBe('+351 966 717 360');
+    expect(defaultSiteLayoutSettings.aboutPage.contactEmail).toBe('ceiscaramulo@gmail.com');
   });
 
   it('deep merges object branches and replaces arrays', () => {

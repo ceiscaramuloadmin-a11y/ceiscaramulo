@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
-import { contactInfo } from '@/data/site';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -183,24 +182,22 @@ export default async function SobreNosPage() {
               <div className="flex items-start gap-3">
                 <MapPin className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-white">Morada</p>
-                  <p className="text-sm text-white/75">
-                    {contactInfo.address}, {contactInfo.postalCode} {contactInfo.city}
-                  </p>
+                  <p className="font-medium text-white">{about.contactAddressLabel}</p>
+                  <p className="text-sm text-white/75">{about.contactAddress}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Phone className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-white">Telefone</p>
-                  <p className="text-sm text-white/75">{contactInfo.phone}</p>
+                  <p className="font-medium text-white">{about.contactPhoneLabel}</p>
+                  <p className="text-sm text-white/75">{about.contactPhone}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Mail className="mt-1 h-5 w-5 shrink-0 text-[#d9e4d1]" />
                 <div>
-                  <p className="font-medium text-white">Email</p>
-                  <p className="text-sm text-white/75">{contactInfo.email}</p>
+                  <p className="font-medium text-white">{about.contactEmailLabel}</p>
+                  <p className="text-sm text-white/75">{about.contactEmail}</p>
                 </div>
               </div>
             </div>
