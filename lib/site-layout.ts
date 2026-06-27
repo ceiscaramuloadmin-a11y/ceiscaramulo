@@ -94,6 +94,13 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     contactos: {
       title: 'Fale connosco.',
       description: 'Estamos disponíveis para esclarecer dúvidas, receber sugestões e acompanhar iniciativas ligadas ao CEISCaramulo.',
+      institutionalTitle: 'Informações institucionais',
+      presidentLabel: 'Presidente da Direção',
+      presidentName: 'Prof. Luís Costa',
+      phoneLabel: 'Telemóvel',
+      phone: '966717360',
+      emailLabel: 'Email',
+      email: 'ceiscaramulo@gmail.com',
     },
     galeria: {
       title: 'Galeria Multimédia',
@@ -175,6 +182,12 @@ export const defaultSiteLayoutSettings: SiteLayoutSettings = {
     ],
     contactTitle: 'Contacte-nos',
     contactDescription: 'Tem questões ou quer saber mais sobre o nosso trabalho? Entre em contacto connosco.',
+    contactAddressLabel: 'Morada',
+    contactAddress: `${contactInfo.address}, ${contactInfo.postalCode} ${contactInfo.city}`,
+    contactPhoneLabel: 'Telefone',
+    contactPhone: contactInfo.phone,
+    contactEmailLabel: 'Email',
+    contactEmail: contactInfo.email,
   },
   serra: {
     sections: [

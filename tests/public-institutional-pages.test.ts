@@ -36,6 +36,10 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain('layout.aboutPage.foundersParagraphs.map');
     expect(sobreNosPageSource).toContain('socialBodies.map');
     expect(sobreNosPageSource).toContain('layout.aboutPage.socialBodiesTitle');
+    expect(sobreNosPageSource).toContain('about.contactAddress');
+    expect(sobreNosPageSource).toContain('about.contactPhone');
+    expect(sobreNosPageSource).toContain('about.contactEmail');
+    expect(sobreNosPageSource).not.toContain('contactInfo.email');
     expect(sobreNosPageSource).not.toContain('Desde {siteConfig.founded}');
     expect(sobreNosPageSource).not.toContain('Um projeto dedicado a estudar, interpretar e valorizar a Serra do Caramulo.');
   });
@@ -184,8 +188,11 @@ describe('institutional pages', () => {
   });
 
   it('renders contact, gallery and Serra intros from appearance settings', () => {
-    expect(contactosPageSource).toContain('layout.pages.contactos.title');
-    expect(contactosPageSource).toContain('layout.pages.contactos.description');
+    expect(contactosPageSource).toContain('const contactPage = layout.pages.contactos');
+    expect(contactosPageSource).toContain('contactPage.title');
+    expect(contactosPageSource).toContain('contactPage.description');
+    expect(contactosPageSource).toContain('contactPage.institutionalTitle');
+    expect(contactosPageSource).toContain('contactPage.presidentName');
     expect(galeriaPageSource).toContain('layout.pages.galeria.title');
     expect(galeriaPageSource).toContain('layout.pages.galeria.description');
     expect(serraPageSource).toContain('layout.pages.serra.description');

@@ -35,6 +35,12 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('updateAboutPage');
     expect(backofficePageSource).toContain('updateAboutParagraphs');
     expect(backofficePageSource).toContain('updateAboutSocialBodies');
+    expect(backofficePageSource).toContain('CTA contacto · Label da morada');
+    expect(backofficePageSource).toContain('layoutSettings.aboutPage.contactAddress');
+    expect(backofficePageSource).toContain('CTA contacto · Telefone');
+    expect(backofficePageSource).toContain('layoutSettings.aboutPage.contactPhone');
+    expect(backofficePageSource).toContain('CTA contacto · Email');
+    expect(backofficePageSource).toContain('layoutSettings.aboutPage.contactEmail');
     expect(backofficePageSource).toContain("fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout'");
   });
 
@@ -366,6 +372,12 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'publicacoes', label: 'Publicações' }");
     expect(backofficePageSource).toContain('updateAppearancePage');
     expect(backofficePageSource).toContain('Mensagem sem conteúdos');
+    expect(pagesEditorBlock).toContain("page.id === 'contactos'");
+    expect(pagesEditorBlock).toContain('Página Contactos · Título das informações');
+    expect(pagesEditorBlock).toContain('Página Contactos · Nome do presidente');
+    expect(pagesEditorBlock).toContain('Página Contactos · Telefone');
+    expect(pagesEditorBlock).toContain('Página Contactos · Email');
+    expect(pagesEditorBlock).toContain("updateAppearancePage('contactos', { presidentName: value })");
     expect(pagesEditorBlock).toContain('max-h-[70vh] gap-3 overflow-y-auto pr-2 md:grid-cols-2');
   });
 

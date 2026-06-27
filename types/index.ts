@@ -268,6 +268,16 @@ export interface SitePageIntroSettings {
   emptyMessage?: string;
 }
 
+export interface SiteContactPageSettings extends SitePageIntroSettings {
+  institutionalTitle: string;
+  presidentLabel: string;
+  presidentName: string;
+  phoneLabel: string;
+  phone: string;
+  emailLabel: string;
+  email: string;
+}
+
 export interface SiteAboutPageSettings {
   whoWeAreTitle: string;
   whoWeAreParagraphs: string[];
@@ -279,6 +289,12 @@ export interface SiteAboutPageSettings {
   socialBodies: Array<{ title: string; members: string[] }>;
   contactTitle: string;
   contactDescription: string;
+  contactAddressLabel: string;
+  contactAddress: string;
+  contactPhoneLabel: string;
+  contactPhone: string;
+  contactEmailLabel: string;
+  contactEmail: string;
 }
 
 export interface SiteLayoutSettings {
@@ -317,7 +333,7 @@ export interface SiteLayoutSettings {
     projetos: SitePageIntroSettings & { emptyMessage: string };
     biblioteca: SitePageIntroSettings & { emptyMessage: string };
     serra: SitePageIntroSettings;
-    contactos: SitePageIntroSettings;
+    contactos: SiteContactPageSettings;
     galeria: SitePageIntroSettings;
     bibliotecaJrs: SitePageIntroSettings;
     oficinaDoBurel: SitePageIntroSettings;
