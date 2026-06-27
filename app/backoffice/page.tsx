@@ -34,6 +34,7 @@ import type {
   LayoutIconName,
   NewsArticle,
   Publication,
+  PublicationType,
   SiteLayoutSettings,
 } from '@/types';
 
@@ -95,6 +96,14 @@ const ACTIVITY_CATEGORY_OPTIONS: Array<{ value: ActivityCategory; label: string 
   { value: 'workshop', label: 'Workshop' },
   { value: 'palestra', label: 'Palestra' },
   { value: 'formacao', label: 'Formação' },
+];
+
+const PUBLICATION_TYPE_OPTIONS: Array<{ value: PublicationType; label: string }> = [
+  { value: 'documento', label: 'Documento' },
+  { value: 'livro', label: 'Livro' },
+  { value: 'artigo', label: 'Artigo' },
+  { value: 'relatorio', label: 'Relatório' },
+  { value: 'tese', label: 'Tese' },
 ];
 
 function getEmptyPublicationForm() {
@@ -797,9 +806,24 @@ export default function BackofficePage() {
       const endpoint = editingId ? `/api/${section}/${editingId}` : `/api/${section}`;
       const method = editingId ? 'PUT' : 'POST';
       const response = await fetch(endpoint, { method, headers, body: formData });
-      const payload = await response.json().catch(() => ({}));
+      const responseText = await response.text();
+      const payload = responseText
+        ? (() => {
+            try {
+              return JSON.parse(responseText) as { message?: string };
+            } catch {
+              return null;
+            }
+          })()
+        : null;
 
-      if (!response.ok) throw new Error(payload?.message || 'Erro ao guardar registo.');
+      if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error('O ficheiro é demasiado grande para ser enviado de uma vez. Usa um PDF/imagem mais leve ou coloca o ficheiro por URL.');
+        }
+
+        throw new Error(payload?.message || responseText.trim() || 'Erro ao guardar registo.');
+      }
 
       toast.success(editingId ? 'Registo atualizado com sucesso.' : 'Registo criado com sucesso.');
       resetCurrentForm();
@@ -1556,7 +1580,7 @@ export default function BackofficePage() {
           onNew={resetPublicationForm}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><Input label="Tipo" value={publicationForm.type} onChange={(v) => setPublicationForm((c) => ({ ...c, type: v }))} required /><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><label className="grid gap-1 text-sm text-stone-700">Tipo<select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required><option value="" disabled>Selecionar tipo</option>{PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 

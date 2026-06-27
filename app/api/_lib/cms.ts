@@ -8,7 +8,7 @@ import { galleryItems as staticGalleryItems } from '@/data/content';
 import { defaultSiteLayoutSettings, deepMergeSettings, normalizeSiteLayoutSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
 import { storePublicUpload } from '@/lib/upload-storage';
 import { getAdminAuthSession } from '@/lib/admin-auth-server';
-import type { AdminPermission, GalleryMediaItem, GalleryMediaType, SiteLayoutSettings } from '@/types';
+import type { AdminPermission, GalleryMediaItem, GalleryMediaType, PublicationType, SiteLayoutSettings } from '@/types';
 
 // Tipos suportados pelas secções públicas/administráveis do CMS.
 export type ContentSection = 'news' | 'activities' | 'projects' | 'publications';
@@ -289,6 +289,23 @@ export function parsePartners(value: unknown) {
 export function normalizeActivityCategory(value: unknown) {
   const category = String(value || '').trim();
   return ['caminhada', 'workshop', 'palestra', 'evento', 'formacao'].includes(category) ? category : 'evento';
+}
+
+export function normalizePublicationType(value: unknown): PublicationType {
+  const type = String(value || '').trim();
+  return ['livro', 'artigo', 'relatorio', 'tese', 'documento'].includes(type)
+    ? (type as PublicationType)
+    : 'documento';
+}
+
+export function normalizePublicationYear(value: unknown) {
+  const year = Number.parseInt(String(value ?? '').trim(), 10);
+
+  if (!Number.isFinite(year) || year < 1000 || year > 9999) {
+    throw new Error('Ano inválido. Indica um ano com quatro dígitos.');
+  }
+
+  return year;
 }
 
 const adminEmails = String(process.env.ADMIN_EMAILS || '')
@@ -1085,8 +1102,8 @@ export async function parseSectionFormData(
   return {
     title: String(formData.get('title') || ''),
     author: String(formData.get('author') || ''),
-    year: Number(formData.get('year')),
-    type: String(formData.get('type') || ''),
+    year: normalizePublicationYear(formData.get('year')),
+    type: normalizePublicationType(formData.get('type')),
     description: String(formData.get('description') || ''),
     downloadUrl: resolvedDownloadUrl,
     published: booleanFromForm(formData.get('published')),
