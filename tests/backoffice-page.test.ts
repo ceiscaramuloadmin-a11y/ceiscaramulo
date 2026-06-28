@@ -267,9 +267,23 @@ describe('backoffice page guards', () => {
     expect(sectionLayoutBlock).toContain('onClick={handleNewClick}');
   });
 
-  it('does not expose a manual hero image URL field in layout management', () => {
+  it('does not expose homepage hero image controls in appearance management', () => {
+    const appearanceTabsBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('const APPEARANCE_TABS'),
+      backofficePageSource.indexOf('const APPEARANCE_PAGE_FIELDS')
+    );
+    const appearanceEditorBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'layout'"),
+      backofficePageSource.indexOf('function TextArea')
+    );
+
+    expect(appearanceTabsBlock).not.toContain("'hero'");
+    expect(appearanceTabsBlock).not.toContain("label: 'Hero'");
+    expect(appearanceEditorBlock).not.toContain('Hero da Página Inicial');
+    expect(appearanceEditorBlock).not.toContain('Hero · Upload de imagem');
+    expect(appearanceEditorBlock).not.toContain('setHeroImageFile');
+    expect(appearanceEditorBlock).not.toContain("fd.append('heroImage'");
     expect(backofficePageSource).not.toContain('Hero · Imagem URL');
-    expect(backofficePageSource).toContain('Hero · Upload de imagem');
   });
 
   it('does not expose the hidden homepage hero CTA fields in appearance management', () => {
@@ -287,7 +301,7 @@ describe('backoffice page guards', () => {
   it('does not expose the homepage hero preview in appearance management', () => {
     expect(backofficePageSource).not.toContain('Pré-visualização');
     expect(backofficePageSource).not.toContain('pré-visualização do primeiro ecrã');
-    expect(backofficePageSource).toContain('Gere o título, botões e imagem do primeiro ecrã.');
+    expect(backofficePageSource).not.toContain('Gere o título, botões e imagem do primeiro ecrã.');
   });
 
   it('allows the appearance tab to edit footer contact details', () => {
@@ -325,11 +339,12 @@ describe('backoffice page guards', () => {
     );
     const appearanceHeaderBlock = backofficePageSource.slice(
       backofficePageSource.indexOf('role="tablist" aria-label="Separadores da aparência"'),
-      backofficePageSource.indexOf("appearanceTab === 'hero'")
+      backofficePageSource.indexOf("appearanceTab === 'pages'")
     );
 
     expect(backofficePageSource).toContain('APPEARANCE_TABS');
-    expect(appearanceTabsBlock).toContain("'hero'");
+    expect(appearanceTabsBlock).not.toContain("'hero'");
+    expect(backofficePageSource).toContain("useState<AppearanceTab>('pages')");
     expect(appearanceTabsBlock).toContain("'pages'");
     expect(appearanceTabsBlock).toContain("'footer'");
     expect(appearanceTabsBlock).not.toContain("'icons'");

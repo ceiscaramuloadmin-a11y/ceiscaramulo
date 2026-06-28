@@ -49,7 +49,7 @@ type ProgrammeGallerySectionId =
   | 'gallery-biblioteca';
 type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
 type SectionId = 'overview' | 'profile' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
-type AppearanceTab = 'hero' | 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
+type AppearanceTab = 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
 type AppearancePageKey = keyof SiteLayoutSettings['pages'];
 type DashboardStats = {
   news: number;
@@ -122,7 +122,6 @@ function getEmptyPublicationForm() {
 }
 
 const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
-  { id: 'hero', label: 'Hero' },
   { id: 'pages', label: 'Páginas' },
   { id: 'footer', label: 'Footer' },
   { id: 'seo', label: 'SEO e Metadados' },
@@ -211,7 +210,7 @@ export default function BackofficePage() {
   const exportAuthMode = isExportAdminAuthMode();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
-  const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('hero');
+  const [appearanceTab, setAppearanceTab] = useState<AppearanceTab>('pages');
   const [busy, setBusy] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLoadingDashboardStats, setIsLoadingDashboardStats] = useState(true);
@@ -231,7 +230,6 @@ export default function BackofficePage() {
   const [layoutSettings, setLayoutSettings] = useState<SiteLayoutSettings>(defaultSiteLayoutSettings);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [currentAdmin, setCurrentAdmin] = useState<{ email: string; role: AdminRole; permissions: AdminPermission[] } | null>(null);
-  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<AdminRole>('editor');
   const [newAdminPasswordMode, setNewAdminPasswordMode] = useState<'manual' | 'generated'>('generated');
@@ -624,23 +622,12 @@ export default function BackofficePage() {
     setBusy(true);
 
     try {
-      if (heroImageFile) {
-        const fd = new FormData();
-        fd.append('settings', JSON.stringify(layoutSettings));
-        fd.append('heroImage', heroImageFile);
-        await fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout', {
-          method: 'PUT',
-          body: fd,
-        });
-      } else {
-        await fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout', {
-          method: 'PUT',
-          body: JSON.stringify(layoutSettings),
-        });
-      }
+      await fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout', {
+        method: 'PUT',
+        body: JSON.stringify(layoutSettings),
+      });
 
       toast.success('Layout atualizado com sucesso.');
-      setHeroImageFile(null);
       await refreshLayout();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao atualizar o layout.');
@@ -2236,7 +2223,7 @@ export default function BackofficePage() {
       {activeSection === 'layout' ? (
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
           <h2 className="text-xl font-semibold text-[#0f4c36]">Aparência</h2>
-          <p className="mt-1 text-sm text-stone-600">Edita hero, footer, textos de páginas e ícones visuais.</p>
+          <p className="mt-1 text-sm text-stone-600">Edita footer, textos de páginas e metadados públicos.</p>
 
           {isLoadingLayout ? (
             <div className="mt-5">
@@ -2260,22 +2247,6 @@ export default function BackofficePage() {
                 ))}
               </div>
             </div>
-
-            {appearanceTab === 'hero' ? (
-            <>
-            <AppearanceSectionTitle title="Hero da Página Inicial" description="Gere o título, botões e imagem do primeiro ecrã." />
-            <div className="grid gap-3 md:grid-cols-2">
-              <Input label="Hero · Eyebrow" value={layoutSettings.home.hero.eyebrow} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, eyebrow: v } } }))} />
-              <Input label="Hero · Linha 1" value={layoutSettings.home.hero.titleLine1} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine1: v } } }))} />
-              <Input label="Hero · Linha 2" value={layoutSettings.home.hero.titleLine2} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine2: v } } }))} />
-              <Input label="Hero · Linha 3" value={layoutSettings.home.hero.titleLine3} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine3: v } } }))} />
-              <Input label="Hero · Linha 4" value={layoutSettings.home.hero.titleLine4} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, titleLine4: v } } }))} />
-              <FileInput label="Hero · Upload de imagem" onFile={setHeroImageFile} />
-              <Input label="Hero · Alt da imagem" value={layoutSettings.home.hero.imageAlt} onChange={(v) => setLayoutSettings((c) => ({ ...c, home: { ...c.home, hero: { ...c.home.hero, imageAlt: v } } }))} />
-            </div>
-
-            </>
-            ) : null}
 
             {appearanceTab === 'pages' ? (
             <>
