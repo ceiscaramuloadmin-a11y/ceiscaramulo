@@ -152,11 +152,18 @@ describe('backoffice page guards', () => {
     expect(navigationBlock).toContain("{ id: 'publications', label: 'Recursos' }");
   });
 
-  it('shows the backoffice change history with the 15 day cleanup policy', () => {
+  it('shows the backoffice change history with the 10 day cleanup policy', () => {
+    const availableSectionsBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("const sections: SectionId[] = ['overview', 'profile']"),
+      backofficePageSource.indexOf('const authHeaders')
+    );
+
     expect(backofficePageSource).toContain("{ id: 'audit', label: 'Histórico' }");
     expect(backofficePageSource).toContain('Histórico de alterações');
-    expect(backofficePageSource).toContain('Os eventos com mais de 15 dias são apagados automaticamente');
+    expect(backofficePageSource).toContain('Os eventos com mais de 10 dias são apagados automaticamente');
     expect(backofficePageSource).toContain("fetchAdminEndpoint<AuditLogEntry[]>('/api/admin/audit')");
+    expect(availableSectionsBlock).toContain("sections.push('audit')");
+    expect(availableSectionsBlock).not.toContain("permissionSet.has('audit')) sections.push('audit')");
   });
 
   it('removes the non-functional role toggle from admin management', () => {

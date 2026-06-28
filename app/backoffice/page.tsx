@@ -337,6 +337,9 @@ export default function BackofficePage() {
     if (exportAuthMode) {
       return sections;
     }
+
+    sections.push('audit');
+
     const permissionSet = new Set(currentAdmin.permissions);
 
     for (const section of ['news', 'activities', 'publications'] as ContentSection[]) {
@@ -350,7 +353,6 @@ export default function BackofficePage() {
       sections.push(...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]));
     }
     if (currentAdmin.role === 'owner' || permissionSet.has('admins')) sections.push('admins');
-    if (currentAdmin.role === 'owner' || permissionSet.has('audit')) sections.push('audit');
     if (currentAdmin.role === 'owner' || permissionSet.has('layout')) {
       sections.push('about');
       sections.push('layout');
@@ -2138,7 +2140,7 @@ export default function BackofficePage() {
         <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
           <h2 className="text-xl font-semibold text-[#0f4c36]">Histórico de alterações</h2>
           <p className="mt-1 text-sm text-stone-600">
-            Registo das alterações feitas no backoffice, com autor, ação e data. Os eventos com mais de 15 dias são apagados automaticamente para não encher a base de dados.
+            Registo das alterações feitas no backoffice, com autor, ação e data. Os eventos com mais de 10 dias são apagados automaticamente para não encher a base de dados.
           </p>
 
           <div className="mt-4 space-y-3">
