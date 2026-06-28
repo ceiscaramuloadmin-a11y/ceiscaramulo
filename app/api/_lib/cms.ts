@@ -59,7 +59,7 @@ type SectionConfig = {
 };
 
 const MAX_AUDIT_LOGS = 500;
-export const AUDIT_LOG_RETENTION_DAYS = 15;
+export const AUDIT_LOG_RETENTION_DAYS = 10;
 const AUDIT_LOG_RETENTION_MS = AUDIT_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 const GALLERY_MEDIA_STORAGE_KEY = 'gallery_media_items';
 const DEFAULT_GALLERY_CONTEXT = 'global';
@@ -812,7 +812,7 @@ export function getAuditLogRetentionCutoff(now = new Date()) {
   return new Date(now.getTime() - AUDIT_LOG_RETENTION_MS);
 }
 
-// Mantém a auditoria leve: eventos com 15 dias ou mais deixam de ser úteis
+// Mantém a auditoria leve: eventos com 10 dias ou mais deixam de ser úteis
 // para operação diária e são apagados antes de listar ou acrescentar histórico.
 export async function pruneExpiredAuditLogs(now = new Date()) {
   const prismaAny = prisma as unknown as {

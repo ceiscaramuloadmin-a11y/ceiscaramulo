@@ -50,12 +50,12 @@ describe('audit log retention', () => {
     vi.clearAllMocks();
   });
 
-  it('calculates the audit cleanup cutoff at 15 days', async () => {
+  it('calculates the audit cleanup cutoff at 10 days', async () => {
     const { AUDIT_LOG_RETENTION_DAYS, getAuditLogRetentionCutoff } = await import('@/app/api/_lib/cms');
 
-    expect(AUDIT_LOG_RETENTION_DAYS).toBe(15);
+    expect(AUDIT_LOG_RETENTION_DAYS).toBe(10);
     expect(getAuditLogRetentionCutoff(new Date('2026-06-02T12:00:00.000Z')).toISOString()).toBe(
-      '2026-05-18T12:00:00.000Z'
+      '2026-05-23T12:00:00.000Z'
     );
   });
 
@@ -67,7 +67,7 @@ describe('audit log retention', () => {
     expect(prismaMocks.deleteMany).toHaveBeenCalledWith({
       where: {
         createdAt: {
-          lte: new Date('2026-05-18T12:00:00.000Z'),
+          lte: new Date('2026-05-23T12:00:00.000Z'),
         },
       },
     });
