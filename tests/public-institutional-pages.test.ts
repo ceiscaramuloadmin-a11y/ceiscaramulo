@@ -88,7 +88,10 @@ describe('institutional pages', () => {
 
     expect(institutionalProgrammePageSource).toContain('heroImage?: string');
     expect(institutionalProgrammePageSource).toContain("heroTitleTone?: 'white' | 'green'");
-    expect(institutionalProgrammePageSource).toContain('backgroundImage');
+    expect(institutionalProgrammePageSource).toContain("import Image from 'next/image'");
+    expect(institutionalProgrammePageSource).toContain('src={heroImage}');
+    expect(institutionalProgrammePageSource).toContain('sizes="100vw"');
+    expect(institutionalProgrammePageSource).not.toContain('backgroundImage');
     expect(institutionalProgrammePageSource).not.toContain('linear-gradient');
     expect(institutionalProgrammePageSource).not.toContain('bg-[#0f4c36]/30');
     expect(institutionalProgrammePageSource).toContain('absolute inset-0 z-0 bg-black/45');
@@ -100,6 +103,9 @@ describe('institutional pages', () => {
     expect(institutionalProgrammePageSource).toContain('hover:!text-[#0f4c36]');
     expect(institutionalProgrammePageSource).toContain('[&_*]:!text-[#0f4c36]');
     expect(sobreNosPageSource).toContain('min-h-[520px] w-full');
+    expect(sobreNosPageSource).toContain("import Image from 'next/image'");
+    expect(sobreNosPageSource).toContain('src={aboutHeroImage}');
+    expect(sobreNosPageSource).toContain('sizes="100vw"');
     expect(sobreNosPageSource).not.toContain('linear-gradient');
     expect(sobreNosPageSource).not.toContain('bg-[#0f4c36]/30');
     expect(sobreNosPageSource).toContain('absolute inset-0 z-0 bg-black/45');
@@ -110,7 +116,10 @@ describe('institutional pages', () => {
     expect(sobreNosPageSource).toContain("bg-[#0f4c36]");
     expect(sobreNosPageSource).toContain("bg-[#f4f6ee]");
     expect(bibliotecaPageSource).toContain('min-h-[520px] w-full');
-    expect(bibliotecaPageSource).toContain('backgroundImage');
+    expect(bibliotecaPageSource).toContain("import Image from 'next/image'");
+    expect(bibliotecaPageSource).toContain('src={bibliotecaHeroImage}');
+    expect(bibliotecaPageSource).toContain('sizes="100vw"');
+    expect(bibliotecaPageSource).not.toContain('backgroundImage');
     expect(bibliotecaPageSource).toContain('absolute inset-0 z-0 bg-black/45');
     expect(bibliotecaPageSource).toContain('font-display text-4xl font-bold leading-tight !text-white');
     expect(bibliotecaPageSource).toContain('tracking-[0.22em] text-white');

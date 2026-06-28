@@ -461,13 +461,27 @@ describe('backoffice page guards', () => {
     expect(saveGalleryBatchBlock).toContain('const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext)');
     expect(saveGalleryBatchBlock).toContain("fd.append('sourceUrl', sourceUrl)");
     expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceFile', item.file)");
-    expect(saveGalleryBatchBlock).toContain('for (const item of galleryBatchItems)');
-    expect(saveGalleryBatchBlock).toContain('await uploadOne(item)');
-    expect(saveGalleryBatchBlock).not.toContain('Promise.all');
+    expect(backofficePageSource).toContain('async function runGalleryBatchQueue');
+    expect(backofficePageSource).toContain('Math.min(concurrency, queue.length)');
+    expect(saveGalleryBatchBlock).toContain('await runGalleryBatchQueue(galleryBatchItems, uploadOne)');
     expect(saveGalleryBatchBlock).not.toContain("fd.append('type', galleryBatchType)");
     expect(backofficePageSource).toContain('accept={GALLERY_BATCH_ACCEPT}');
     expect(backofficePageSource).not.toContain('accept={galleryAcceptForType(galleryBatchType)}');
     expect(backofficePageSource).not.toContain('MAX_INLINE_AUDIO_UPLOAD_BYTES');
+  });
+
+  it('keeps page media editing lightweight after admin listings replace data URLs with asset routes', () => {
+    const startEditGalleryBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('function startEditGallery'),
+      backofficePageSource.indexOf('async function saveGalleryItem')
+    );
+
+    expect(backofficePageSource).toContain('function isGalleryAssetRoute');
+    expect(startEditGalleryBlock).toContain('isGalleryAssetRoute(item.source)');
+    expect(startEditGalleryBlock).toContain('!isGalleryAssetRoute(item.thumbnail)');
+    expect(backofficePageSource).toContain("import Image from 'next/image'");
+    expect(backofficePageSource).toContain('sizes="96px"');
+    expect(backofficePageSource).toContain('preload="none"');
   });
 
   it('scrolls to the individual media form when editing page media items', () => {

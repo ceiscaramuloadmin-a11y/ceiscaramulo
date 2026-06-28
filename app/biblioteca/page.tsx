@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Calendar, Download, Tag, User } from 'lucide-react';
 import GalleryTabs from '@/components/GalleryTabs';
@@ -55,6 +56,14 @@ export const metadata: Metadata = {
 
 const bibliotecaHeroImage = '/internal-pages/biblioteca.jpg';
 
+function OptimizedPublicationCover({ src, alt, className }: { src: string; alt: string; className: string }) {
+  if (!src.startsWith('/')) {
+    return <img src={src} alt={alt} loading="lazy" decoding="async" className={className} />;
+  }
+
+  return <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" className={className} />;
+}
+
 async function getPublicPublications() {
   if (shouldSkipPublicDb()) {
     return fallbackPublications;
@@ -105,12 +114,15 @@ export default async function BibliotecaPage({
       <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
         <section
           className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
-          style={{
-            backgroundImage: `url(${bibliotecaHeroImage})`,
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-          }}
         >
+          <Image
+            src={bibliotecaHeroImage}
+            alt=""
+            fill
+            priority={false}
+            sizes="100vw"
+            className="absolute inset-0 z-0 object-cover"
+          />
           <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
           <div className="relative z-10 mx-auto max-w-4xl text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">CEISCaramulo</p>
@@ -179,11 +191,11 @@ export default async function BibliotecaPage({
                   href={`/biblioteca/${getPublicationSlug(publication)}`}
                   className="group rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="mb-4 overflow-hidden rounded-lg">
-                    <img
+                  <div className="relative mb-4 h-48 overflow-hidden rounded-lg">
+                    <OptimizedPublicationCover
                       src={getAssetUrl(publication.coverImage)}
                       alt={publication.title}
-                      className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">

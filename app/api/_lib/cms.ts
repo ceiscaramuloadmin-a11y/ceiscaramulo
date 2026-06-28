@@ -1223,7 +1223,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
   if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
     const items = await listGalleryFromStorage();
     const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
-    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published).map(withPublicGalleryAssets);
   }
 
   if (scope === 'public' && shouldSkipPublicDb()) {
@@ -1255,7 +1255,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
   if (!prismaAny.galleryMedia) {
     const items = await listGalleryFromStorage();
     const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
-    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published).map(withPublicGalleryAssets);
   }
 
   let items;
@@ -1277,7 +1277,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
     try {
       const fallbackItems = await listGalleryFromStorage();
       const contextItems = fallbackItems.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
-      return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+      return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published).map(withPublicGalleryAssets);
     } catch (storageError) {
       if (scope === 'public' && isPublicDbQuotaExceededError(storageError)) {
         markPublicDbQuotaExceeded('public gallery storage');

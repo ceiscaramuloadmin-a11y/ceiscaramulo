@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(items);
+    return NextResponse.json(items.map(withPublicGalleryAssets));
   } catch (caughtError) {
     console.error(caughtError);
     return jsonError('Ocorreu um erro inesperado.', 500);

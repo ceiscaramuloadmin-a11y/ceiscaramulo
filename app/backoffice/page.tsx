@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { upload } from '@vercel/blob/client';
@@ -262,6 +263,25 @@ async function uploadGalleryBatchFile(file: File, galleryContext: string) {
   });
 
   return blob.url;
+}
+
+function isGalleryAssetRoute(value: string) {
+  return value.trim().startsWith('/api/gallery/assets/');
+}
+
+async function runGalleryBatchQueue<T>(items: T[], worker: (item: T) => Promise<unknown>, concurrency = 3) {
+  const queue = [...items];
+  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+    while (queue.length > 0) {
+      const item = queue.shift();
+
+      if (item) {
+        await worker(item);
+      }
+    }
+  });
+
+  await Promise.all(workers);
 }
 
 function isProgrammeGallerySection(value: SectionId): value is ProgrammeGallerySectionId {
@@ -995,9 +1015,9 @@ export default function BackofficePage() {
       title: item.title,
       description: item.description || '',
       type: item.type,
-      sourceUrl: item.source.startsWith('data:') ? '' : item.source,
+      sourceUrl: item.source.startsWith('data:') || isGalleryAssetRoute(item.source) ? '' : item.source,
       sourceFile: null,
-      thumbnailUrl: item.thumbnail && !item.thumbnail.startsWith('data:') ? item.thumbnail : '',
+      thumbnailUrl: item.thumbnail && !item.thumbnail.startsWith('data:') && !isGalleryAssetRoute(item.thumbnail) ? item.thumbnail : '',
       thumbnailFile: null,
       published: item.published,
     });
@@ -1138,9 +1158,7 @@ export default function BackofficePage() {
         });
       };
 
-      for (const item of galleryBatchItems) {
-        await uploadOne(item);
-      }
+      await runGalleryBatchQueue(galleryBatchItems, uploadOne);
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
       clearGalleryBatchItems();
@@ -2823,7 +2841,22 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
   }
 
   if (item.type === 'photo') {
-    return <img src={item.thumbnail || item.source || '/placeholder.svg'} alt={item.title} className="h-24 w-24 rounded-lg object-cover" />;
+    const previewSource = item.thumbnail || item.source || '/placeholder.svg';
+
+    if (!previewSource.startsWith('/')) {
+      return <img src={previewSource} alt={item.title} loading="lazy" decoding="async" className="h-24 w-24 rounded-lg object-cover" />;
+    }
+
+    return (
+      <Image
+        src={previewSource}
+        alt={item.title}
+        width={96}
+        height={96}
+        sizes="96px"
+        className="h-24 w-24 rounded-lg object-cover"
+      />
+    );
   }
 
   if (item.type === 'video') {
@@ -2842,6 +2875,7 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
         className="h-24 w-24 rounded-lg bg-black object-cover"
         muted
         playsInline
+        preload="none"
         controls
       />
     );
@@ -2865,7 +2899,7 @@ function GalleryItemPreview({ item }: { item: GalleryMediaItem }) {
   return (
     <div className="flex w-full max-w-xs flex-col gap-2 rounded-lg bg-stone-100 p-3">
       <div className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Preview áudio</div>
-      {item.source ? <audio controls preload="metadata" className="w-full" src={item.source} /> : <p className="text-sm text-stone-500">Sem áudio associado.</p>}
+      {item.source ? <audio controls preload="none" className="w-full" src={item.source} /> : <p className="text-sm text-stone-500">Sem áudio associado.</p>}
     </div>
   );
 }

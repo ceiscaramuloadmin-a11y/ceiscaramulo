@@ -18,4 +18,12 @@ describe('GalleryTabs', () => {
     expect(galleryTabsSource).toContain('disabled={!item.source}');
     expect(galleryTabsSource).toContain("activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg'");
   });
+
+  it('routes local gallery photo previews through next/image with responsive thumbnail sizes', () => {
+    expect(galleryTabsSource).toContain("import Image from 'next/image'");
+    expect(galleryTabsSource).toContain("previewSource.startsWith('/')");
+    expect(galleryTabsSource).toContain('sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"');
+    expect(galleryTabsSource).toContain('loading="lazy"');
+    expect(galleryTabsSource).toContain('decoding="async"');
+  });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { FileText, Maximize2, Pause, Play, Search, SearchX, Volume2, X } from 'lucide-react';
 import type { GalleryMediaItem } from '@/types';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,42 @@ type Props = {
 };
 
 type TabId = 'photo' | 'video' | 'audio' | 'document';
+
+function GalleryPhotoPreview({ item }: { item: GalleryMediaItem }) {
+  const previewSource = item.thumbnail || item.source;
+
+  if (!previewSource) {
+    return (
+      <div className="flex h-44 w-full items-center justify-center bg-stone-100 px-4 text-center text-sm text-stone-500">
+        Sem imagem associada
+      </div>
+    );
+  }
+
+  if (previewSource.startsWith('/')) {
+    return (
+      <div className="relative h-44 w-full overflow-hidden">
+        <Image
+          src={previewSource}
+          alt={item.title}
+          fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={previewSource}
+      alt={item.title}
+      loading="lazy"
+      decoding="async"
+      className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+    />
+  );
+}
 
 export default function GalleryTabs({ items }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>('photo');
@@ -124,17 +161,7 @@ export default function GalleryTabs({ items }: Props) {
                   onClick={() => openPhoto(index)}
                   className="group overflow-hidden rounded-xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  {item.thumbnail || item.source ? (
-                    <img
-                      src={item.thumbnail || item.source}
-                      alt={item.title}
-                      className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-44 w-full items-center justify-center bg-stone-100 px-4 text-center text-sm text-stone-500">
-                      Sem imagem associada
-                    </div>
-                  )}
+                  <GalleryPhotoPreview item={item} />
                   <div className="p-3">
                     <p className="truncate text-sm font-medium text-stone-800">{item.title}</p>
                   </div>
@@ -222,7 +249,7 @@ export default function GalleryTabs({ items }: Props) {
                     </div>
                   </div>
                   <div className="w-full md:max-w-[420px]">
-                    {item.source ? <audio controls preload="metadata" className="w-full" src={item.source} /> : <p className="rounded-lg bg-stone-50 px-4 py-3 text-sm text-stone-500">Sem áudio associado.</p>}
+                    {item.source ? <audio controls preload="none" className="w-full" src={item.source} /> : <p className="rounded-lg bg-stone-50 px-4 py-3 text-sm text-stone-500">Sem áudio associado.</p>}
                   </div>
                 </div>
               </article>

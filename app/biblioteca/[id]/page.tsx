@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Download, Tag, User } from 'lucide-react';
@@ -21,6 +22,23 @@ export const dynamicParams = true;
 
 interface Props {
   params: Promise<{ id: string }>;
+}
+
+function OptimizedPublicationDetailCover({ src, alt }: { src: string; alt: string }) {
+  if (!src.startsWith('/')) {
+    return <img src={src} alt={alt} loading="lazy" decoding="async" className="h-auto w-full object-cover" />;
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={1200}
+      height={800}
+      sizes="(min-width: 1024px) 960px, 100vw"
+      className="h-auto w-full object-cover"
+    />
+  );
 }
 
 async function getPublication(identifier: string) {
@@ -193,11 +211,7 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
           </h1>
 
           <div className="mt-8 overflow-hidden rounded-lg">
-            <img
-              src={getAssetUrl(publication.coverImage)}
-              alt={publication.title}
-              className="h-auto w-full object-cover"
-            />
+            <OptimizedPublicationDetailCover src={getAssetUrl(publication.coverImage)} alt={publication.title} />
           </div>
 
           <div className="mt-8 prose prose-lg max-w-none">

@@ -89,6 +89,33 @@ describe('gallery route', () => {
     expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus');
   });
 
+  it('keeps admin gallery listings lightweight by replacing stored data URLs with asset routes', async () => {
+    listGalleryMedia.mockResolvedValueOnce([
+      {
+        id: 'gallery-data-url',
+        title: 'Foto antiga',
+        description: null,
+        type: 'photo',
+        context: 'pon-do-jueus',
+        source: 'data:image/jpeg;base64,abc123',
+        thumbnail: 'data:image/jpeg;base64,thumb123',
+        mimeType: 'image/jpeg',
+        published: true,
+      },
+    ]);
+
+    const { GET } = await import('@/app/api/gallery/route');
+    const request = {
+      nextUrl: new URL('http://localhost/api/gallery?scope=admin&context=pon-do-jueus'),
+    };
+
+    const response = await GET(request as never);
+    const payload = await response.json();
+
+    expect(payload[0].source).toBe('/api/gallery/assets/gallery-data-url/source');
+    expect(payload[0].thumbnail).toBe('/api/gallery/assets/gallery-data-url/thumbnail');
+  });
+
   it('stores programme gallery uploads through public storage so sale photos work in production', async () => {
     storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-escola-dos-nossos-avos/foto.png');
     createGalleryMedia.mockResolvedValueOnce({
