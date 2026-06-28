@@ -432,6 +432,11 @@ describe('backoffice page guards', () => {
   });
 
   it('allows the recent page media sections to submit videos and PDFs', () => {
+    const saveGalleryBatchBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('async function saveGalleryBatch'),
+      backofficePageSource.indexOf('async function createAdminUser')
+    );
+
     expect(backofficePageSource).toContain("context: 'oficina-do-burel'");
     expect(backofficePageSource).toContain("context: 'pon-do-jueus'");
     expect(backofficePageSource).toContain("context: 'escola-dos-nossos-avos'");
@@ -443,10 +448,26 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('<option value="document">Documentos/PDFs</option>');
     expect(backofficePageSource).toContain('<option value="video">Vídeo</option>');
     expect(backofficePageSource).toContain('<option value="document">Documento/PDF</option>');
+    expect(backofficePageSource).toContain('const GALLERY_BATCH_ACCEPT');
+    expect(backofficePageSource).toContain('function inferGalleryBatchType');
+    expect(backofficePageSource).toContain("import { upload } from '@vercel/blob/client'");
+    expect(backofficePageSource).toContain('async function uploadGalleryBatchFile');
+    expect(backofficePageSource).toContain("handleUploadUrl: '/api/gallery/client-upload'");
+    expect(backofficePageSource).toContain('O tipo é detetado automaticamente.');
     expect(backofficePageSource).toContain("if (type === 'video') return 'video/*'");
     expect(backofficePageSource).toContain("application/pdf,.pdf");
     expect(backofficePageSource).toContain("fd.append('context', activeGalleryConfig?.context || 'global')");
-    expect(backofficePageSource).toContain("fd.append('sourceFile', item.file)");
+    expect(saveGalleryBatchBlock).toContain("fd.append('type', item.type)");
+    expect(saveGalleryBatchBlock).toContain('const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext)');
+    expect(saveGalleryBatchBlock).toContain("fd.append('sourceUrl', sourceUrl)");
+    expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceFile', item.file)");
+    expect(saveGalleryBatchBlock).toContain('for (const item of galleryBatchItems)');
+    expect(saveGalleryBatchBlock).toContain('await uploadOne(item)');
+    expect(saveGalleryBatchBlock).not.toContain('Promise.all');
+    expect(saveGalleryBatchBlock).not.toContain("fd.append('type', galleryBatchType)");
+    expect(backofficePageSource).toContain('accept={GALLERY_BATCH_ACCEPT}');
+    expect(backofficePageSource).not.toContain('accept={galleryAcceptForType(galleryBatchType)}');
+    expect(backofficePageSource).not.toContain('MAX_INLINE_AUDIO_UPLOAD_BYTES');
   });
 
   it('scrolls to the individual media form when editing page media items', () => {

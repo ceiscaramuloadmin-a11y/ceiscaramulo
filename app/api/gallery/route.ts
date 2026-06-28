@@ -10,7 +10,6 @@ import {
 } from '@/app/api/_lib/cms';
 import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
 import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
-import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@/lib/gallery-upload';
 import type { GalleryMediaType } from '@/types';
 
 export const runtime = 'nodejs';
@@ -78,10 +77,6 @@ export async function POST(request: NextRequest) {
 
     const thumbFileRaw = formData.get('thumbnailFile');
     const thumbnailFile = thumbFileRaw instanceof File && thumbFileRaw.size > 0 ? thumbFileRaw : null;
-
-    if (isInlineAudioUploadTooLarge(sourceFile, type)) {
-      return jsonError(getInlineAudioUploadErrorMessage(), 413);
-    }
 
     const source = sourceFile ? await storeUploadedFile(sourceFile, `gallery-${galleryContext}`) : sourceUrl;
     const thumbnail = thumbnailFile ? await storeUploadedFile(thumbnailFile, `gallery-thumbnails-${galleryContext}`) : thumbUrl || null;

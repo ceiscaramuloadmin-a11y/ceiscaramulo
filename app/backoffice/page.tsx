@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { upload } from '@vercel/blob/client';
 import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
 import RichTextEditor from '@/components/RichTextEditor';
 import { backofficePrimaryActionLabel } from '@/lib/backoffice-primary-label';
@@ -17,7 +18,6 @@ import {
 } from '@/components/ui/dialog';
 import { layoutIconMap } from '@/lib/layout-icons';
 import { defaultSiteLayoutSettings } from '@/lib/site-layout';
-import { MAX_INLINE_AUDIO_UPLOAD_BYTES, getInlineAudioUploadErrorMessage } from '@/lib/gallery-upload';
 import { cn } from '@/lib/utils';
 import type {
   Activity,
@@ -187,6 +187,8 @@ const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: str
   },
 };
 
+const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
+
 function galleryTypeLabel(type: GalleryMediaType) {
   if (type === 'photo') return 'Foto';
   if (type === 'video') return 'Vídeo';
@@ -199,6 +201,67 @@ function galleryAcceptForType(type: GalleryMediaType) {
   if (type === 'video') return 'video/*';
   if (type === 'audio') return 'audio/*';
   return 'application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
+}
+
+const GALLERY_BATCH_ACCEPT = [
+  WEB_IMAGE_ACCEPT,
+  'video/*',
+  'audio/*',
+  'application/pdf',
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.txt',
+].join(',');
+
+function inferGalleryBatchType(file: File, fallbackType: GalleryMediaType): GalleryMediaType | null {
+  const mimeType = file.type.toLowerCase();
+  const fileName = file.name.toLowerCase();
+
+  if (mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName)) return 'photo';
+  if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v|avi)$/i.test(fileName)) return 'video';
+  if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return 'audio';
+  if (
+    mimeType === 'application/pdf' ||
+    /\.(pdf|docx?|xlsx?|pptx?|txt)$/i.test(fileName)
+  ) {
+    return 'document';
+  }
+
+  return fallbackType === 'document' ? null : fallbackType;
+}
+
+function extensionFromFileName(fileName: string) {
+  const match = fileName.match(/\.[a-z0-9]+$/i);
+  return match ? match[0].toLowerCase() : '';
+}
+
+function sanitizeBlobPathSegment(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9.-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'ficheiro';
+}
+
+async function uploadGalleryBatchFile(file: File, galleryContext: string) {
+  const safeContext = sanitizeBlobPathSegment(galleryContext);
+  const safeName = sanitizeBlobPathSegment(file.name.replace(/\.[^/.]+$/, ''));
+  const extension = extensionFromFileName(file.name);
+  const pathname = `backoffice/gallery-${safeContext}/${Date.now()}-${crypto.randomUUID()}-${safeName}${extension}`;
+
+  const blob = await upload(pathname, file, {
+    access: 'public',
+    handleUploadUrl: '/api/gallery/client-upload',
+    contentType: file.type || undefined,
+  });
+
+  return blob.url;
 }
 
 function isProgrammeGallerySection(value: SectionId): value is ProgrammeGallerySectionId {
@@ -879,47 +942,21 @@ export default function BackofficePage() {
       return;
     }
 
-    const acceptsFile = (file: File) => {
-      if (galleryBatchType === 'photo') return file.type.startsWith('image/');
-      if (galleryBatchType === 'video') return file.type.startsWith('video/');
-      if (galleryBatchType === 'audio') return file.type.startsWith('audio/');
-      return Boolean(file.type === 'application/pdf' || file.name.match(/\.(pdf|docx?|xlsx?|pptx?|txt)$/i));
-    };
-
-    const rejectedLargeAudio = Array.from(files).some(
-      (file) => galleryBatchType === 'audio' && file.type.startsWith('audio/') && file.size > MAX_INLINE_AUDIO_UPLOAD_BYTES
-    );
-
-    if (rejectedLargeAudio) {
-      toast.error(getInlineAudioUploadErrorMessage());
-      return;
-    }
-
     const nextItems = Array.from(files)
-      .filter(acceptsFile)
-      .map((file) => ({
-        id: crypto.randomUUID(),
-        file,
-        previewUrl: URL.createObjectURL(file),
-        type: galleryBatchType,
-        title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Sem título',
-        description: '',
-        published: true,
-      }));
+      .map((file) => ({ file, type: inferGalleryBatchType(file, galleryBatchType) }))
+      .filter((item): item is { file: File; type: GalleryMediaType } => Boolean(item.type))
+      .map(({ file, type }) => ({
+          id: crypto.randomUUID(),
+          file,
+          previewUrl: URL.createObjectURL(file),
+          type,
+          title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Sem título',
+          description: '',
+          published: true,
+        }));
 
     if (nextItems.length === 0) {
-      if (galleryBatchType === 'document') {
-        toast.error('Seleciona apenas PDFs ou documentos para este carregamento em massa.');
-        return;
-      }
-
-      toast.error(
-        galleryBatchType === 'photo'
-          ? 'Seleciona apenas ficheiros de imagem para este carregamento em massa.'
-          : galleryBatchType === 'video'
-            ? 'Seleciona apenas ficheiros de vídeo para este carregamento em massa.'
-            : 'Seleciona apenas ficheiros de áudio para este carregamento em massa.'
-      );
+      toast.error('Seleciona ficheiros de imagem, vídeo, áudio ou PDF/documento para este carregamento em massa.');
       return;
     }
 
@@ -1085,14 +1122,15 @@ export default function BackofficePage() {
 
     try {
       const galleryContext = activeGalleryConfig?.context || 'global';
-      const uploadOne = (item: (typeof galleryBatchItems)[number]) => {
+      const uploadOne = async (item: (typeof galleryBatchItems)[number]) => {
+        const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext);
         const fd = new FormData();
         fd.append('title', item.title.trim());
         fd.append('description', item.description.trim());
         fd.append('type', item.type);
         fd.append('context', galleryContext);
         fd.append('published', String(item.published));
-        fd.append('sourceFile', item.file);
+        fd.append('sourceUrl', sourceUrl);
 
         return fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
           method: 'POST',
@@ -1100,10 +1138,8 @@ export default function BackofficePage() {
         });
       };
 
-      const uploadConcurrency = 3;
-
-      for (let index = 0; index < galleryBatchItems.length; index += uploadConcurrency) {
-        await Promise.all(galleryBatchItems.slice(index, index + uploadConcurrency).map(uploadOne));
+      for (const item of galleryBatchItems) {
+        await uploadOne(item);
       }
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
@@ -1741,12 +1777,12 @@ export default function BackofficePage() {
                 <div>
                   <h3 className="text-base font-semibold text-[#0f4c36]">Carregamento em massa</h3>
                   <p className="mt-1 text-sm text-stone-600">
-                    Escolhe o tipo no dropdown, seleciona vários ficheiros e ajusta os dados de cada um antes de gravar.
+                    Seleciona vários ficheiros e ajusta os dados de cada um antes de gravar. O tipo é detetado automaticamente.
                   </p>
                 </div>
 
                 <label className="grid gap-1 text-sm text-stone-700">
-                  Tipo do lote
+                  Tipo predefinido para ficheiros sem formato reconhecido
                   <select
                     value={galleryBatchType}
                     onChange={(event) => setGalleryBatchType(event.target.value as GalleryMediaType)}
@@ -1763,7 +1799,7 @@ export default function BackofficePage() {
                   Ficheiros
                   <input
                     type="file"
-                    accept={galleryAcceptForType(galleryBatchType)}
+                    accept={GALLERY_BATCH_ACCEPT}
                     multiple
                     onChange={(event) => {
                       handleGalleryBatchFiles(event.target.files);
@@ -2842,8 +2878,6 @@ function Input({ label, value, onChange, required, type = 'text' }: { label: str
     </label>
   );
 }
-
-const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 
 function FileInput({ label, onFile, accept = WEB_IMAGE_ACCEPT }: { label: string; onFile: (file: File | null) => void; accept?: string }) {
   return (
