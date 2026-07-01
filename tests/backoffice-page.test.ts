@@ -28,6 +28,11 @@ describe('backoffice page guards', () => {
   });
 
   it('exposes a dedicated Sobre Nos backoffice editor backed by layout settings', () => {
+    const aboutEditorBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("{activeSection === 'about'"),
+      backofficePageSource.indexOf("{activeSection === 'layout'", backofficePageSource.indexOf("{activeSection === 'about'"))
+    );
+
     expect(backofficePageSource).toContain("{ id: 'about', label: 'Sobre Nós' }");
     expect(backofficePageSource).toContain("activeSection === 'about'");
     expect(backofficePageSource).toContain('Editar página Sobre Nós');
@@ -42,6 +47,9 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('CTA contacto · Email');
     expect(backofficePageSource).toContain('layoutSettings.aboutPage.contactEmail');
     expect(backofficePageSource).toContain("fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout'");
+    expect(aboutEditorBlock).toContain('border border-[#cfe7bd] bg-[#f2faed] p-5');
+    expect(aboutEditorBlock).toContain('className={`grid gap-3 md:grid-cols-2 ${APPEARANCE_PANEL_CLASS}`}');
+    expect(aboutEditorBlock).toContain('className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}');
   });
 
   it('exposes a dedicated user profile page for account security', () => {

@@ -2371,7 +2371,7 @@ export default function BackofficePage() {
       ) : null}
 
       {activeSection === 'about' ? (
-        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
+        <section className="mt-8 rounded-xl border border-[#cfe7bd] bg-[#f2faed] p-5">
           <h2 className="text-xl font-semibold text-[#0f4c36]">Editar página Sobre Nós</h2>
           <p className="mt-1 text-sm text-stone-600">Atualiza o conteúdo institucional publicado em /sobre-nos.</p>
 
@@ -2381,27 +2381,27 @@ export default function BackofficePage() {
             </div>
           ) : (
             <form className="mt-5 grid gap-5" onSubmit={(event) => void saveLayoutSettings(event)}>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className={`grid gap-3 md:grid-cols-2 ${APPEARANCE_PANEL_CLASS}`}>
                 <Input label="Hero · Título" value={layoutSettings.pages.sobre.title} onChange={(value) => updateAppearancePage('sobre', { title: value })} />
                 <TextArea label="Hero · Subtítulo" value={layoutSettings.pages.sobre.description} onChange={(value) => updateAppearancePage('sobre', { description: value })} />
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                <div className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}>
                   <Input label="Secção · Quem Somos" value={layoutSettings.aboutPage.whoWeAreTitle} onChange={(value) => updateAboutPage({ whoWeAreTitle: value })} />
                   <TextArea label="Parágrafos · Quem Somos" value={layoutSettings.aboutPage.whoWeAreParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('whoWeAreParagraphs', value)} />
                 </div>
-                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                <div className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}>
                   <Input label="Secção · Como Nasceu" value={layoutSettings.aboutPage.originTitle} onChange={(value) => updateAboutPage({ originTitle: value })} />
                   <TextArea label="Parágrafos · Como Nasceu" value={layoutSettings.aboutPage.originParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('originParagraphs', value)} />
                 </div>
-                <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                <div className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}>
                   <Input label="Secção · Fundadores" value={layoutSettings.aboutPage.foundersTitle} onChange={(value) => updateAboutPage({ foundersTitle: value })} />
                   <TextArea label="Parágrafos · Fundadores" value={layoutSettings.aboutPage.foundersParagraphs.join('\n')} onChange={(value) => updateAboutParagraphs('foundersParagraphs', value)} />
                 </div>
               </div>
 
-              <div className="grid gap-3 rounded-lg border border-stone-200 p-3">
+              <div className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}>
                 <Input label="Secção · Corpos Sociais" value={layoutSettings.aboutPage.socialBodiesTitle} onChange={(value) => updateAboutPage({ socialBodiesTitle: value })} />
                 <TextArea
                   label="Corpos sociais · Uma linha para o grupo, depois membros com cargo: nome"
@@ -2410,7 +2410,7 @@ export default function BackofficePage() {
                 />
               </div>
 
-              <div className="grid gap-3 rounded-lg border border-stone-200 p-3 md:grid-cols-2">
+              <div className={`grid gap-3 md:grid-cols-2 ${APPEARANCE_PANEL_CLASS}`}>
                 <Input label="CTA contacto · Título" value={layoutSettings.aboutPage.contactTitle} onChange={(value) => updateAboutPage({ contactTitle: value })} />
                 <TextArea label="CTA contacto · Descrição" value={layoutSettings.aboutPage.contactDescription} onChange={(value) => updateAboutPage({ contactDescription: value })} />
                 <Input label="CTA contacto · Label da morada" value={layoutSettings.aboutPage.contactAddressLabel} onChange={(value) => updateAboutPage({ contactAddressLabel: value })} />
