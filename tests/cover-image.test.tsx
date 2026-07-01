@@ -1,14 +1,26 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import CoverImage from '@/components/CoverImage';
 
 describe('CoverImage', () => {
-  it('uses responsive optimized images for local CMS cover routes', () => {
-    render(<CoverImage src="/api/content-assets/news/n1" alt="Capa da notícia" className="h-full w-full object-cover" />);
+  afterEach(() => {
+    cleanup();
+  });
 
-    const image = screen.getByRole('img', { name: 'Capa da notícia' });
-    expect(image.getAttribute('src')).toContain('/_next/image?url=%2Fapi%2Fcontent-assets%2Fnews%2Fn1');
-    expect(image).toHaveAttribute('sizes', '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw');
+  it('renders dynamic CMS asset routes directly instead of routing them through next/image', () => {
+    render(<CoverImage src="/api/content-assets/news/n1" alt="Capa da noticia" className="h-full w-full object-cover" />);
+
+    const image = screen.getByRole('img', { name: 'Capa da noticia' });
+    expect(image).toHaveAttribute('src', '/api/content-assets/news/n1');
+    expect(image.getAttribute('src')).not.toContain('/_next/image');
+  });
+
+  it('renders backoffice upload covers directly so Vercel image optimization does not 404 dynamic files', () => {
+    render(<CoverImage src="/uploads/backoffice/news/foto.jpg" alt="Capa da noticia" className="h-full w-full object-cover" />);
+
+    const image = screen.getByRole('img', { name: 'Capa da noticia' });
+    expect(image).toHaveAttribute('src', '/uploads/backoffice/news/foto.jpg');
+    expect(image.getAttribute('src')).not.toContain('/_next/image');
   });
 
   it('falls back to the shared placeholder when the cover file cannot be loaded', () => {

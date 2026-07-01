@@ -68,18 +68,20 @@ describe('origin transfer optimization', () => {
     expect(sobreNosSource).toContain('src={aboutHeroImage}');
   });
 
-  it('serves gallery grid photos as optimized responsive thumbnails', () => {
+  it('serves static gallery grid photos as optimized thumbnails but bypasses dynamic upload routes', () => {
     expect(galleryTabsSource).toContain("import Image from 'next/image'");
-    expect(galleryTabsSource).toContain("previewSource.startsWith('/')");
+    expect(galleryTabsSource).toContain("previewSource.startsWith('/') && !shouldBypassNextImageOptimization(previewSource)");
     expect(galleryTabsSource).toContain('sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"');
     expect(galleryTabsSource).toContain('preload="none"');
   });
 
-  it('optimizes public publication covers instead of serving originals in listing and detail views', () => {
+  it('optimizes static publication covers while bypassing dynamic backoffice upload routes', () => {
     expect(bibliotecaPageSource).toContain('function OptimizedPublicationCover');
     expect(bibliotecaPageSource).toContain("import Image from 'next/image'");
+    expect(bibliotecaPageSource).toContain('shouldBypassNextImageOptimization(src)');
     expect(bibliotecaPageSource).toContain('sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"');
     expect(bibliotecaDetailSource).toContain('function OptimizedPublicationDetailCover');
+    expect(bibliotecaDetailSource).toContain('shouldBypassNextImageOptimization(src)');
     expect(bibliotecaDetailSource).toContain('sizes="(min-width: 1024px) 960px, 100vw"');
   });
 });
