@@ -4,7 +4,6 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { upload } from '@vercel/blob/client';
 import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
 import RichTextEditor from '@/components/RichTextEditor';
 import { backofficePrimaryActionLabel } from '@/lib/backoffice-primary-label';
@@ -241,37 +240,72 @@ function inferGalleryBatchType(file: File, fallbackType: GalleryMediaType): Gall
   return fallbackType === 'document' ? null : fallbackType;
 }
 
-function extensionFromFileName(fileName: string) {
-  const match = fileName.match(/\.[a-z0-9]+$/i);
-  return match ? match[0].toLowerCase() : '';
-}
-
-function sanitizeBlobPathSegment(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'ficheiro';
-}
-
-async function uploadGalleryBatchFile(file: File, galleryContext: string) {
-  const safeContext = sanitizeBlobPathSegment(galleryContext);
-  const safeName = sanitizeBlobPathSegment(file.name.replace(/\.[^/.]+$/, ''));
-  const extension = extensionFromFileName(file.name);
-  const pathname = `backoffice/gallery-${safeContext}/${Date.now()}-${crypto.randomUUID()}-${safeName}${extension}`;
-
-  const blob = await upload(pathname, file, {
-    access: 'public',
-    handleUploadUrl: '/api/gallery/client-upload',
-    contentType: file.type || undefined,
-  });
-
-  return blob.url;
-}
-
 function isGalleryAssetRoute(value: string) {
   return value.trim().startsWith('/api/gallery/assets/');
+}
+
+type UploadProgress = {
+  label: string;
+  percent: number;
+  detail?: string;
+};
+
+function clampProgress(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function requestJsonWithUploadProgress<T>(
+  path: string,
+  method: string,
+  body: FormData,
+  headers: Record<string, string>,
+  onProgress?: (percent: number) => void
+) {
+  return new Promise<T>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open(method, path);
+
+    for (const [key, value] of Object.entries(headers)) {
+      request.setRequestHeader(key, value);
+    }
+
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(clampProgress((event.loaded / event.total) * 100));
+      }
+    };
+
+    request.onload = () => {
+      const responseText = request.responseText || '';
+      const payload = responseText
+        ? (() => {
+            try {
+              return JSON.parse(responseText) as T & { message?: string };
+            } catch {
+              return null;
+            }
+          })()
+        : null;
+
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100);
+        resolve(payload as T);
+        return;
+      }
+
+      if (request.status === 413) {
+        reject(new Error('O ficheiro é demasiado grande para ser enviado de uma vez. Usa um PDF/imagem mais leve ou coloca o ficheiro por URL.'));
+        return;
+      }
+
+      reject(new Error(payload?.message || responseText.trim() || 'Falha no carregamento.'));
+    };
+
+    request.onerror = () => reject(new Error('Falha de rede durante o carregamento. Verifica a ligação e tenta novamente.'));
+    request.onabort = () => reject(new Error('Carregamento cancelado.'));
+    request.send(body);
+  });
 }
 
 async function runGalleryBatchQueue<T>(items: T[], worker: (item: T) => Promise<unknown>, concurrency = 3) {
@@ -307,6 +341,7 @@ export default function BackofficePage() {
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
   const [isLoadingLayout, setIsLoadingLayout] = useState(true);
+  const [operationProgress, setOperationProgress] = useState<UploadProgress | null>(null);
 
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -521,18 +556,27 @@ export default function BackofficePage() {
       fd.append('kind', kind);
       fd.append('file', file);
 
-      const payload = await fetchAdminEndpoint<{ url: string }>('/api/content-assets/rich-text', {
-        method: 'POST',
-        body: fd,
-      });
+      try {
+        setOperationProgress({ label: 'A carregar ficheiro do editor', percent: 5, detail: file.name });
+        const headers = await authHeaders();
+        const payload = await requestJsonWithUploadProgress<{ url: string }>(
+          '/api/content-assets/rich-text',
+          'POST',
+          fd,
+          headers,
+          (percent) => setOperationProgress({ label: 'A carregar ficheiro do editor', percent, detail: file.name })
+        );
 
-      if (!payload.url) {
-        throw new Error('Não foi possível guardar o ficheiro.');
+        if (!payload.url) {
+          throw new Error('Não foi possível guardar o ficheiro.');
+        }
+
+        return payload.url;
+      } finally {
+        setOperationProgress(null);
       }
-
-      return payload.url;
     },
-    [fetchAdminEndpoint]
+    [authHeaders]
   );
 
   const refreshDashboardStats = useCallback(async () => {
@@ -931,6 +975,7 @@ export default function BackofficePage() {
   async function saveSection(section: ContentSection, formData: FormData) {
     setBusy(true);
     try {
+      setOperationProgress({ label: 'A guardar conteudo', percent: 5, detail: section });
       const headers = await authHeaders();
       const endpoint = editingId ? `/api/${section}/${editingId}` : `/api/${section}`;
       const method = editingId ? 'PUT' : 'POST';
@@ -956,10 +1001,12 @@ export default function BackofficePage() {
 
       toast.success(editingId ? 'Registo atualizado com sucesso.' : 'Registo criado com sucesso.');
       resetCurrentForm();
+      setOperationProgress({ label: 'A atualizar listas', percent: 95, detail: section });
       await Promise.all([refreshContentSection(section, true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao guardar registo.');
     } finally {
+      setOperationProgress(null);
       setBusy(false);
     }
   }
@@ -1088,6 +1135,13 @@ export default function BackofficePage() {
     setBusy(true);
 
     try {
+      const uploadDetail = galleryForm.sourceFile?.name || galleryForm.thumbnailFile?.name || galleryForm.title;
+      setOperationProgress({
+        label: galleryEditingId ? 'A atualizar media' : 'A carregar media',
+        percent: 5,
+        detail: uploadDetail,
+      });
+
       const fd = new FormData();
       fd.append('context', activeGalleryConfig?.context || 'global');
       fd.append('title', galleryForm.title);
@@ -1099,20 +1153,28 @@ export default function BackofficePage() {
       if (galleryForm.sourceFile) fd.append('sourceFile', galleryForm.sourceFile);
       if (galleryForm.thumbnailFile) fd.append('thumbnailFile', galleryForm.thumbnailFile);
 
-      await fetchAdminEndpoint<GalleryMediaItem>(
+      const headers = await authHeaders();
+      await requestJsonWithUploadProgress<GalleryMediaItem>(
         galleryEditingId ? `/api/gallery/${galleryEditingId}` : '/api/gallery',
-        {
-          method: galleryEditingId ? 'PUT' : 'POST',
-          body: fd,
-        }
+        galleryEditingId ? 'PUT' : 'POST',
+        fd,
+        headers,
+        (percent) =>
+          setOperationProgress({
+            label: galleryEditingId ? 'A atualizar media' : 'A carregar media',
+            percent,
+            detail: uploadDetail,
+          })
       );
 
       toast.success(galleryEditingId ? 'Media atualizado com sucesso.' : 'Media criado com sucesso.');
       resetGalleryForm();
+      setOperationProgress({ label: 'A atualizar galeria', percent: 95, detail: uploadDetail });
       await Promise.all([refreshGallery(true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao guardar media da galeria.');
     } finally {
+      setOperationProgress(null);
       setBusy(false);
     }
   }
@@ -1199,30 +1261,60 @@ export default function BackofficePage() {
 
     try {
       const galleryContext = activeGalleryConfig?.context || 'global';
+      const totalItems = galleryBatchItems.length;
+      let completedItems = 0;
+      const headers = await authHeaders();
+
+      setOperationProgress({
+        label: 'A carregar lote da galeria',
+        percent: 0,
+        detail: `0/${totalItems} concluidos`,
+      });
+
       const uploadOne = async (item: (typeof galleryBatchItems)[number]) => {
-        const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext);
         const fd = new FormData();
         fd.append('title', item.title.trim());
         fd.append('description', item.description.trim());
         fd.append('type', item.type);
         fd.append('context', galleryContext);
         fd.append('published', String(item.published));
-        fd.append('sourceUrl', sourceUrl);
+        fd.append('sourceFile', item.file);
 
-        return fetchAdminEndpoint<GalleryMediaItem>('/api/gallery', {
-          method: 'POST',
-          body: fd,
+        const result = await requestJsonWithUploadProgress<GalleryMediaItem>(
+          '/api/gallery',
+          'POST',
+          fd,
+          headers,
+          (filePercent) => {
+            const overallPercent = ((completedItems + filePercent / 100) / totalItems) * 100;
+            setOperationProgress({
+              label: 'A carregar lote da galeria',
+              percent: clampProgress(overallPercent),
+              detail: `${completedItems}/${totalItems} concluidos - ${item.file.name}`,
+            });
+          }
+        );
+
+        completedItems += 1;
+        setOperationProgress({
+          label: 'A carregar lote da galeria',
+          percent: clampProgress((completedItems / totalItems) * 100),
+          detail: `${completedItems}/${totalItems} concluidos`,
         });
+
+        return result;
       };
 
-      await runGalleryBatchQueue(galleryBatchItems, uploadOne);
+      await runGalleryBatchQueue(galleryBatchItems, uploadOne, 1);
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
       clearGalleryBatchItems();
+      setOperationProgress({ label: 'A atualizar galeria', percent: 95, detail: `${totalItems}/${totalItems} concluidos` });
       await Promise.all([refreshGallery(true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha no carregamento em massa da galeria.');
     } finally {
+      setOperationProgress(null);
       setBusy(false);
     }
   }
@@ -1498,11 +1590,13 @@ export default function BackofficePage() {
             </button>
           </div>
 
-      {exportAuthMode ? (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Esta sessão é compatível com `output: "export"` e protege a interface do backoffice no cliente. As operações de gestão de conteúdos continuam a exigir um deploy com runtime servidor.
-        </div>
-      ) : null}
+          {operationProgress ? <OperationProgressNotice progress={operationProgress} /> : null}
+
+          {exportAuthMode ? (
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Esta sessão é compatível com `output: "export"` e protege a interface do backoffice no cliente. As operações de gestão de conteúdos continuam a exigir um deploy com runtime servidor.
+            </div>
+          ) : null}
 
       {activeSection === 'overview' ? (
         <section className="mt-8 space-y-6">
@@ -2713,6 +2807,29 @@ function sidebarNavClass(active: boolean, collapsed: boolean) {
     active
       ? 'bg-[#0f4c36] font-medium text-white [&_span:first-child]:bg-white/15 [&_span:first-child]:text-white'
       : 'text-stone-700 hover:bg-stone-100'
+  );
+}
+
+function OperationProgressNotice({ progress }: { progress: UploadProgress }) {
+  const percent = clampProgress(progress.percent);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950 shadow-sm"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold">{progress.label}</p>
+          {progress.detail ? <p className="mt-1 text-emerald-800">{progress.detail}</p> : null}
+        </div>
+        <span className="font-semibold tabular-nums">{percent}%</span>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+        <div className="h-full rounded-full bg-[#0f4c36] transition-[width] duration-200" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }
 

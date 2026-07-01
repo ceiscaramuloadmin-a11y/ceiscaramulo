@@ -479,24 +479,41 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('<option value="document">Documento/PDF</option>');
     expect(backofficePageSource).toContain('const GALLERY_BATCH_ACCEPT');
     expect(backofficePageSource).toContain('function inferGalleryBatchType');
-    expect(backofficePageSource).toContain("import { upload } from '@vercel/blob/client'");
-    expect(backofficePageSource).toContain('async function uploadGalleryBatchFile');
-    expect(backofficePageSource).toContain("handleUploadUrl: '/api/gallery/client-upload'");
+    expect(backofficePageSource).not.toContain("import { upload } from '@vercel/blob/client'");
+    expect(backofficePageSource).not.toContain('async function uploadGalleryBatchFile');
+    expect(backofficePageSource).not.toContain("handleUploadUrl: '/api/gallery/client-upload'");
     expect(backofficePageSource).toContain('O tipo é detetado automaticamente.');
     expect(backofficePageSource).toContain("if (type === 'video') return 'video/*'");
     expect(backofficePageSource).toContain("application/pdf,.pdf");
     expect(backofficePageSource).toContain("fd.append('context', activeGalleryConfig?.context || 'global')");
     expect(saveGalleryBatchBlock).toContain("fd.append('type', item.type)");
-    expect(saveGalleryBatchBlock).toContain('const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext)');
-    expect(saveGalleryBatchBlock).toContain("fd.append('sourceUrl', sourceUrl)");
-    expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceFile', item.file)");
+    expect(saveGalleryBatchBlock).not.toContain('const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext)');
+    expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceUrl', sourceUrl)");
+    expect(saveGalleryBatchBlock).toContain("fd.append('sourceFile', item.file)");
+    expect(saveGalleryBatchBlock).toContain('requestJsonWithUploadProgress<GalleryMediaItem>');
     expect(backofficePageSource).toContain('async function runGalleryBatchQueue');
     expect(backofficePageSource).toContain('Math.min(concurrency, queue.length)');
-    expect(saveGalleryBatchBlock).toContain('await runGalleryBatchQueue(galleryBatchItems, uploadOne)');
+    expect(saveGalleryBatchBlock).toContain('await runGalleryBatchQueue(galleryBatchItems, uploadOne, 1)');
     expect(saveGalleryBatchBlock).not.toContain("fd.append('type', galleryBatchType)");
     expect(backofficePageSource).toContain('accept={GALLERY_BATCH_ACCEPT}');
     expect(backofficePageSource).not.toContain('accept={galleryAcceptForType(galleryBatchType)}');
     expect(backofficePageSource).not.toContain('MAX_INLINE_AUDIO_UPLOAD_BYTES');
+  });
+
+  it('shows upload progress feedback for slow backoffice uploads', () => {
+    const progressBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('type UploadProgress'),
+      backofficePageSource.indexOf('function isProgrammeGallerySection')
+    );
+
+    expect(progressBlock).toContain('function requestJsonWithUploadProgress');
+    expect(progressBlock).toContain('request.upload.onprogress');
+    expect(backofficePageSource).toContain('const [operationProgress, setOperationProgress]');
+    expect(backofficePageSource).toContain('OperationProgressNotice');
+    expect(backofficePageSource).toContain('role="status"');
+    expect(backofficePageSource).toContain('aria-live="polite"');
+    expect(backofficePageSource).toContain('A carregar lote da galeria');
+    expect(backofficePageSource).toContain('tabular-nums');
   });
 
   it('keeps page media editing lightweight after admin listings replace data URLs with asset routes', () => {
@@ -531,7 +548,8 @@ describe('backoffice page guards', () => {
 
   it('uploads rich text media before saving news content so audio is not persisted inline', () => {
     expect(backofficePageSource).toContain('uploadRichTextMedia');
-    expect(backofficePageSource).toContain("fetchAdminEndpoint<{ url: string }>('/api/content-assets/rich-text'");
+    expect(backofficePageSource).toContain("requestJsonWithUploadProgress<{ url: string }>");
+    expect(backofficePageSource).toContain("'/api/content-assets/rich-text'");
     expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)}");
   });
 
