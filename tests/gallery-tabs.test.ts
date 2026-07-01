@@ -19,6 +19,13 @@ describe('GalleryTabs', () => {
     expect(galleryTabsSource).toContain("activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg'");
   });
 
+  it('opens the first available media type instead of showing an empty photos tab', () => {
+    expect(galleryTabsSource).toContain('function firstAvailableGalleryTab');
+    expect(galleryTabsSource).toContain("useState<TabId>(() => firstAvailableGalleryTab(items))");
+    expect(galleryTabsSource).toContain("if (items.some((item) => item.type === 'document')) return 'document'");
+    expect(galleryTabsSource).toContain('setActiveTab(firstAvailableGalleryTab(items))');
+  });
+
   it('keeps static local gallery photo previews eligible for next/image with responsive thumbnail sizes', () => {
     expect(galleryTabsSource).toContain("import Image from 'next/image'");
     expect(galleryTabsSource).toContain("previewSource.startsWith('/') && !shouldBypassNextImageOptimization(previewSource)");

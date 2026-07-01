@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { FileText, Maximize2, Pause, Play, Search, SearchX, Volume2, X } from 'lucide-react';
 import type { GalleryMediaItem } from '@/types';
@@ -11,6 +11,15 @@ type Props = {
 };
 
 type TabId = 'photo' | 'video' | 'audio' | 'document';
+
+function firstAvailableGalleryTab(items: GalleryMediaItem[]): TabId {
+  if (items.some((item) => item.type === 'photo')) return 'photo';
+  if (items.some((item) => item.type === 'video')) return 'video';
+  if (items.some((item) => item.type === 'audio')) return 'audio';
+  if (items.some((item) => item.type === 'document')) return 'document';
+
+  return 'photo';
+}
 
 function GalleryPhotoPreview({ item }: { item: GalleryMediaItem }) {
   const previewSource = item.thumbnail || item.source;
@@ -49,7 +58,7 @@ function GalleryPhotoPreview({ item }: { item: GalleryMediaItem }) {
 }
 
 export default function GalleryTabs({ items }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>('photo');
+  const [activeTab, setActiveTab] = useState<TabId>(() => firstAvailableGalleryTab(items));
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -62,6 +71,19 @@ export default function GalleryTabs({ items }: Props) {
   const videos = useMemo(() => items.filter((item) => item.type === 'video'), [items]);
   const audios = useMemo(() => items.filter((item) => item.type === 'audio'), [items]);
   const documents = useMemo(() => items.filter((item) => item.type === 'document'), [items]);
+
+  useEffect(() => {
+    if (
+      (activeTab === 'photo' && photos.length > 0) ||
+      (activeTab === 'video' && videos.length > 0) ||
+      (activeTab === 'audio' && audios.length > 0) ||
+      (activeTab === 'document' && documents.length > 0)
+    ) {
+      return;
+    }
+
+    setActiveTab(firstAvailableGalleryTab(items));
+  }, [activeTab, audios.length, documents.length, items, photos.length, videos.length]);
 
   const activePhoto = activePhotoIndex !== null ? photos[activePhotoIndex] : null;
   const activePhotoSource = activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg';
