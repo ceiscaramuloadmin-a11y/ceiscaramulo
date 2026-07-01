@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { getAssetUrl } from '@/lib/utils';
+import { getAssetUrl, shouldBypassNextImageOptimization } from '@/lib/utils';
 
 describe('getAssetUrl', () => {
   afterEach(() => {
@@ -22,5 +22,13 @@ describe('getAssetUrl', () => {
     expect(getAssetUrl('uploads/backoffice/rich-text-activities-image/foto.jpg')).toBe(
       '/uploads/backoffice/rich-text-activities-image/foto.jpg'
     );
+  });
+
+  it('marks dynamic public asset routes as unsafe for next/image optimization', () => {
+    expect(shouldBypassNextImageOptimization('/uploads/backoffice/news/foto.png')).toBe(true);
+    expect(shouldBypassNextImageOptimization('/api/content-assets/news/n1')).toBe(true);
+    expect(shouldBypassNextImageOptimization('/api/gallery/assets/g1/source')).toBe(true);
+    expect(shouldBypassNextImageOptimization('/internal-pages/pon-do-jueus.jpg')).toBe(false);
+    expect(shouldBypassNextImageOptimization('https://blob.example/foto.jpg')).toBe(false);
   });
 });

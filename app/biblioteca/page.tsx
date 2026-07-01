@@ -20,7 +20,7 @@ import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPubl
 import prisma from '@/lib/prisma';
 import { richTextToPlainText } from '@/lib/richText';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
-import { capitalizeFirstLetter, cn, getAssetUrl } from '@/lib/utils';
+import { capitalizeFirstLetter, cn, getAssetUrl, shouldBypassNextImageOptimization } from '@/lib/utils';
 import type { Publication, PublicationType } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -91,7 +91,7 @@ function buildBibliotecaPublicationWhere(tipo: PublicationType | null, query: st
 }
 
 function OptimizedPublicationCover({ src, alt, className }: { src: string; alt: string; className: string }) {
-  if (!src.startsWith('/')) {
+  if (!src.startsWith('/') || shouldBypassNextImageOptimization(src)) {
     return <img src={src} alt={alt} loading="lazy" decoding="async" className={className} />;
   }
 

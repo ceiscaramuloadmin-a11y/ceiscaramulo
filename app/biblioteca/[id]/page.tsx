@@ -14,7 +14,7 @@ import { getPublicationSlug } from '@/lib/public-content-slugs';
 import { publicAssetValue, withPublicContentAsset } from '@/lib/public-content-assets';
 import prisma from '@/lib/prisma';
 import { prepareRichTextForRender } from '@/lib/richText';
-import { capitalizeFirstLetter, getAssetUrl } from '@/lib/utils';
+import { capitalizeFirstLetter, getAssetUrl, shouldBypassNextImageOptimization } from '@/lib/utils';
 import { siteConfig } from '@/data/site';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +28,7 @@ interface Props {
 }
 
 function OptimizedPublicationDetailCover({ src, alt }: { src: string; alt: string }) {
-  if (!src.startsWith('/')) {
+  if (!src.startsWith('/') || shouldBypassNextImageOptimization(src)) {
     return <img src={src} alt={alt} loading="lazy" decoding="async" className="h-auto w-full object-cover" />;
   }
 

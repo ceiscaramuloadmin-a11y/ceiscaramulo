@@ -54,3 +54,17 @@ export function getAssetUrl(value?: string | null): string {
 
   return value;
 }
+
+export function shouldBypassNextImageOptimization(value?: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim();
+
+  return (
+    normalized.startsWith('/uploads/backoffice/') ||
+    normalized.startsWith('/api/content-assets/') ||
+    normalized.startsWith('/api/gallery/assets/')
+  );
+}

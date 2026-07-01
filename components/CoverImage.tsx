@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { ImgHTMLAttributes } from 'react';
+import { shouldBypassNextImageOptimization } from '@/lib/utils';
 
 type CoverImageProps = ImgHTMLAttributes<HTMLImageElement> & {
   src: string;
@@ -12,7 +13,9 @@ type CoverImageProps = ImgHTMLAttributes<HTMLImageElement> & {
 export default function CoverImage({ src, fallbackSrc = '/placeholder.svg', onError, ...props }: CoverImageProps) {
   const [currentSrc, setCurrentSrc] = useState(src || fallbackSrc);
   const shouldUseOptimizedImage =
-    currentSrc.startsWith('/') && !/\.(svg|heic|heif)$/i.test(currentSrc.split('?')[0] || '');
+    currentSrc.startsWith('/') &&
+    !shouldBypassNextImageOptimization(currentSrc) &&
+    !/\.(svg|heic|heif)$/i.test(currentSrc.split('?')[0] || '');
 
   const handleError: NonNullable<ImgHTMLAttributes<HTMLImageElement>['onError']> = (event) => {
     onError?.(event);

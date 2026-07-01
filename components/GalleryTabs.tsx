@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { FileText, Maximize2, Pause, Play, Search, SearchX, Volume2, X } from 'lucide-react';
 import type { GalleryMediaItem } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, shouldBypassNextImageOptimization } from '@/lib/utils';
 
 type Props = {
   items: GalleryMediaItem[];
@@ -23,7 +23,7 @@ function GalleryPhotoPreview({ item }: { item: GalleryMediaItem }) {
     );
   }
 
-  if (previewSource.startsWith('/')) {
+  if (previewSource.startsWith('/') && !shouldBypassNextImageOptimization(previewSource)) {
     return (
       <div className="relative h-44 w-full overflow-hidden">
         <Image
