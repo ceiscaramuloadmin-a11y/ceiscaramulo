@@ -128,6 +128,12 @@ const APPEARANCE_TABS: Array<{ id: AppearanceTab; label: string }> = [
   { id: 'seo', label: 'SEO e Metadados' },
 ];
 
+const APPEARANCE_PANEL_CLASS = 'rounded-lg border border-[#cfe7bd] bg-[#f2faed] p-3';
+const ADMIN_CONTENT_LIST_LIMIT = 80;
+const ADMIN_CONTACT_MESSAGES_LIMIT = 80;
+const ADMIN_AUDIT_LIMIT = 100;
+const ADMIN_GALLERY_LIST_LIMIT = 120;
+
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
   { id: 'biblioteca', label: 'Recursos', hasEmptyMessage: true },
@@ -141,7 +147,6 @@ const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasE
   { id: 'oficinasDeFormacao', label: 'Oficinas de formação' },
   { id: 'ponDoJueus', label: 'PON do Jueus' },
   { id: 'publicacoes', label: 'Publicações' },
-  { id: 'serra', label: 'Serra do Caramulo' },
   { id: 'sobre', label: 'Sobre Nós' },
 ];
 
@@ -353,6 +358,13 @@ export default function BackofficePage() {
     published: boolean;
   }>>([]);
   const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
+  const loadedContentSectionsRef = useRef<Set<ContentSection>>(new Set());
+  const loadedAdminUsersRef = useRef(false);
+  const loadedAuditLogsRef = useRef(false);
+  const loadedContactMessagesRef = useRef(false);
+  const loadedLayoutRef = useRef(false);
+  const loadedGalleryContextsRef = useRef<Set<string>>(new Set());
+  const cachedGalleryItemsByContextRef = useRef<Map<string, GalleryMediaItem[]>>(new Map());
 
   const stats = useMemo(
     () => ({
@@ -456,7 +468,7 @@ export default function BackofficePage() {
 
   const fetchAdminCollection = useCallback(async <T,>(section: ContentSection) => {
     const headers = await authHeaders();
-    const response = await fetch(`/api/${section}?scope=admin`, { headers });
+    const response = await fetch(`/api/${section}?scope=admin&limit=${ADMIN_CONTENT_LIST_LIMIT}`, { headers });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload?.message || `Erro ao carregar ${section}.`);
     return payload as T[];
@@ -530,60 +542,99 @@ export default function BackofficePage() {
     setIsLoadingDashboardStats(false);
   }, [fetchAdminEndpoint]);
 
-  const refreshAll = useCallback(async () => {
+  const refreshContentSection = useCallback(async (section: ContentSection, force = false) => {
+    if (!force && loadedContentSectionsRef.current.has(section)) {
+      return;
+    }
+
     setIsLoadingContent(true);
-    const safeFetchSection = async <T,>(section: ContentSection) => {
-      try {
-        return await fetchAdminCollection<T>(section);
-      } catch {
-        return [] as T[];
+
+    try {
+      if (section === 'news') {
+        setNews(await fetchAdminCollection<NewsArticle>('news'));
       }
-    };
 
-    const [newsData, activitiesData, publicationsData] = await Promise.all([
-      safeFetchSection<NewsArticle>('news'),
-      safeFetchSection<Activity>('activities'),
-      safeFetchSection<Publication>('publications'),
-    ]);
+      if (section === 'activities') {
+        setActivities(await fetchAdminCollection<Activity>('activities'));
+      }
 
-    setNews(newsData);
-    setActivities(activitiesData);
-    setPublications(publicationsData);
+      if (section === 'publications') {
+        setPublications(await fetchAdminCollection<Publication>('publications'));
+      }
+
+      loadedContentSectionsRef.current.add(section);
+    } catch {
+      if (section === 'news') setNews([]);
+      if (section === 'activities') setActivities([]);
+      if (section === 'publications') setPublications([]);
+    }
+
     setIsLoadingContent(false);
   }, [fetchAdminCollection]);
 
-  const refreshGovernance = useCallback(async () => {
-    setIsLoadingGovernance(true);
-    const [adminsData, auditData] = await Promise.all([
-      fetchAdminEndpoint<AdminUser[]>('/api/admin/users').catch(() => []),
-      fetchAdminEndpoint<AuditLogEntry[]>('/api/admin/audit').catch(() => []),
-    ]);
+  const refreshAdminUsers = useCallback(async (force = false) => {
+    if (!force && loadedAdminUsersRef.current) {
+      return;
+    }
 
+    setIsLoadingGovernance(true);
+    const adminsData = await fetchAdminEndpoint<AdminUser[]>('/api/admin/users').catch(() => []);
     setAdmins(adminsData);
-    setAuditLogs(auditData);
+    loadedAdminUsersRef.current = true;
     setIsLoadingGovernance(false);
   }, [fetchAdminEndpoint]);
 
-  const refreshContactMessages = useCallback(async () => {
+  const refreshAuditLogs = useCallback(async (force = false) => {
+    if (!force && loadedAuditLogsRef.current) {
+      return;
+    }
+
+    setIsLoadingGovernance(true);
+    const auditData = await fetchAdminEndpoint<AuditLogEntry[]>(`/api/admin/audit?limit=${ADMIN_AUDIT_LIMIT}`).catch(() => []);
+    setAuditLogs(auditData);
+    loadedAuditLogsRef.current = true;
+    setIsLoadingGovernance(false);
+  }, [fetchAdminEndpoint]);
+
+  const refreshContactMessages = useCallback(async (force = false) => {
+    if (!force && loadedContactMessagesRef.current) {
+      return;
+    }
+
     setIsLoadingContacts(true);
-    const data = await fetchAdminEndpoint<ContactMessage[]>('/api/admin/contact-messages').catch(() => []);
+    const data = await fetchAdminEndpoint<ContactMessage[]>(`/api/admin/contact-messages?limit=${ADMIN_CONTACT_MESSAGES_LIMIT}`).catch(() => []);
     setContactMessages(data);
+    loadedContactMessagesRef.current = true;
     setIsLoadingContacts(false);
   }, [fetchAdminEndpoint]);
 
-  const refreshLayout = useCallback(async () => {
+  const refreshLayout = useCallback(async (force = false) => {
+    if (!force && loadedLayoutRef.current) {
+      return;
+    }
+
     setIsLoadingLayout(true);
     const data = await fetchAdminEndpoint<SiteLayoutSettings>('/api/admin/layout').catch(() => defaultSiteLayoutSettings);
     setLayoutSettings(data);
+    loadedLayoutRef.current = true;
     setIsLoadingLayout(false);
   }, [fetchAdminEndpoint]);
 
-  const refreshGallery = useCallback(async () => {
-    setIsLoadingGallery(true);
+  const refreshGallery = useCallback(async (force = false) => {
     const galleryContext = activeGalleryConfig?.context || 'global';
-    const data = await fetchAdminEndpoint<GalleryMediaItem[]>(`/api/gallery?scope=admin&context=${encodeURIComponent(galleryContext)}`).catch(() => []);
+
+    if (!force && loadedGalleryContextsRef.current.has(galleryContext)) {
+      setGalleryItems(cachedGalleryItemsByContextRef.current.get(galleryContext) ?? []);
+      setSelectedGalleryIds([]);
+      return;
+    }
+
+    setIsLoadingGallery(true);
+    const data = await fetchAdminEndpoint<GalleryMediaItem[]>(`/api/gallery?scope=admin&context=${encodeURIComponent(galleryContext)}&limit=${ADMIN_GALLERY_LIST_LIMIT}`).catch(() => []);
     setGalleryItems(data);
     setSelectedGalleryIds([]);
+    cachedGalleryItemsByContextRef.current.set(galleryContext, data);
+    loadedGalleryContextsRef.current.add(galleryContext);
     setIsLoadingGallery(false);
   }, [activeGalleryConfig, fetchAdminEndpoint]);
 
@@ -649,7 +700,7 @@ export default function BackofficePage() {
         body: JSON.stringify({ id, read }),
       });
       toast.success(read ? 'Mensagem marcada como lida.' : 'Mensagem marcada como não lida.');
-      await refreshContactMessages();
+      await refreshContactMessages(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao atualizar a mensagem.');
     } finally {
@@ -669,7 +720,7 @@ export default function BackofficePage() {
     }
 
     if (['news', 'activities', 'publications'].includes(activeSection)) {
-      void refreshAll();
+      void refreshContentSection(activeSection as ContentSection);
       return;
     }
 
@@ -678,8 +729,13 @@ export default function BackofficePage() {
       return;
     }
 
-    if (activeSection === 'admins' || activeSection === 'audit') {
-      void refreshGovernance();
+    if (activeSection === 'admins') {
+      void refreshAdminUsers();
+      return;
+    }
+
+    if (activeSection === 'audit') {
+      void refreshAuditLogs();
       return;
     }
 
@@ -695,10 +751,11 @@ export default function BackofficePage() {
     activeGalleryConfig,
     activeSection,
     exportAuthMode,
-    refreshAll,
+    refreshAdminUsers,
+    refreshAuditLogs,
+    refreshContentSection,
     refreshContactMessages,
     refreshGallery,
-    refreshGovernance,
     refreshLayout,
   ]);
 
@@ -713,7 +770,7 @@ export default function BackofficePage() {
       });
 
       toast.success('Layout atualizado com sucesso.');
-      await refreshLayout();
+      await refreshLayout(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao atualizar o layout.');
     } finally {
@@ -899,7 +956,7 @@ export default function BackofficePage() {
 
       toast.success(editingId ? 'Registo atualizado com sucesso.' : 'Registo criado com sucesso.');
       resetCurrentForm();
-      await refreshAll();
+      await Promise.all([refreshContentSection(section, true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao guardar registo.');
     } finally {
@@ -918,7 +975,7 @@ export default function BackofficePage() {
       if (!response.ok) throw new Error(payload?.message || 'Erro ao eliminar registo.');
 
       toast.success('Registo removido com sucesso.');
-      await refreshAll();
+      await Promise.all([refreshContentSection(section, true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao eliminar registo.');
     } finally {
@@ -1052,7 +1109,7 @@ export default function BackofficePage() {
 
       toast.success(galleryEditingId ? 'Media atualizado com sucesso.' : 'Media criado com sucesso.');
       resetGalleryForm();
-      await refreshGallery();
+      await Promise.all([refreshGallery(true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao guardar media da galeria.');
     } finally {
@@ -1067,7 +1124,7 @@ export default function BackofficePage() {
     try {
       await fetchAdminEndpoint<null>(`/api/gallery/${id}`, { method: 'DELETE' });
       toast.success('Media removido com sucesso.');
-      await refreshGallery();
+      await Promise.all([refreshGallery(true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao eliminar media da galeria.');
     } finally {
@@ -1115,7 +1172,7 @@ export default function BackofficePage() {
 
       setSelectedGalleryIds((current) => current.filter((id) => !ids.includes(id)));
       toast.success(ids.length === 1 ? 'Item eliminado com sucesso.' : `${ids.length} itens eliminados com sucesso.`);
-      await refreshGallery();
+      await Promise.all([refreshGallery(true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao eliminar itens da galeria.');
     } finally {
@@ -1162,7 +1219,7 @@ export default function BackofficePage() {
 
       toast.success(`${galleryBatchItems.length} item(ns) carregado(s) com sucesso.`);
       clearGalleryBatchItems();
-      await refreshGallery();
+      await Promise.all([refreshGallery(true), refreshDashboardStats()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha no carregamento em massa da galeria.');
     } finally {
@@ -1192,7 +1249,7 @@ export default function BackofficePage() {
       setNewAdminPassword('');
       setNewAdminPasswordMode('generated');
       setCreatedAdminPassword(created.generatedPassword ?? null);
-      await refreshGovernance();
+      await refreshAdminUsers(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao criar utilizador admin.');
     } finally {
@@ -1213,7 +1270,7 @@ export default function BackofficePage() {
       });
 
       toast.success('Utilizador admin atualizado com sucesso.');
-      await refreshGovernance();
+      await refreshAdminUsers(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao atualizar utilizador admin.');
     } finally {
@@ -1232,7 +1289,7 @@ export default function BackofficePage() {
       });
 
       toast.success('Utilizador admin removido com sucesso.');
-      await refreshGovernance();
+      await refreshAdminUsers(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao remover utilizador admin.');
     } finally {
@@ -1617,13 +1674,15 @@ export default function BackofficePage() {
       {activeSection === 'publications' ? (
         <SectionLayout
           title="Recursos"
+          description="Biblioteca simples: adiciona título, autor, ano, tipo e PDF ou link quando existir."
+          newButtonLabel="Novo recurso"
           list={publications}
           loading={isLoadingContent}
           busy={busy}
           onNew={resetPublicationForm}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><label className="grid gap-1 text-sm text-stone-700">Tipo<select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required><option value="" disabled>Selecionar tipo</option>{PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label><RichTextEditor label="Descrição" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="URL de download" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="Documento PDF" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor ou entidade" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><label className="grid gap-1 text-sm text-stone-700">Tipo de recurso<select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required><option value="" disabled>Selecionar tipo</option>{PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label><RichTextEditor label="Resumo simples" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="Link externo para download (opcional)" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="PDF para download (opcional)" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa (opcional)" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 
@@ -2277,7 +2336,7 @@ export default function BackofficePage() {
       ) : null}
 
       {activeSection === 'layout' ? (
-        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
+        <section className="mt-8 rounded-xl border border-[#cfe7bd] bg-[#f2faed] p-5">
           <h2 className="text-xl font-semibold text-[#0f4c36]">Aparência</h2>
           <p className="mt-1 text-sm text-stone-600">Edita footer, textos de páginas e metadados públicos.</p>
 
@@ -2287,7 +2346,7 @@ export default function BackofficePage() {
             </div>
           ) : (
           <form className="mt-5 grid gap-6" onSubmit={(event) => void saveLayoutSettings(event)}>
-            <div className="sticky top-4 z-10 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+            <div className="sticky top-4 z-10 rounded-xl border border-[#cfe7bd] bg-[#f8fcf4]/95 p-3 shadow-sm backdrop-blur">
               <div className="flex flex-wrap gap-2" role="tablist" aria-label="Separadores da aparência">
                 {APPEARANCE_TABS.map((tab) => (
                   <button
@@ -2312,7 +2371,7 @@ export default function BackofficePage() {
                 const pageSettings = layoutSettings.pages[page.id];
 
                 return (
-                  <div key={page.id} className="grid gap-3 rounded-lg border border-stone-200 p-3">
+                  <div key={page.id} className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}>
                     <Input
                       label={`Página ${page.label} · Título`}
                       value={pageSettings.title}
@@ -2382,7 +2441,7 @@ export default function BackofficePage() {
             <>
             <AppearanceSectionTitle title="Footer" description="Edita apenas os campos que aparecem no footer público: contactos, redes sociais, navegação, sócio e rodapé legal." />
 
-            <div className="rounded-lg border border-stone-200 p-3">
+            <div className={APPEARANCE_PANEL_CLASS}>
               <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Contactos</h3>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <Input label="Footer · Morada" value={layoutSettings.footer.contactInfo.address} onChange={(v) => updateFooterContact({ address: v })} />
@@ -2393,7 +2452,7 @@ export default function BackofficePage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-stone-200 p-3">
+            <div className={APPEARANCE_PANEL_CLASS}>
               <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Redes sociais</h3>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <Input label="Título da secção" value={layoutSettings.footer.socialTitle} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, socialTitle: v } }))} />
@@ -2404,7 +2463,7 @@ export default function BackofficePage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-stone-200 p-3">
+            <div className={APPEARANCE_PANEL_CLASS}>
               <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Navegação visível</h3>
               <p className="mt-1 text-xs leading-5 text-stone-500">
                 A coluna CEISCaramulo em ação é fixa no frontend e mostra Atividades e Notícias. A coluna de iniciativas pode ser ajustada abaixo.
@@ -2456,7 +2515,7 @@ export default function BackofficePage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-stone-200 p-3">
+              <div className={APPEARANCE_PANEL_CLASS}>
                 <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Tornar-se sócio</h3>
                 <div className="mt-3 grid gap-3">
                   <Input label="Título" value={layoutSettings.footer.membership.title} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, title: value } } }))} />
@@ -2465,7 +2524,7 @@ export default function BackofficePage() {
                   <Input label="Link do botão" value={layoutSettings.footer.membership.ctaHref} onChange={(value) => setLayoutSettings((current) => ({ ...current, footer: { ...current.footer, membership: { ...current.footer.membership, ctaHref: value } } }))} />
                 </div>
               </div>
-              <div className="rounded-lg border border-stone-200 p-3">
+              <div className={APPEARANCE_PANEL_CLASS}>
                 <h3 className="text-sm font-semibold text-[#0f4c36]">Footer · Rodapé legal</h3>
                 <div className="mt-3 grid gap-3">
                   <Input label="Copyright" value={layoutSettings.footer.copyrightLine} onChange={(v) => setLayoutSettings((c) => ({ ...c, footer: { ...c.footer, copyrightLine: v } }))} />
@@ -2481,7 +2540,7 @@ export default function BackofficePage() {
             <AppearanceSectionTitle title="Ícones e Elementos Visuais" description="Seleciona ícones através de preview visual e reorganiza cartões quando aplicável." />
             <div className="grid gap-4 md:grid-cols-2">
               {layoutSettings.home.explore.links.slice(0, 6).map((link, index) => (
-                <div key={`${link.href}-${index}`} className="rounded-lg border border-stone-200 p-3">
+                <div key={`${link.href}-${index}`} className={APPEARANCE_PANEL_CLASS}>
                   <div className="mb-3 flex gap-2">
                     <button type="button" onClick={() => moveExploreLink(index, -1)} className="rounded border px-2 py-1 text-xs" disabled={index === 0}>Subir</button>
                     <button type="button" onClick={() => moveExploreLink(index, 1)} className="rounded border px-2 py-1 text-xs" disabled={index === layoutSettings.home.explore.links.length - 1}>Descer</button>
@@ -2507,7 +2566,7 @@ export default function BackofficePage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               {layoutSettings.serra.sections.map((section, index) => (
-                <div key={section.id} className="rounded-lg border border-stone-200 p-3">
+                <div key={section.id} className={APPEARANCE_PANEL_CLASS}>
                   <Input label={`Serra ${index + 1} · Título`} value={section.title} onChange={(v) => setLayoutSettings((c) => {
                     const sections = [...c.serra.sections];
                     sections[index] = { ...sections[index], title: v };
@@ -2527,7 +2586,7 @@ export default function BackofficePage() {
             {appearanceTab === 'colors' ? (
             <>
             <AppearanceSectionTitle title="Cores e Identidade Visual" description="Define as cores base que alimentam as variáveis visuais globais do website." />
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className={`grid gap-3 md:grid-cols-2 ${APPEARANCE_PANEL_CLASS}`}>
               {Object.entries(layoutSettings.visualIdentity.colors).map(([key, value]) => (
                 <Input key={key} type="color" label={`Cor · ${key}`} value={value} onChange={(next) => updateVisualColor(key as keyof SiteLayoutSettings['visualIdentity']['colors'], next)} />
               ))}
@@ -2538,7 +2597,7 @@ export default function BackofficePage() {
             {appearanceTab === 'logos' ? (
             <>
             <AppearanceSectionTitle title="Logótipos" description="Regista os logótipos institucionais usados pelo website e materiais públicos." />
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className={`grid gap-3 md:grid-cols-2 ${APPEARANCE_PANEL_CLASS}`}>
               <Input label="Logótipo principal" value={layoutSettings.visualIdentity.logos.primary} onChange={(v) => updateLogo('primary', v)} />
               <Input label="Logótipo do footer" value={layoutSettings.visualIdentity.logos.footer} onChange={(v) => updateLogo('footer', v)} />
               <Input label="Logótipo institucional" value={layoutSettings.visualIdentity.logos.institutional} onChange={(v) => updateLogo('institutional', v)} />
@@ -2549,10 +2608,14 @@ export default function BackofficePage() {
             {appearanceTab === 'seo' ? (
             <>
             <AppearanceSectionTitle title="SEO e Metadados" description="Campos centrais para título, descrição, palavras-chave e imagem social." />
-            <Input label="SEO · Título" value={layoutSettings.seo.title} onChange={(v) => updateSeo({ title: v })} />
-            <TextArea label="SEO · Descrição" value={layoutSettings.seo.description} onChange={(v) => updateSeo({ description: v })} />
-            <TextArea label="SEO · Palavras-chave" value={layoutSettings.seo.keywords} onChange={(v) => updateSeo({ keywords: v })} />
-            <Input label="SEO · Imagem Open Graph" value={layoutSettings.seo.ogImage} onChange={(v) => updateSeo({ ogImage: v })} />
+            <div className={APPEARANCE_PANEL_CLASS}>
+              <div className="grid gap-3">
+                <Input label="SEO · Título" value={layoutSettings.seo.title} onChange={(v) => updateSeo({ title: v })} />
+                <TextArea label="SEO · Descrição" value={layoutSettings.seo.description} onChange={(v) => updateSeo({ description: v })} />
+                <TextArea label="SEO · Palavras-chave" value={layoutSettings.seo.keywords} onChange={(v) => updateSeo({ keywords: v })} />
+                <Input label="SEO · Imagem Open Graph" value={layoutSettings.seo.ogImage} onChange={(v) => updateSeo({ ogImage: v })} />
+              </div>
+            </div>
             </>
             ) : null}
 
@@ -2664,6 +2727,8 @@ function Card({ title, value, loading = false }: { title: string; value: number 
 
 function SectionLayout({
   title,
+  description,
+  newButtonLabel = 'Novo',
   list,
   form,
   onEdit,
@@ -2673,6 +2738,8 @@ function SectionLayout({
   loading = false,
 }: {
   title: string;
+  description?: string;
+  newButtonLabel?: string;
   list: Array<{ id: string; title?: string }>;
   form: React.ReactNode;
   onEdit: (item: { id: string; title?: string }) => void;
@@ -2694,9 +2761,12 @@ function SectionLayout({
     <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div className="rounded-xl border border-stone-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-[#0f4c36]">{title}</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-[#0f4c36]">{title}</h2>
+            {description ? <p className="mt-1 text-sm text-stone-500">{description}</p> : null}
+          </div>
           <button type="button" onClick={handleNewClick} disabled={busy} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-50">
-            Novo
+            {newButtonLabel}
           </button>
         </div>
         <div className="space-y-3">

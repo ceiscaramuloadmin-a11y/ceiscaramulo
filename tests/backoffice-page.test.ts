@@ -161,7 +161,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'audit', label: 'Histórico' }");
     expect(backofficePageSource).toContain('Histórico de alterações');
     expect(backofficePageSource).toContain('Os eventos com mais de 10 dias são apagados automaticamente');
-    expect(backofficePageSource).toContain("fetchAdminEndpoint<AuditLogEntry[]>('/api/admin/audit')");
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<AuditLogEntry[]>(`/api/admin/audit?limit=${ADMIN_AUDIT_LIMIT}`)");
     expect(availableSectionsBlock).toContain("sections.push('audit')");
     expect(availableSectionsBlock).not.toContain("permissionSet.has('audit')) sections.push('audit')");
   });
@@ -175,9 +175,24 @@ describe('backoffice page guards', () => {
   });
 
   it('allows PDF attachments in the resources form', () => {
-    expect(backofficePageSource).toContain('label="Documento PDF"');
+    expect(backofficePageSource).toContain('label="PDF para download (opcional)"');
     expect(backofficePageSource).toContain('accept="application/pdf"');
     expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
+  });
+
+  it('keeps the resources editor practical for managing the public library', () => {
+    const resourcesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'contacts' ? (")
+    );
+
+    expect(resourcesBlock).toContain('description="Biblioteca simples: adiciona título, autor, ano, tipo e PDF ou link quando existir."');
+    expect(resourcesBlock).toContain('newButtonLabel="Novo recurso"');
+    expect(resourcesBlock).toContain('label="Autor ou entidade"');
+    expect(resourcesBlock).toContain('Tipo de recurso');
+    expect(resourcesBlock).toContain('label="Resumo simples"');
+    expect(resourcesBlock).toContain('label="Link externo para download (opcional)"');
+    expect(resourcesBlock).toContain('label="Capa (opcional)"');
   });
 
   it('keeps resources always public and clears the resources form when creating a new item', () => {
@@ -368,6 +383,19 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('updateSeo');
   });
 
+  it('uses a light green highlight on large appearance panels for readability', () => {
+    const appearanceEditorBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'layout'"),
+      backofficePageSource.indexOf('function TextArea')
+    );
+
+    expect(backofficePageSource).toContain("const APPEARANCE_PANEL_CLASS = 'rounded-lg border border-[#cfe7bd] bg-[#f2faed] p-3'");
+    expect(appearanceEditorBlock).toContain('border border-[#cfe7bd] bg-[#f2faed] p-5');
+    expect(appearanceEditorBlock).toContain('bg-[#f8fcf4]/95');
+    expect(appearanceEditorBlock).toContain('className={`grid gap-3 ${APPEARANCE_PANEL_CLASS}`}');
+    expect(appearanceEditorBlock).toContain('className={APPEARANCE_PANEL_CLASS}');
+  });
+
   it('adds the active public frontend pages to the appearance page editor', () => {
     const pagesEditorBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("appearanceTab === 'pages'"),
@@ -392,6 +420,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{ id: 'oficinasDeFormacao', label: 'Oficinas de formação' }");
     expect(backofficePageSource).toContain("{ id: 'ponDoJueus', label: 'PON do Jueus' }");
     expect(backofficePageSource).toContain("{ id: 'publicacoes', label: 'Publicações' }");
+    expect(backofficePageSource).not.toContain("{ id: 'serra', label: 'Serra do Caramulo' }");
     expect(backofficePageSource).toContain('updateAppearancePage');
     expect(backofficePageSource).toContain('Mensagem sem conteúdos');
     expect(pagesEditorBlock).toContain("page.id === 'contactos'");
@@ -522,5 +551,27 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('await refreshDashboardStats();');
     expect(backofficePageSource).not.toContain('await Promise.allSettled([refreshAll(), refreshGovernance(), refreshLayout(), refreshGallery(), refreshContactMessages()])');
     expect(backofficePageSource).toContain('sections.push(...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]))');
+  });
+
+  it('loads backoffice sections lazily with bounded admin requests', () => {
+    expect(backofficePageSource).toContain('const ADMIN_CONTENT_LIST_LIMIT = 80');
+    expect(backofficePageSource).toContain('const ADMIN_CONTACT_MESSAGES_LIMIT = 80');
+    expect(backofficePageSource).toContain('const ADMIN_AUDIT_LIMIT = 100');
+    expect(backofficePageSource).toContain('const ADMIN_GALLERY_LIST_LIMIT = 120');
+    expect(backofficePageSource).toContain('const loadedContentSectionsRef = useRef<Set<ContentSection>>(new Set())');
+    expect(backofficePageSource).toContain('const cachedGalleryItemsByContextRef = useRef<Map<string, GalleryMediaItem[]>>(new Map())');
+    expect(backofficePageSource).toContain('const refreshContentSection = useCallback(async (section: ContentSection, force = false)');
+    expect(backofficePageSource).toContain('if (!force && loadedContentSectionsRef.current.has(section))');
+    expect(backofficePageSource).toContain('void refreshContentSection(activeSection as ContentSection)');
+    expect(backofficePageSource).not.toContain('const refreshAll = useCallback');
+    expect(backofficePageSource).not.toContain("safeFetchSection<NewsArticle>('news')");
+    expect(backofficePageSource).not.toContain("safeFetchSection<Activity>('activities')");
+    expect(backofficePageSource).not.toContain("safeFetchSection<Publication>('publications')");
+    expect(backofficePageSource).toContain('/api/${section}?scope=admin&limit=${ADMIN_CONTENT_LIST_LIMIT}');
+    expect(backofficePageSource).toContain('/api/admin/contact-messages?limit=${ADMIN_CONTACT_MESSAGES_LIMIT}');
+    expect(backofficePageSource).toContain('/api/gallery?scope=admin&context=${encodeURIComponent(galleryContext)}&limit=${ADMIN_GALLERY_LIST_LIMIT}');
+    expect(backofficePageSource).toContain('setGalleryItems(cachedGalleryItemsByContextRef.current.get(galleryContext) ?? [])');
+    expect(backofficePageSource).toContain('cachedGalleryItemsByContextRef.current.set(galleryContext, data)');
+    expect(backofficePageSource).toContain('Promise.all([refreshContentSection(section, true), refreshDashboardStats()])');
   });
 });

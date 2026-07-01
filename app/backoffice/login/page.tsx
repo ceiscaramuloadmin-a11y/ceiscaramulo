@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AUTH0_ADMIN_LOGIN_PATH, adminAuthClient, isExportAdminAuthMode } from '@/lib/admin-auth';
+import { AUTH0_ADMIN_LOGIN_PATH, adminAuthClient, getAuth0AdminLoginHref, isExportAdminAuthMode } from '@/lib/admin-auth';
 
 export default function BackofficeLoginPage() {
   const router = useRouter();
@@ -11,8 +11,11 @@ export default function BackofficeLoginPage() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [auth0LoginHref, setAuth0LoginHref] = useState(AUTH0_ADMIN_LOGIN_PATH);
 
   useEffect(() => {
+    setAuth0LoginHref(getAuth0AdminLoginHref());
+
     const checkSession = async () => {
       const sessionResult = await adminAuthClient.adapter.getSession();
 
@@ -98,11 +101,14 @@ export default function BackofficeLoginPage() {
             O formulário local foi desativado para o runtime do servidor. O login e a sessão passam pelo Universal Login do Auth0.
           </p>
           <a
-            href={AUTH0_ADMIN_LOGIN_PATH}
+            href={auth0LoginHref}
             className="inline-flex w-full justify-center rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b3d2b]"
           >
             Entrar com Auth0
           </a>
+          <p className="text-xs text-stone-500">
+            Em localhost, abre sempre por <span className="font-medium text-stone-700">http://localhost:3000/backoffice</span>. Usar 127.0.0.1 pode invalidar o state do Auth0.
+          </p>
           <p className="text-xs text-stone-500">Se a tua conta ainda não existir, pede a um owner para a criar no painel de admins.</p>
         </section>
       )}

@@ -18,6 +18,18 @@ import { withPublicContentAsset, type PublicContentSection } from '@/lib/public-
 // - GET: listagem pública (ou admin com `scope=admin`)
 // - POST: criação de registos (apenas admin autenticado)
 export const runtime = 'nodejs';
+const DEFAULT_ADMIN_LIST_LIMIT = 80;
+const MAX_ADMIN_LIST_LIMIT = 150;
+
+function parseAdminListLimit(value: string | null) {
+  const parsed = Number.parseInt(String(value || ''), 10);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_ADMIN_LIST_LIMIT;
+  }
+
+  return Math.max(1, Math.min(parsed, MAX_ADMIN_LIST_LIMIT));
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ section: string }> }) {
   try {
@@ -43,10 +55,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const config = sectionConfig[section];
     const model = getSectionModel(section);
+    const adminLimit = scope === 'admin' ? parseAdminListLimit(request.nextUrl.searchParams.get('limit')) : undefined;
 
     const items = await model.findMany({
       where: scope === 'admin' ? {} : config.publicWhere,
       orderBy: config.listOrder,
+      ...(adminLimit ? { take: adminLimit } : {}),
     });
 
     if (scope === 'public') {

@@ -27,4 +27,13 @@ describe('admin auth runtime mode', () => {
       },
     });
   });
+
+  it('normalizes loopback Auth0 login links to localhost in development', async () => {
+    const { getAuth0AdminLoginHref } = await import('@/lib/admin-auth');
+
+    expect(getAuth0AdminLoginHref({ hostname: '127.0.0.1', port: '3000' })).toBe(
+      'http://localhost:3000/auth/login?returnTo=%2Fbackoffice'
+    );
+    expect(getAuth0AdminLoginHref({ hostname: 'localhost', port: '3000' })).toBe('/auth/login?returnTo=%2Fbackoffice');
+  });
 });

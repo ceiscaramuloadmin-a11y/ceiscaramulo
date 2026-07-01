@@ -53,6 +53,7 @@ describe('gallery client upload route', () => {
       'gallery'
     );
     expect(handleUpload).toHaveBeenCalledTimes(1);
+    expect(handleUpload).toHaveBeenCalledWith(expect.not.objectContaining({ onUploadCompleted: expect.any(Function) }));
     await expect(response.json()).resolves.toEqual(
       expect.objectContaining({
         clientToken: 'client-token',
@@ -83,7 +84,7 @@ describe('gallery client upload route', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      message: 'Sem permissão para carregar media da galeria.',
+      message: 'Sem permissao para carregar media da galeria.',
     });
   });
 });

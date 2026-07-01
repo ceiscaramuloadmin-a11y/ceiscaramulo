@@ -86,7 +86,7 @@ describe('gallery route', () => {
 
     await GET(request as never);
 
-    expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus');
+    expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus', 120);
   });
 
   it('keeps admin gallery listings lightweight by replacing stored data URLs with asset routes', async () => {
@@ -337,5 +337,16 @@ describe('gallery route', () => {
   it('keeps stored gallery records even when they do not have a source yet', () => {
     expect(cmsSource).not.toContain('if (!source) {\n    return null;\n  }');
     expect(cmsSource).toContain('source,');
+  });
+
+  it('keeps new gallery records in site settings storage instead of adding database weight', () => {
+    expect(cmsSource).toContain('return createGalleryMediaInStorage({ ...input, context: galleryContext });');
+  });
+
+  it('uses a local site-settings fallback when the database is slow or unavailable', () => {
+    expect(cmsSource).toContain("const LOCAL_SITE_SETTINGS_DIR = join(process.cwd(), '.tmp', 'site-settings')");
+    expect(cmsSource).toContain('const SITE_SETTINGS_DB_TIMEOUT_MS = 5000');
+    expect(cmsSource).toContain('return readLocalSiteSettingValue(key)');
+    expect(cmsSource).toContain('await writeLocalSiteSettingValue(key, value)');
   });
 });

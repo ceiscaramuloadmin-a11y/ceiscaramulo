@@ -40,11 +40,11 @@ export async function POST(request: NextRequest) {
         const { context, error } = await requireAdminContextFromRequest(request);
 
         if (error) {
-          throw new Error('Sessão administrativa expirada.');
+          throw new Error('Sessao administrativa expirada.');
         }
 
         if (!context || !hasAdminPermission(context, 'gallery')) {
-          throw new Error('Sem permissão para carregar media da galeria.');
+          throw new Error('Sem permissao para carregar media da galeria.');
         }
 
         return {
@@ -55,15 +55,12 @@ export async function POST(request: NextRequest) {
           }),
         };
       },
-      onUploadCompleted: async () => {
-        // O registo da galeria é criado pelo submit do backoffice depois de receber a URL do Blob.
-      },
     });
 
     return NextResponse.json(jsonResponse);
   } catch (error) {
     return NextResponse.json(
-      { message: error instanceof Error ? error.message : 'Não foi possível preparar o upload da galeria.' },
+      { message: error instanceof Error ? error.message : 'Nao foi possivel preparar o upload da galeria.' },
       { status: 400 }
     );
   }
