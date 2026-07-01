@@ -10,10 +10,11 @@ import {
 } from '@/app/api/_lib/cms';
 import { PUBLIC_DATA_CACHE_HEADERS } from '@/lib/cache-headers';
 import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
-import { getInlineAudioUploadErrorMessage, isInlineAudioUploadTooLarge } from '@/lib/gallery-upload';
 import type { GalleryMediaType } from '@/types';
 
 export const runtime = 'nodejs';
+const DEFAULT_ADMIN_GALLERY_LIMIT = 120;
+const MAX_ADMIN_GALLERY_LIMIT = 200;
 
 function normalizeType(value: unknown): GalleryMediaType {
   return value === 'video' || value === 'audio' || value === 'document' ? value : 'photo';
@@ -28,10 +29,21 @@ function normalizeGalleryContext(value: unknown) {
   return normalized.replace(/[^a-z0-9-]/g, '-') || 'global';
 }
 
+function parseAdminGalleryLimit(value: string | null) {
+  const parsed = Number.parseInt(String(value || ''), 10);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_ADMIN_GALLERY_LIMIT;
+  }
+
+  return Math.max(1, Math.min(parsed, MAX_ADMIN_GALLERY_LIMIT));
+}
+
 export async function GET(request: NextRequest) {
   try {
     const scope = request.nextUrl.searchParams.get('scope') === 'admin' ? 'admin' : 'public';
     const context = normalizeGalleryContext(request.nextUrl.searchParams.get('context'));
+    const limit = scope === 'admin' ? parseAdminGalleryLimit(request.nextUrl.searchParams.get('limit')) : undefined;
 
     if (scope === 'admin') {
       const authError = await requireAdminFromRequest(request);
@@ -41,7 +53,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const items = await listGalleryMedia(scope, context);
+    const items = await listGalleryMedia(scope, context, limit);
 
     if (scope === 'public') {
       return NextResponse.json(items.map(withPublicGalleryAssets), {
@@ -49,7 +61,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(items);
+    return NextResponse.json(items.map(withPublicGalleryAssets));
   } catch (caughtError) {
     console.error(caughtError);
     return jsonError('Ocorreu um erro inesperado.', 500);
@@ -78,10 +90,6 @@ export async function POST(request: NextRequest) {
 
     const thumbFileRaw = formData.get('thumbnailFile');
     const thumbnailFile = thumbFileRaw instanceof File && thumbFileRaw.size > 0 ? thumbFileRaw : null;
-
-    if (isInlineAudioUploadTooLarge(sourceFile, type)) {
-      return jsonError(getInlineAudioUploadErrorMessage(), 413);
-    }
 
     const source = sourceFile ? await storeUploadedFile(sourceFile, `gallery-${galleryContext}`) : sourceUrl;
     const thumbnail = thumbnailFile ? await storeUploadedFile(thumbnailFile, `gallery-thumbnails-${galleryContext}`) : thumbUrl || null;

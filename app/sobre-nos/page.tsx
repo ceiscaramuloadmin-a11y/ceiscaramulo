@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Award, Landmark, Mail, MapPin, Phone, Users2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -85,12 +86,15 @@ export default async function SobreNosPage() {
       <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
         <section
           className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
-          style={{
-            backgroundImage: `url(${aboutHeroImage})`,
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-          }}
         >
+          <Image
+            src={aboutHeroImage}
+            alt=""
+            fill
+            priority={false}
+            sizes="100vw"
+            className="absolute inset-0 z-0 object-cover"
+          />
           <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" />
           <div className="relative z-10 mx-auto max-w-4xl text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">

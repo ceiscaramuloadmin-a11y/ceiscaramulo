@@ -40,11 +40,22 @@ describe('gallery route', () => {
     vi.resetModules();
   });
 
-  it('rejects oversized inline audio uploads with 413', async () => {
+  it('stores large audio uploads through public storage', async () => {
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-pon-do-jueus/podcast.mp3');
+    createGalleryMedia.mockResolvedValueOnce({
+      id: 'audio-1',
+      title: 'Podcast',
+      type: 'audio',
+      context: 'pon-do-jueus',
+      source: '/uploads/backoffice/gallery-pon-do-jueus/podcast.mp3',
+      published: true,
+    });
+
     const { POST } = await import('@/app/api/gallery/route');
     const formData = new FormData();
     formData.append('title', 'Podcast');
     formData.append('type', 'audio');
+    formData.append('context', 'pon-do-jueus');
     formData.append('published', 'true');
     formData.append('sourceFile', new File([new Uint8Array(4 * 1024 * 1024 + 1)], 'podcast.mp3', { type: 'audio/mpeg' }));
 
@@ -55,12 +66,14 @@ describe('gallery route', () => {
 
     const response = await POST(request as never);
 
-    expect(response.status).toBe(413);
-    await expect(response.json()).resolves.toEqual({
-      message: 'Ficheiros de áudio grandes devem ser enviados por URL. Para upload direto, usa um áudio até 4 MB.',
-    });
-    expect(storeUploadedFile).not.toHaveBeenCalled();
-    expect(createGalleryMedia).not.toHaveBeenCalled();
+    expect(response.status).toBe(201);
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-pon-do-jueus');
+    expect(createGalleryMedia).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'audio',
+      context: 'pon-do-jueus',
+      source: '/uploads/backoffice/gallery-pon-do-jueus/podcast.mp3',
+      mimeType: 'audio/mpeg',
+    }));
   });
 
   it('passes the requested gallery context to admin listing', async () => {
@@ -73,7 +86,34 @@ describe('gallery route', () => {
 
     await GET(request as never);
 
-    expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus');
+    expect(listGalleryMedia).toHaveBeenCalledWith('admin', 'pon-do-jueus', 120);
+  });
+
+  it('keeps admin gallery listings lightweight by replacing stored data URLs with asset routes', async () => {
+    listGalleryMedia.mockResolvedValueOnce([
+      {
+        id: 'gallery-data-url',
+        title: 'Foto antiga',
+        description: null,
+        type: 'photo',
+        context: 'pon-do-jueus',
+        source: 'data:image/jpeg;base64,abc123',
+        thumbnail: 'data:image/jpeg;base64,thumb123',
+        mimeType: 'image/jpeg',
+        published: true,
+      },
+    ]);
+
+    const { GET } = await import('@/app/api/gallery/route');
+    const request = {
+      nextUrl: new URL('http://localhost/api/gallery?scope=admin&context=pon-do-jueus'),
+    };
+
+    const response = await GET(request as never);
+    const payload = await response.json();
+
+    expect(payload[0].source).toBe('/api/gallery/assets/gallery-data-url/source');
+    expect(payload[0].thumbnail).toBe('/api/gallery/assets/gallery-data-url/thumbnail');
   });
 
   it('stores programme gallery uploads through public storage so sale photos work in production', async () => {
@@ -110,6 +150,42 @@ describe('gallery route', () => {
     }));
     expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-escola-dos-nossos-avos');
     expect(fileToDataUrl).not.toHaveBeenCalled();
+  });
+
+  it('stores programme gallery video uploads through public storage', async () => {
+    storeUploadedFile.mockResolvedValueOnce('/uploads/backoffice/gallery-oficina-do-burel/demo.mp4');
+    createGalleryMedia.mockResolvedValueOnce({
+      id: 'video-1',
+      title: 'Demonstração',
+      type: 'video',
+      context: 'oficina-do-burel',
+      source: '/uploads/backoffice/gallery-oficina-do-burel/demo.mp4',
+      published: true,
+    });
+
+    const { POST } = await import('@/app/api/gallery/route');
+    const formData = new FormData();
+    formData.append('title', 'Demonstração');
+    formData.append('type', 'video');
+    formData.append('context', 'oficina-do-burel');
+    formData.append('published', 'true');
+    formData.append('sourceFile', new File(['video'], 'demo.mp4', { type: 'video/mp4' }));
+
+    const request = new Request('http://localhost/api/gallery', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(201);
+    expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-oficina-do-burel');
+    expect(createGalleryMedia).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'video',
+      context: 'oficina-do-burel',
+      source: '/uploads/backoffice/gallery-oficina-do-burel/demo.mp4',
+      mimeType: 'video/mp4',
+    }));
   });
 
   it('stores Biblioteca JRS document uploads with the dedicated context', async () => {
@@ -261,5 +337,16 @@ describe('gallery route', () => {
   it('keeps stored gallery records even when they do not have a source yet', () => {
     expect(cmsSource).not.toContain('if (!source) {\n    return null;\n  }');
     expect(cmsSource).toContain('source,');
+  });
+
+  it('keeps new gallery records in site settings storage instead of adding database weight', () => {
+    expect(cmsSource).toContain('return createGalleryMediaInStorage({ ...input, context: galleryContext });');
+  });
+
+  it('uses a local site-settings fallback when the database is slow or unavailable', () => {
+    expect(cmsSource).toContain("const LOCAL_SITE_SETTINGS_DIR = join(process.cwd(), '.tmp', 'site-settings')");
+    expect(cmsSource).toContain('const SITE_SETTINGS_DB_TIMEOUT_MS = 5000');
+    expect(cmsSource).toContain('return readLocalSiteSettingValue(key)');
+    expect(cmsSource).toContain('await writeLocalSiteSettingValue(key, value)');
   });
 });

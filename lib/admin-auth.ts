@@ -17,6 +17,8 @@ import {
 export const AUTH0_ADMIN_LOGIN_PATH = '/auth/login?returnTo=%2Fbackoffice';
 export const AUTH0_ADMIN_LOGOUT_PATH = '/auth/logout?returnTo=%2Fbackoffice%2Flogin';
 
+type Auth0LoginLocation = Pick<Location, 'hostname' | 'port'>;
+
 type SignInResult =
   | { data: { session: AdminSession }; error: null }
   | { data: null; error: { message: string } };
@@ -224,6 +226,18 @@ async function signInWithExportSession(email: string, password: string): Promise
 
 export function isExportAdminAuthMode() {
   return getPublicAdminAuthMode() === 'export';
+}
+
+export function getAuth0AdminLoginHref(locationLike?: Auth0LoginLocation) {
+  const currentLocation = locationLike ?? (typeof window !== 'undefined' ? window.location : null);
+  const hostname = currentLocation?.hostname;
+
+  if (hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
+    const port = currentLocation?.port ? `:${currentLocation.port}` : '';
+    return `http://localhost${port}${AUTH0_ADMIN_LOGIN_PATH}`;
+  }
+
+  return AUTH0_ADMIN_LOGIN_PATH;
 }
 
 export function getStoredAdminSession() {

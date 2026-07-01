@@ -17,6 +17,7 @@ dist-ssr
 .env.local
 .env.*.local
 .next
+.tmp
 uploads
 !app/uploads/
 !app/uploads/backoffice/
@@ -37,3 +38,4 @@ uploads
 .env*.local
 
 /src/generated/prisma
+.env*

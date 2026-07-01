@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import * as React from 'react';
 import { ArrowLeft, Calendar, Download, Tag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
@@ -18,12 +20,31 @@ import { siteConfig } from '@/data/site';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const dynamicParams = true;
+const MAX_PUBLICATION_SLUG_LOOKUP_ROWS = 300;
+const cachePublicationLookup = typeof React.cache === 'function' ? React.cache : <T extends (...args: never[]) => unknown>(fn: T) => fn;
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-async function getPublication(identifier: string) {
+function OptimizedPublicationDetailCover({ src, alt }: { src: string; alt: string }) {
+  if (!src.startsWith('/')) {
+    return <img src={src} alt={alt} loading="lazy" decoding="async" className="h-auto w-full object-cover" />;
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={1200}
+      height={800}
+      sizes="(min-width: 1024px) 960px, 100vw"
+      className="h-auto w-full object-cover"
+    />
+  );
+}
+
+const getPublication = cachePublicationLookup(async function getPublication(identifier: string) {
   if (shouldSkipPublicDb()) {
     return (
       fallbackPublications.find(
@@ -44,12 +65,26 @@ async function getPublication(identifier: string) {
       return withPublicContentAsset('publications', publicationById);
     }
 
-    const publications = await prisma.publication.findMany({
+    const publicationSlugCandidates = await prisma.publication.findMany({
       where: { published: true },
+      select: { id: true, title: true },
       orderBy: { year: 'desc' },
+      take: MAX_PUBLICATION_SLUG_LOOKUP_ROWS,
     });
 
-    const publication = publications.find((item) => getPublicationSlug(item) === identifier) ?? null;
+    const publicationSlugMatch = publicationSlugCandidates.find((item) => getPublicationSlug(item) === identifier) ?? null;
+
+    if (!publicationSlugMatch) {
+      return null;
+    }
+
+    const publication = await prisma.publication.findFirst({
+      where: {
+        id: publicationSlugMatch.id,
+        published: true,
+      },
+    });
+
     return publication ? withPublicContentAsset('publications', publication) : null;
   } catch (error) {
     if (isPublicDbQuotaExceededError(error)) {
@@ -63,7 +98,7 @@ async function getPublication(identifier: string) {
       ) ?? null
     );
   }
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -193,11 +228,7 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
           </h1>
 
           <div className="mt-8 overflow-hidden rounded-lg">
-            <img
-              src={getAssetUrl(publication.coverImage)}
-              alt={publication.title}
-              className="h-auto w-full object-cover"
-            />
+            <OptimizedPublicationDetailCover src={getAssetUrl(publication.coverImage)} alt={publication.title} />
           </div>
 
           <div className="mt-8 prose prose-lg max-w-none">

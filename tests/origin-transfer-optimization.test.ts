@@ -6,12 +6,17 @@ import { describe, expect, it } from 'vitest';
 
 const nextConfigSource = readFileSync(resolve(process.cwd(), 'next.config.js'), 'utf8');
 const homeHeroSource = readFileSync(resolve(process.cwd(), 'components/HomeHero.tsx'), 'utf8');
+const institutionalProgrammePageSource = readFileSync(resolve(process.cwd(), 'components/InstitutionalProgrammePage.tsx'), 'utf8');
+const bibliotecaPageSource = readFileSync(resolve(process.cwd(), 'app/biblioteca/page.tsx'), 'utf8');
+const bibliotecaDetailSource = readFileSync(resolve(process.cwd(), 'app/biblioteca/[id]/page.tsx'), 'utf8');
+const sobreNosSource = readFileSync(resolve(process.cwd(), 'app/sobre-nos/page.tsx'), 'utf8');
 const contentAssetsSource = readFileSync(
   resolve(process.cwd(), 'app/api/content-assets/[section]/[id]/route.ts'),
   'utf8'
 );
 const sectionRouteSource = readFileSync(resolve(process.cwd(), 'app/api/[section]/route.ts'), 'utf8');
 const gallerySource = readFileSync(resolve(process.cwd(), 'app/api/_lib/cms.ts'), 'utf8');
+const galleryTabsSource = readFileSync(resolve(process.cwd(), 'components/GalleryTabs.tsx'), 'utf8');
 const cacheHeadersSource = readFileSync(resolve(process.cwd(), 'lib/cache-headers.ts'), 'utf8');
 
 describe('origin transfer optimization', () => {
@@ -49,5 +54,32 @@ describe('origin transfer optimization', () => {
   it('normalizes public gallery data URLs to cached asset URLs', () => {
     expect(gallerySource).toContain('withPublicGalleryAssets');
     expect(gallerySource).toContain("scope === 'public' ? publicItems.map(withPublicGalleryAssets) : publicItems");
+    expect(gallerySource).toContain(
+      "contextItems.filter((item) => item.published).map(withPublicGalleryAssets)"
+    );
+  });
+
+  it('renders static internal page heroes through next/image instead of full-size CSS backgrounds', () => {
+    expect(institutionalProgrammePageSource).toContain("import Image from 'next/image'");
+    expect(institutionalProgrammePageSource).toContain('src={heroImage}');
+    expect(institutionalProgrammePageSource).toContain('sizes="100vw"');
+    expect(institutionalProgrammePageSource).not.toContain('backgroundImage');
+    expect(bibliotecaPageSource).toContain('src={bibliotecaHeroImage}');
+    expect(sobreNosSource).toContain('src={aboutHeroImage}');
+  });
+
+  it('serves gallery grid photos as optimized responsive thumbnails', () => {
+    expect(galleryTabsSource).toContain("import Image from 'next/image'");
+    expect(galleryTabsSource).toContain("previewSource.startsWith('/')");
+    expect(galleryTabsSource).toContain('sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"');
+    expect(galleryTabsSource).toContain('preload="none"');
+  });
+
+  it('optimizes public publication covers instead of serving originals in listing and detail views', () => {
+    expect(bibliotecaPageSource).toContain('function OptimizedPublicationCover');
+    expect(bibliotecaPageSource).toContain("import Image from 'next/image'");
+    expect(bibliotecaPageSource).toContain('sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"');
+    expect(bibliotecaDetailSource).toContain('function OptimizedPublicationDetailCover');
+    expect(bibliotecaDetailSource).toContain('sizes="(min-width: 1024px) 960px, 100vw"');
   });
 });

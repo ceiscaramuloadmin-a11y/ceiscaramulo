@@ -53,4 +53,29 @@ describe('public rich text rendering', () => {
     const source = readAppFile('app/biblioteca/page.tsx');
     expect(source).toContain('richTextToPlainText');
   });
+
+  it('keeps the library page practical with search, filters and result feedback', () => {
+    const source = readAppFile('app/biblioteca/page.tsx');
+
+    expect(source).toContain('parseBibliotecaQueryParam(sp.q)');
+    expect(source).toContain('buildBibliotecaPublicationWhere(tipo, query)');
+    expect(source).toContain('take: MAX_PUBLIC_BIBLIOTECA_RESULTS');
+    expect(source).toContain("distinct: ['type']");
+    expect(source).toContain('role="search"');
+    expect(source).toContain('placeholder="Pesquisar por título, autor, ano ou tema"');
+    expect(source).toContain('recurso(s) encontrado(s)');
+    expect(source).toContain('Limpar filtros');
+    expect(source).toContain('href={`/biblioteca?tipo=${encodeURIComponent(code)}${querySuffix}`}');
+  });
+
+  it('keeps publication detail slug lookup lightweight', () => {
+    const source = readAppFile('app/biblioteca/[id]/page.tsx');
+
+    expect(source).toContain("import * as React from 'react'");
+    expect(source).toContain('const cachePublicationLookup = typeof React.cache');
+    expect(source).toContain('const getPublication = cachePublicationLookup(async function getPublication');
+    expect(source).toContain('select: { id: true, title: true }');
+    expect(source).toContain('take: MAX_PUBLICATION_SLUG_LOOKUP_ROWS');
+    expect(source).toContain('id: publicationSlugMatch.id');
+  });
 });

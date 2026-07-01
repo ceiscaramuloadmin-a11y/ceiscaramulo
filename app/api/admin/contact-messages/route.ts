@@ -3,6 +3,18 @@ import prisma from '@/lib/prisma';
 import { appendAuditLog, hasAdminPermission, jsonError, requireAdminContextFromRequest } from '@/app/api/_lib/cms';
 
 export const runtime = 'nodejs';
+const DEFAULT_CONTACT_MESSAGES_LIMIT = 80;
+const MAX_CONTACT_MESSAGES_LIMIT = 150;
+
+function parseContactMessagesLimit(value: string | null) {
+  const parsed = Number.parseInt(String(value || ''), 10);
+
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_CONTACT_MESSAGES_LIMIT;
+  }
+
+  return Math.max(1, Math.min(parsed, MAX_CONTACT_MESSAGES_LIMIT));
+}
 
 export async function GET(request: NextRequest) {
   const { context, error } = await requireAdminContextFromRequest(request);
@@ -16,8 +28,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const url = new URL(request.url);
+    const limit = parseContactMessagesLimit(url.searchParams.get('limit'));
     const messages = await prisma.contactMessage.findMany({
       orderBy: { createdAt: 'desc' },
+      take: limit,
     });
 
     return NextResponse.json(

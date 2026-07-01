@@ -1,4 +1,5 @@
-import { extname } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
@@ -106,7 +107,7 @@ export const sectionModel: Record<ContentSection, unknown> = {
 // Fornece uma interface comum sobre delegates Prisma heterogéneos.
 export function getSectionModel(section: ContentSection) {
   return sectionModel[section] as {
-    findMany: (args: { where: Record<string, unknown>; orderBy: SectionConfig['listOrder'] }) => Promise<unknown[]>;
+    findMany: (args: { where: Record<string, unknown>; orderBy: SectionConfig['listOrder']; take?: number }) => Promise<unknown[]>;
     findFirst: (args: { where: Record<string, unknown> }) => Promise<({ id: string } & Record<string, unknown>) | null>;
     findUnique: (args: { where: { id: string } }) => Promise<({ id: string } & Record<string, unknown>) | null>;
     create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
@@ -314,17 +315,68 @@ const adminEmails = String(process.env.ADMIN_EMAILS || '')
   .filter(Boolean);
 
 // Compatibilidade com deployments onde o Prisma Client em memória ainda não expõe novos delegates.
+const LOCAL_SITE_SETTINGS_DIR = join(process.cwd(), '.tmp', 'site-settings');
+const SITE_SETTINGS_DB_TIMEOUT_MS = 5000;
+
+function localSiteSettingFilePath(key: string) {
+  const safeKey = key.replace(/[^a-z0-9._-]/gi, '_') || 'setting';
+  return join(LOCAL_SITE_SETTINGS_DIR, `${safeKey}.json`);
+}
+
+async function readLocalSiteSettingValue(key: string) {
+  try {
+    return await readFile(localSiteSettingFilePath(key), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+async function writeLocalSiteSettingValue(key: string, value: string) {
+  await mkdir(LOCAL_SITE_SETTINGS_DIR, { recursive: true });
+  await writeFile(localSiteSettingFilePath(key), value, 'utf8');
+}
+
+async function withSiteSettingsDbTimeout<T>(operation: Promise<T>, label: string) {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(`${label} timed out`)), SITE_SETTINGS_DB_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
 async function getSiteSettingValue(key: string) {
-  const setting = await prisma.siteSetting.findUnique({ where: { key } });
-  return setting?.value ?? null;
+  try {
+    const setting = await withSiteSettingsDbTimeout(prisma.siteSetting.findUnique({ where: { key } }), `site setting ${key} read`);
+    return setting?.value ?? (await readLocalSiteSettingValue(key));
+  } catch (error) {
+    console.warn(`Site setting ${key} unavailable in database; using local fallback.`, error);
+    return readLocalSiteSettingValue(key);
+  }
 }
 
 async function setSiteSettingValue(key: string, value: string) {
-  await prisma.siteSetting.upsert({
-    where: { key },
-    create: { key, value },
-    update: { value },
-  });
+  try {
+    await withSiteSettingsDbTimeout(
+      prisma.siteSetting.upsert({
+        where: { key },
+        create: { key, value },
+        update: { value },
+      }),
+      `site setting ${key} write`
+    );
+  } catch (error) {
+    console.warn(`Site setting ${key} unavailable in database; writing local fallback.`, error);
+    await writeLocalSiteSettingValue(key, value);
+  }
 }
 
 // Faz parse seguro de JSON vindo das definições persistidas.
@@ -890,7 +942,8 @@ async function appendStoredAuditLog(input: {
 }
 
 // Lista os eventos de auditoria por ordem decrescente de criação.
-export async function listAuditLogs() {
+export async function listAuditLogs(limit = MAX_AUDIT_LOGS) {
+  const safeLimit = Math.max(1, Math.min(limit, MAX_AUDIT_LOGS));
   const prismaAny = prisma as unknown as {
     adminAuditLog?: {
       deleteMany: (args: { where: { createdAt: { lte: Date } } }) => Promise<{ count: number }>;
@@ -912,7 +965,7 @@ export async function listAuditLogs() {
   };
 
   if (!prismaAny.adminAuditLog) {
-    return listStoredAuditLogs();
+    return listStoredAuditLogs().then((logs) => logs.slice(0, safeLimit));
   }
 
   await pruneExpiredAuditLogs();
@@ -922,7 +975,7 @@ export async function listAuditLogs() {
   try {
     logs = await prismaAny.adminAuditLog.findMany({
       orderBy: { createdAt: 'desc' },
-      take: MAX_AUDIT_LOGS,
+      take: safeLimit,
     });
   } catch (error) {
     if (isMissingAuditTableError(error)) {
@@ -1170,6 +1223,36 @@ async function saveGalleryToStorage(items: GalleryMediaRecord[]) {
   await setSiteSettingValue(GALLERY_MEDIA_STORAGE_KEY, JSON.stringify(items));
 }
 
+async function createGalleryMediaInStorage(input: {
+  title: string;
+  description?: string | null;
+  type: GalleryMediaType;
+  context?: string | null;
+  source: string;
+  thumbnail?: string | null;
+  mimeType?: string | null;
+  published: boolean;
+}) {
+  const now = new Date().toISOString();
+  const created: GalleryMediaRecord = {
+    id: crypto.randomUUID(),
+    title: input.title.trim() || 'Sem titulo',
+    description: input.description ?? null,
+    type: normalizeGalleryType(input.type),
+    context: normalizeGalleryContext(input.context),
+    source: input.source,
+    thumbnail: input.thumbnail ?? null,
+    mimeType: input.mimeType ?? null,
+    published: input.published,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const items = await listGalleryFromStorage();
+  await saveGalleryToStorage([created, ...items]);
+  return created;
+}
+
 function getStaticGalleryFallback(): GalleryMediaRecord[] {
   return staticGalleryItems.map((item) => {
     const fallbackDate = item.date ? new Date(item.date) : new Date();
@@ -1217,13 +1300,15 @@ async function retryGalleryQuery<T>(query: () => Promise<T>) {
   }
 }
 
-export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFAULT_GALLERY_CONTEXT) {
+export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFAULT_GALLERY_CONTEXT, limit?: number) {
   const galleryContext = normalizeGalleryContext(context);
+  const safeLimit = limit ? Math.max(1, Math.min(limit, 200)) : undefined;
 
   if (galleryContext !== DEFAULT_GALLERY_CONTEXT) {
     const items = await listGalleryFromStorage();
     const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
-    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+    const visibleItems = scope === 'admin' ? contextItems : contextItems.filter((item) => item.published).map(withPublicGalleryAssets);
+    return safeLimit ? visibleItems.slice(0, safeLimit) : visibleItems;
   }
 
   if (scope === 'public' && shouldSkipPublicDb()) {
@@ -1235,6 +1320,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
       findMany: (args: {
         where?: { published?: boolean };
         orderBy: { createdAt: 'desc' };
+        take?: number;
       }) => Promise<
         Array<{
           id: string;
@@ -1255,7 +1341,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
   if (!prismaAny.galleryMedia) {
     const items = await listGalleryFromStorage();
     const contextItems = items.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
-    return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+    const visibleItems = scope === 'admin' ? contextItems : contextItems.filter((item) => item.published).map(withPublicGalleryAssets);
+    return safeLimit ? visibleItems.slice(0, safeLimit) : visibleItems;
   }
 
   let items;
@@ -1265,6 +1352,7 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
       prismaAny.galleryMedia!.findMany({
         where: scope === 'admin' ? undefined : { published: true },
         orderBy: { createdAt: 'desc' },
+        ...(safeLimit ? { take: safeLimit } : {}),
       })
     );
   } catch (error) {
@@ -1277,7 +1365,8 @@ export async function listGalleryMedia(scope: 'public' | 'admin', context = DEFA
     try {
       const fallbackItems = await listGalleryFromStorage();
       const contextItems = fallbackItems.filter((item) => normalizeGalleryContext(item.context) === galleryContext);
-      return scope === 'admin' ? contextItems : contextItems.filter((item) => item.published);
+      const visibleItems = scope === 'admin' ? contextItems : contextItems.filter((item) => item.published).map(withPublicGalleryAssets);
+      return safeLimit ? visibleItems.slice(0, safeLimit) : visibleItems;
     } catch (storageError) {
       if (scope === 'public' && isPublicDbQuotaExceededError(storageError)) {
         markPublicDbQuotaExceeded('public gallery storage');
@@ -1395,6 +1484,12 @@ export async function createGalleryMedia(input: {
 }) {
   const galleryContext = normalizeGalleryContext(input.context);
 
+  return createGalleryMediaInStorage({ ...input, context: galleryContext });
+
+  if (galleryContext !== DEFAULT_GALLERY_CONTEXT || input.type === 'document') {
+    return createGalleryMediaInStorage({ ...input, context: galleryContext });
+  }
+
   if (galleryContext !== DEFAULT_GALLERY_CONTEXT || input.type === 'document') {
     const now = new Date().toISOString();
     const created: GalleryMediaRecord = {
@@ -1464,7 +1559,7 @@ export async function createGalleryMedia(input: {
     return created;
   }
 
-  const created = await prismaAny.galleryMedia.create({
+  const created = await prismaAny.galleryMedia!.create({
     data: {
       title: input.title.trim() || 'Sem título',
       description: input.description ?? null,

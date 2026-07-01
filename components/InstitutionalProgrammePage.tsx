@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Mail } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -24,16 +25,17 @@ export default function InstitutionalProgrammePage({
       <main id="main-content" className="min-h-screen bg-[#f4f6ee] pt-20">
         <section
           className="relative flex min-h-[520px] w-full items-center justify-center overflow-hidden bg-[#0f4c36] px-4 py-16 text-center"
-          style={
-            heroImage
-              ? {
-                  backgroundImage: `url(${heroImage})`,
-                  backgroundPosition: 'center',
-                  backgroundSize: 'cover',
-                }
-              : undefined
-          }
         >
+          {heroImage ? (
+            <Image
+              src={heroImage}
+              alt=""
+              fill
+              priority={false}
+              sizes="100vw"
+              className="absolute inset-0 z-0 object-cover"
+            />
+          ) : null}
           {heroImage ? <div className="pointer-events-none absolute inset-0 z-0 bg-black/45" /> : null}
           <div className="relative z-10 mx-auto max-w-4xl text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">
