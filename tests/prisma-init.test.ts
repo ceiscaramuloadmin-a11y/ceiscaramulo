@@ -24,6 +24,7 @@ describe('prisma client initialization', () => {
   afterEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    delete (globalThis as typeof globalThis & { prisma?: unknown }).prisma;
     process.env.DATABASE_URL = previousEnv.DATABASE_URL;
     process.env.POSTGRES_URL = previousEnv.POSTGRES_URL;
     process.env.PRISMA_DATABASE_URL = previousEnv.PRISMA_DATABASE_URL;
@@ -49,5 +50,17 @@ describe('prisma client initialization', () => {
     await expect(import('@/lib/prisma')).resolves.toBeDefined();
     expect(prismaPgMock).toHaveBeenCalledWith({ connectionString: 'postgresql://example.test/db' });
     expect(prismaClientMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes legacy Postgres ssl modes to the current verify-full behavior', async () => {
+    process.env.DATABASE_URL = 'postgresql://user:pass@example.test/db?sslmode=require&schema=public';
+    process.env.NODE_ENV = 'test';
+    prismaPgMock.mockReturnValue({ adapter: true });
+    prismaClientMock.mockReturnValue({ client: true });
+
+    await expect(import('@/lib/prisma')).resolves.toBeDefined();
+    expect(prismaPgMock).toHaveBeenCalledWith({
+      connectionString: 'postgresql://user:pass@example.test/db?sslmode=verify-full&schema=public',
+    });
   });
 });
