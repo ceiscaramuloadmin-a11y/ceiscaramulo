@@ -107,15 +107,6 @@ const PUBLICATION_TYPE_OPTIONS: Array<{ value: PublicationType; label: string }>
   { value: 'tese', label: 'Tese' },
 ];
 
-type PublicationBatchItem = {
-  id: string;
-  file: File;
-  previewUrl: string;
-  title: string;
-  type: GalleryMediaType;
-  description: string;
-};
-
 function getEmptyPublicationForm() {
   return {
     title: '',
@@ -406,7 +397,6 @@ export default function BackofficePage() {
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento' as ActivityCategory, published: true, imageFile: null as File | null, removeImage: false });
   const [publicationForm, setPublicationForm] = useState(getEmptyPublicationForm);
   const [publicationFormResetKey, setPublicationFormResetKey] = useState(0);
-  const [publicationBatchItems, setPublicationBatchItems] = useState<PublicationBatchItem[]>([]);
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
     title: '',
@@ -1040,7 +1030,6 @@ export default function BackofficePage() {
   function resetPublicationForm() {
     setEditingId(null);
     setPublicationForm(getEmptyPublicationForm());
-    clearPublicationBatchItems();
     setPublicationFormResetKey((value) => value + 1);
   }
 
@@ -1568,124 +1557,6 @@ export default function BackofficePage() {
     await saveSection('publications', fd);
   }
 
-  function handlePublicationBatchFiles(files: FileList | null) {
-    if (!files?.length) {
-      return;
-    }
-
-    const nextItems = Array.from(files).map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      previewUrl: URL.createObjectURL(file),
-      title: titleFromFileName(file.name),
-      type: previewKindForResourceFile(file),
-      description: '',
-    }));
-
-    setPublicationBatchItems((current) => [...current, ...nextItems]);
-  }
-
-  function clearPublicationBatchItems() {
-    setPublicationBatchItems((current) => {
-      current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-      return [];
-    });
-  }
-
-  function updatePublicationBatchItem(id: string, updates: Partial<Pick<PublicationBatchItem, 'title' | 'type' | 'description'>>) {
-    setPublicationBatchItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
-  }
-
-  function removePublicationBatchItem(id: string) {
-    setPublicationBatchItems((current) => {
-      const item = current.find((entry) => entry.id === id);
-      if (item) {
-        URL.revokeObjectURL(item.previewUrl);
-      }
-      return current.filter((item) => item.id !== id);
-    });
-  }
-
-  async function savePublicationBatch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (publicationBatchItems.length === 0) {
-      toast.error('Adiciona pelo menos um ficheiro para carregar em massa.');
-      return;
-    }
-
-    const firstInvalid = publicationBatchItems.find((item) => !item.title.trim());
-
-    if (firstInvalid) {
-      toast.error('Cada recurso precisa de um título antes de gravar.');
-      return;
-    }
-
-    setBusy(true);
-
-    try {
-      const totalItems = publicationBatchItems.length;
-      let completedItems = 0;
-      const headers = await authHeaders();
-
-      setOperationProgress({
-        label: 'A carregar lote de recursos',
-        percent: 0,
-        detail: `0/${totalItems} concluidos`,
-      });
-
-      const uploadOne = async (item: PublicationBatchItem) => {
-        const fd = new FormData();
-        fd.append('title', item.title.trim());
-        fd.append('context', 'biblioteca');
-        fd.append('type', item.type);
-        fd.append('description', item.description.trim());
-        fd.append('published', 'true');
-        fd.append('sourceFile', item.file);
-
-        const result = await requestJsonWithUploadProgress<GalleryMediaItem>(
-          '/api/gallery',
-          'POST',
-          fd,
-          headers,
-          (filePercent) => {
-            const overallPercent = ((completedItems + filePercent / 100) / totalItems) * 100;
-            setOperationProgress({
-              label: 'A carregar lote de recursos',
-              percent: clampProgress(overallPercent),
-              detail: `${completedItems}/${totalItems} concluidos - ${item.file.name}`,
-            });
-          }
-        );
-
-        completedItems += 1;
-        setOperationProgress({
-          label: 'A carregar lote de recursos',
-          percent: clampProgress((completedItems / totalItems) * 100),
-          detail: `${completedItems}/${totalItems} concluidos`,
-        });
-
-        return result;
-      };
-
-      await runGalleryBatchQueue(publicationBatchItems, uploadOne, 1);
-
-      toast.success(`${publicationBatchItems.length} recurso(s) carregado(s) com sucesso.`);
-      clearPublicationBatchItems();
-      cachedGalleryItemsByContextRef.current.delete('biblioteca');
-      loadedGalleryContextsRef.current.delete('biblioteca');
-      setOperationProgress({ label: 'A atualizar conteúdos de recursos', percent: 95, detail: `${totalItems}/${totalItems} concluidos` });
-      await refreshDashboardStats();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Falha no carregamento em massa de recursos.');
-    } finally {
-      setOperationProgress(null);
-      setBusy(false);
-    }
-  }
-
   function startEdit(section: ContentSection, item: NewsArticle | Activity | Publication) {
     setActiveSection(section);
     setEditingId(item.id);
@@ -1991,105 +1862,6 @@ export default function BackofficePage() {
                 <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button>
               </form>
 
-              {!editingId ? (
-                <form className="space-y-4 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void savePublicationBatch(event)}>
-                  <div>
-                    <h3 className="text-base font-semibold text-[#0f4c36]">Carregamento em massa</h3>
-                    <p className="mt-1 text-sm text-stone-600">
-                      Seleciona vários ficheiros e confirma os dados antes de gravar. A base de dados guarda apenas o URL otimizado de cada ficheiro.
-                    </p>
-                  </div>
-
-                  <label className="grid gap-1 text-sm text-stone-700">
-                    Ficheiros do lote
-                    <input
-                      type="file"
-                      accept={RESOURCE_ATTACHMENT_ACCEPT}
-                      multiple
-                      onChange={(event) => {
-                        handlePublicationBatchFiles(event.target.files);
-                        event.target.value = '';
-                      }}
-                      className="block w-full text-sm"
-                    />
-                  </label>
-
-                  {publicationBatchItems.length > 0 ? (
-                    <div className="space-y-3">
-                      {publicationBatchItems.map((item, index) => {
-                        const previewKind = previewKindForResourceFile(item.file);
-
-                        return (
-                          <article key={item.id} className="rounded-lg border border-stone-200 p-3">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
-                                Recurso {index + 1} · {item.file.name}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => removePublicationBatchItem(item.id)}
-                                className="rounded-lg border border-stone-300 px-3 py-1 text-xs text-stone-600"
-                              >
-                                Remover
-                              </button>
-                            </div>
-                            <div className="mt-3 grid gap-3 md:grid-cols-[120px_1fr]">
-                              <div className="rounded-lg bg-stone-100 p-2">
-                                {previewKind === 'photo' ? (
-                                  <img src={item.previewUrl} alt={item.title} className="h-28 w-full rounded-md object-cover" />
-                                ) : null}
-                                {previewKind === 'video' ? (
-                                  <video src={item.previewUrl} className="h-28 w-full rounded-md bg-black object-cover" controls preload="metadata" />
-                                ) : null}
-                                {previewKind === 'audio' ? (
-                                  <div className="grid min-h-28 content-center gap-2">
-                                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Áudio</span>
-                                    <audio src={item.previewUrl} controls preload="metadata" className="w-full" />
-                                  </div>
-                                ) : null}
-                                {previewKind === 'document' ? (
-                                  <div className="flex min-h-28 items-center justify-center rounded-md border border-dashed border-stone-300 px-3 text-center text-xs font-medium text-stone-600">
-                                    Documento
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div className="grid gap-3">
-                                <Input
-                                  label="Título"
-                                  value={item.title}
-                                  onChange={(value) => updatePublicationBatchItem(item.id, { title: value })}
-                                  required
-                                />
-                                <label className="grid gap-1 text-sm text-stone-700">
-                                  Tipo de conteúdo
-                                  <select
-                                    value={item.type}
-                                    onChange={(event) => updatePublicationBatchItem(item.id, { type: event.target.value as GalleryMediaType })}
-                                    className="h-10 rounded-lg border border-stone-300 px-3"
-                                  >
-                                    {ALL_GALLERY_MEDIA_TYPES.map((type) => (
-                                      <option key={type} value={type}>{type === 'document' ? 'Documento' : galleryTypeLabel(type)}</option>
-                                    ))}
-                                  </select>
-                                </label>
-                                <TextArea
-                                  label="Resumo simples"
-                                  value={item.description}
-                                  onChange={(value) => updatePublicationBatchItem(item.id, { description: value })}
-                                />
-                              </div>
-                            </div>
-                          </article>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-
-                  <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
-                    {backofficePrimaryActionLabel(busy, 'Carregar lote de recursos')}
-                  </button>
-                </form>
-              ) : null}
             </div>
           }
         />
