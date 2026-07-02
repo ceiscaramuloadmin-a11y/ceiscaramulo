@@ -310,7 +310,7 @@ export default async function BibliotecaPage({
                     <div className="mt-4">
                       <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
                         <Download className="h-4 w-4" />
-                        Disponível para download
+                        Ficheiro disponível
                       </span>
                     </div>
                   )}

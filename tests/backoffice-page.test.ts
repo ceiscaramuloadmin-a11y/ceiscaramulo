@@ -182,9 +182,12 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("{admin.active ? 'Desativar' : 'Ativar'}");
   });
 
-  it('allows PDF attachments in the resources form', () => {
-    expect(backofficePageSource).toContain('label="PDF para download (opcional)"');
-    expect(backofficePageSource).toContain('accept="application/pdf"');
+  it('allows optimized PDF, photo, video and audio attachments in the resources form', () => {
+    expect(backofficePageSource).toContain('const RESOURCE_ATTACHMENT_ACCEPT');
+    expect(backofficePageSource).toContain('video/*');
+    expect(backofficePageSource).toContain('audio/*');
+    expect(backofficePageSource).toContain('label="Ficheiro do recurso (PDF, foto, vídeo ou áudio)"');
+    expect(backofficePageSource).toContain('accept={RESOURCE_ATTACHMENT_ACCEPT}');
     expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
   });
 
@@ -194,12 +197,12 @@ describe('backoffice page guards', () => {
       backofficePageSource.indexOf("activeSection === 'contacts' ? (")
     );
 
-    expect(resourcesBlock).toContain('description="Biblioteca simples: adiciona título, autor, ano, tipo e PDF ou link quando existir."');
+    expect(resourcesBlock).toContain('description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio) ou link quando existir."');
     expect(resourcesBlock).toContain('newButtonLabel="Novo recurso"');
     expect(resourcesBlock).toContain('label="Autor ou entidade"');
     expect(resourcesBlock).toContain('Tipo de recurso');
     expect(resourcesBlock).toContain('label="Resumo simples"');
-    expect(resourcesBlock).toContain('label="Link externo para download (opcional)"');
+    expect(resourcesBlock).toContain('label="Link externo do recurso (opcional)"');
     expect(resourcesBlock).toContain('label="Capa (opcional)"');
   });
 

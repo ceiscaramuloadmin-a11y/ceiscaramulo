@@ -197,6 +197,24 @@ const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: str
 };
 
 const WEB_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
+const RESOURCE_ATTACHMENT_ACCEPT = [
+  WEB_IMAGE_ACCEPT,
+  'application/pdf',
+  'video/*',
+  'audio/*',
+  '.pdf',
+  '.mp4',
+  '.webm',
+  '.mov',
+  '.m4v',
+  '.mp3',
+  '.m4a',
+  '.aac',
+  '.wav',
+  '.ogg',
+  '.oga',
+  '.flac',
+].join(',');
 
 function galleryTypeLabel(type: GalleryMediaType) {
   if (type === 'photo') return 'Foto';
@@ -1797,7 +1815,7 @@ export default function BackofficePage() {
       {activeSection === 'publications' ? (
         <SectionLayout
           title="Recursos"
-          description="Biblioteca simples: adiciona título, autor, ano, tipo e PDF ou link quando existir."
+          description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio) ou link quando existir."
           newButtonLabel="Novo recurso"
           list={publications}
           loading={isLoadingContent}
@@ -1805,7 +1823,7 @@ export default function BackofficePage() {
           onNew={resetPublicationForm}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor ou entidade" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><label className="grid gap-1 text-sm text-stone-700">Tipo de recurso<select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required><option value="" disabled>Selecionar tipo</option>{PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label><RichTextEditor label="Resumo simples" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="Link externo para download (opcional)" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="PDF para download (opcional)" accept="application/pdf" onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa (opcional)" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor ou entidade" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><label className="grid gap-1 text-sm text-stone-700">Tipo de recurso<select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required><option value="" disabled>Selecionar tipo</option>{PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label><RichTextEditor label="Resumo simples" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="Link externo do recurso (opcional)" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="Ficheiro do recurso (PDF, foto, vídeo ou áudio)" accept={RESOURCE_ATTACHMENT_ACCEPT} onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa (opcional)" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
         />
       ) : null}
 

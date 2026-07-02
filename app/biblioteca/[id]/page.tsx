@@ -270,7 +270,7 @@ export default async function PublicacaoDetalhePage({ params }: Props) {
                   className="flex items-center gap-2"
                 >
                   <Download className="h-4 w-4" />
-                  Descarregar Publicação
+                  Abrir recurso
                 </a>
               </Button>
             </div>

@@ -167,6 +167,19 @@ function isUnsupportedBrowserImage(file: File, mimeType: string, extension: stri
   );
 }
 
+function isPublicationAttachmentFile(file: File) {
+  const mimeType = (file.type || '').toLowerCase();
+  const extension = extname(file.name || '').toLowerCase();
+
+  return (
+    mimeType === 'application/pdf' ||
+    mimeType.startsWith('image/') ||
+    mimeType.startsWith('video/') ||
+    mimeType.startsWith('audio/') ||
+    ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm', '.mov', '.m4v', '.mp3', '.m4a', '.aac', '.wav', '.ogg', '.oga', '.flac'].includes(extension)
+  );
+}
+
 function bufferToDataUrl(buffer: Buffer, mimeType: string) {
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
 }
@@ -1130,16 +1143,18 @@ export async function parseSectionFormData(
   }
 
   const rawDocument = formData.get('document');
-  const documentFile =
-    rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'
-      ? rawDocument
-      : null;
+  const documentFile = rawDocument instanceof File && rawDocument.size > 0 ? rawDocument : null;
+
+  if (documentFile && !isPublicationAttachmentFile(documentFile)) {
+    throw new Error('Usa um PDF, imagem, vídeo ou áudio compatível para o ficheiro do recurso.');
+  }
+
   const currentDownloadUrl = currentItem?.downloadUrl as string | null | undefined;
 
-  // Os PDFs usam o mesmo armazenamento público já utilizado pelas capas.
-  // Assim, o contrato existente de `downloadUrl` continua válido no frontend.
+  // O ficheiro principal do recurso usa storage externo/asset route; a base de dados guarda só a URL.
+  // Assim, o contrato existente de `downloadUrl` continua válido no frontend sem armazenar blobs pesados.
   const resolvedDownloadUrl = documentFile
-    ? await storeUploadedFile(documentFile, 'publications-documents')
+    ? await storeUploadedFile(documentFile, 'publications-media')
     : emptyToNull(formData.get('downloadUrl')) ?? currentDownloadUrl ?? null;
 
   return {

@@ -34,9 +34,12 @@ describe('content image storage', () => {
     expect(cmsSource).toContain('Usa uma imagem em JPG, PNG, WebP ou GIF');
   });
 
-  it('stores uploaded publication PDFs and keeps using the downloadUrl contract', () => {
-    expect(cmsSource).toContain("rawDocument instanceof File && rawDocument.size > 0 && rawDocument.type === 'application/pdf'");
-    expect(cmsSource).toContain("storeUploadedFile(documentFile, 'publications-documents')");
+  it('stores uploaded publication media and keeps using the downloadUrl contract', () => {
+    expect(cmsSource).toContain('function isPublicationAttachmentFile');
+    expect(cmsSource).toContain("mimeType.startsWith('image/')");
+    expect(cmsSource).toContain("mimeType.startsWith('video/')");
+    expect(cmsSource).toContain("mimeType.startsWith('audio/')");
+    expect(cmsSource).toContain("storeUploadedFile(documentFile, 'publications-media')");
     expect(cmsSource).toContain('downloadUrl: resolvedDownloadUrl');
   });
 

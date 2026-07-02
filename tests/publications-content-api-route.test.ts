@@ -8,11 +8,13 @@ const {
   requireAdminContextFromRequest,
   appendAuditLog,
   hasAdminPermission,
+  storePublicUpload,
 } = vi.hoisted(() => ({
   publicationCreate: vi.fn(),
   requireAdminContextFromRequest: vi.fn(),
   appendAuditLog: vi.fn(),
   hasAdminPermission: vi.fn(),
+  storePublicUpload: vi.fn(),
 }));
 
 vi.mock('@/lib/auth0', () => ({
@@ -70,6 +72,10 @@ vi.mock('@/lib/newsletter-on-publish', () => ({
   enqueueActivityPublishedNotifications: vi.fn(),
 }));
 
+vi.mock('@/lib/upload-storage', () => ({
+  storePublicUpload,
+}));
+
 vi.mock('@/app/api/_lib/cms', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/app/api/_lib/cms')>();
   return {
@@ -103,6 +109,7 @@ describe('publications content route', () => {
       id: 'publication-1',
       ...data,
     }));
+    storePublicUpload.mockResolvedValue({ publicUrl: 'https://blob.example/backoffice/publications-media/video.mp4' });
   });
 
   it('normalizes invalid resource types before creating publications', async () => {
@@ -140,6 +147,51 @@ describe('publications content route', () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       message: 'Ano inválido. Indica um ano com quatro dígitos.',
+    });
+    expect(publicationCreate).not.toHaveBeenCalled();
+  });
+
+  it('stores uploaded resource photos, videos or audio as external media URLs', async () => {
+    const { POST } = await import('@/app/api/[section]/route');
+    const formData = publicationForm();
+    formData.set('document', new File(['video'], 'apresentacao.mp4', { type: 'video/mp4' }));
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/publications', {
+        method: 'POST',
+        body: formData,
+      }),
+      { params: Promise.resolve({ section: 'publications' }) }
+    );
+
+    expect(response.status).toBe(201);
+    expect(storePublicUpload).toHaveBeenCalledWith(expect.objectContaining({
+      relativePath: expect.stringMatching(/^publications-media\/.+\.mp4$/),
+      contentType: 'video/mp4',
+    }));
+    expect(publicationCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        downloadUrl: 'https://blob.example/backoffice/publications-media/video.mp4',
+      }),
+    });
+  });
+
+  it('rejects unsupported resource attachment formats as validation errors', async () => {
+    const { POST } = await import('@/app/api/[section]/route');
+    const formData = publicationForm();
+    formData.set('document', new File(['bad'], 'ficheiro.exe', { type: 'application/x-msdownload' }));
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/publications', {
+        method: 'POST',
+        body: formData,
+      }),
+      { params: Promise.resolve({ section: 'publications' }) }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Usa um PDF, imagem, vídeo ou áudio compatível para o ficheiro do recurso.',
     });
     expect(publicationCreate).not.toHaveBeenCalled();
   });
