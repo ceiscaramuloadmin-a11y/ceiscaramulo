@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { FileText, Maximize2, Pause, Play, Search, SearchX, Volume2, X } from 'lucide-react';
 import type { GalleryMediaItem } from '@/types';
@@ -11,6 +11,9 @@ type Props = {
 };
 
 type TabId = 'photo' | 'video' | 'audio' | 'document';
+
+const GALLERY_TABS = ['photo', 'video', 'audio', 'document'] as const satisfies readonly TabId[];
+const TAB_SWIPE_THRESHOLD = 48;
 
 function firstAvailableGalleryTab(items: GalleryMediaItem[]): TabId {
   if (items.some((item) => item.type === 'photo')) return 'photo';
@@ -64,6 +67,7 @@ export default function GalleryTabs({ items }: Props) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [tabSwipeStart, setTabSwipeStart] = useState<{ x: number; y: number } | null>(null);
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
@@ -72,21 +76,30 @@ export default function GalleryTabs({ items }: Props) {
   const audios = useMemo(() => items.filter((item) => item.type === 'audio'), [items]);
   const documents = useMemo(() => items.filter((item) => item.type === 'document'), [items]);
 
-  useEffect(() => {
-    if (
-      (activeTab === 'photo' && photos.length > 0) ||
-      (activeTab === 'video' && videos.length > 0) ||
-      (activeTab === 'audio' && audios.length > 0) ||
-      (activeTab === 'document' && documents.length > 0)
-    ) {
+  const activePhoto = activePhotoIndex !== null ? photos[activePhotoIndex] : null;
+  const activePhotoSource = activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg';
+
+  const selectAdjacentTab = (direction: 1 | -1) => {
+    const currentIndex = GALLERY_TABS.indexOf(activeTab);
+    const nextIndex = (currentIndex + direction + GALLERY_TABS.length) % GALLERY_TABS.length;
+    setActiveTab(GALLERY_TABS[nextIndex]);
+  };
+
+  const handleTabSwipeEnd = (x: number, y: number) => {
+    if (!tabSwipeStart) {
       return;
     }
 
-    setActiveTab(firstAvailableGalleryTab(items));
-  }, [activeTab, audios.length, documents.length, items, photos.length, videos.length]);
+    const deltaX = x - tabSwipeStart.x;
+    const deltaY = y - tabSwipeStart.y;
+    setTabSwipeStart(null);
 
-  const activePhoto = activePhotoIndex !== null ? photos[activePhotoIndex] : null;
-  const activePhotoSource = activePhoto?.source || activePhoto?.thumbnail || '/placeholder.svg';
+    if (Math.abs(deltaX) < TAB_SWIPE_THRESHOLD || Math.abs(deltaX) < Math.abs(deltaY)) {
+      return;
+    }
+
+    selectAdjacentTab(deltaX < 0 ? 1 : -1);
+  };
 
   const resetViewer = () => {
     setZoom(1);
@@ -145,10 +158,30 @@ export default function GalleryTabs({ items }: Props) {
 
   return (
     <>
-      <div className="rounded-xl border border-stone-200 bg-white p-2">
+      <div
+        className="rounded-xl border border-stone-200 bg-white p-2"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          setTabSwipeStart({ x: touch.clientX, y: touch.clientY });
+        }}
+        onTouchEnd={(event) => {
+          const touch = event.changedTouches[0];
+          handleTabSwipeEnd(touch.clientX, touch.clientY);
+        }}
+      >
         <div
           className="flex snap-x gap-2 overflow-x-auto scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-4 md:overflow-visible md:pb-0"
           role="tablist"
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowRight') {
+              event.preventDefault();
+              selectAdjacentTab(1);
+            }
+            if (event.key === 'ArrowLeft') {
+              event.preventDefault();
+              selectAdjacentTab(-1);
+            }
+          }}
           aria-label="Tipos de conteúdos da galeria"
         >
           {(
@@ -176,6 +209,16 @@ export default function GalleryTabs({ items }: Props) {
         </div>
       </div>
 
+      <div
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          setTabSwipeStart({ x: touch.clientX, y: touch.clientY });
+        }}
+        onTouchEnd={(event) => {
+          const touch = event.changedTouches[0];
+          handleTabSwipeEnd(touch.clientX, touch.clientY);
+        }}
+      >
       {activeTab === 'photo' ? (
         <section className="mt-8">
           {photos.length === 0 ? (
@@ -321,6 +364,7 @@ export default function GalleryTabs({ items }: Props) {
           )}
         </section>
       ) : null}
+      </div>
 
       {activePhoto ? (
         <div className="fixed inset-0 z-[80] bg-black/90">
