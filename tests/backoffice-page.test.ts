@@ -121,7 +121,8 @@ describe('backoffice page guards', () => {
     expect(navigationBlock.indexOf("{ id: 'contacts', label: 'Mensagens' }")).toBeLessThan(
       navigationBlock.indexOf("{ id: 'audit', label: 'Histórico' }")
     );
-    expect(backofficePageSource).toContain("{ id: 'publications', label: 'Recursos' }");
+    expect(backofficePageSource).toContain("{ id: 'gallery-biblioteca', label: 'Recursos' }");
+    expect(backofficePageSource).toContain("{ id: 'publications', label: 'Lista de recursos' }");
   });
 
   it('removes projects from the backoffice navigation, permissions and editors', () => {
@@ -157,7 +158,8 @@ describe('backoffice page guards', () => {
     );
 
     expect(permissionOptionsBlock).toContain("{ id: 'publications', label: 'Publicações' }");
-    expect(navigationBlock).toContain("{ id: 'publications', label: 'Recursos' }");
+    expect(navigationBlock).toContain("{ id: 'publications', label: 'Lista de recursos' }");
+    expect(navigationBlock).toContain("{ id: 'gallery-biblioteca', label: 'Recursos' }");
   });
 
   it('shows the backoffice change history with the 10 day cleanup policy', () => {
@@ -490,6 +492,7 @@ describe('backoffice page guards', () => {
     expect(navigationBlock).toContain("id: 'gallery-oficina-do-burel'");
     expect(navigationBlock).toContain("id: 'gallery-artigos-para-venda'");
     expect(navigationBlock).toContain("id: 'gallery-biblioteca-jrs'");
+    expect(navigationBlock).toContain("id: 'gallery-biblioteca'");
     expect(navigationBlock).toContain("id: 'gallery-pon-do-jueus'");
     expect(navigationBlock).toContain("id: 'gallery-escola-dos-nossos-avos'");
     expect(navigationBlock).toContain("id: 'gallery-oficinas-de-formacao'");
@@ -503,8 +506,8 @@ describe('backoffice page guards', () => {
       backofficePageSource.indexOf('const APPEARANCE_TABS')
     );
 
-    expect(navigationBlock).toContain("{ id: 'publications', label: 'Recursos' }");
-    expect(navigationBlock).not.toContain("id: 'gallery-biblioteca'");
+    expect(navigationBlock).toContain("{ id: 'gallery-biblioteca', label: 'Recursos' }");
+    expect(navigationBlock).toContain("{ id: 'publications', label: 'Lista de recursos' }");
     expect((navigationBlock.match(/label: 'Recursos'/g) || [])).toHaveLength(1);
   });
 

@@ -26,6 +26,16 @@ describe('GalleryTabs', () => {
     expect(galleryTabsSource).toContain('setActiveTab(firstAvailableGalleryTab(items))');
   });
 
+  it('keeps the media type bar horizontally scrollable on narrow screens', () => {
+    expect(galleryTabsSource).toContain('role="tablist"');
+    expect(galleryTabsSource).toContain('aria-label="Tipos de conteúdos da galeria"');
+    expect(galleryTabsSource).toContain('overflow-x-auto');
+    expect(galleryTabsSource).toContain('snap-x');
+    expect(galleryTabsSource).toContain('min-w-[180px]');
+    expect(galleryTabsSource).toContain('role="tab"');
+    expect(galleryTabsSource).toContain('aria-selected={activeTab === tab.id}');
+  });
+
   it('keeps static local gallery photo previews eligible for next/image with responsive thumbnail sizes', () => {
     expect(galleryTabsSource).toContain("import Image from 'next/image'");
     expect(galleryTabsSource).toContain("previewSource.startsWith('/') && !shouldBypassNextImageOptimization(previewSource)");

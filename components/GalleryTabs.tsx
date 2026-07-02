@@ -146,7 +146,11 @@ export default function GalleryTabs({ items }: Props) {
   return (
     <>
       <div className="rounded-xl border border-stone-200 bg-white p-2">
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <div
+          className="flex snap-x gap-2 overflow-x-auto scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-4 md:overflow-visible md:pb-0"
+          role="tablist"
+          aria-label="Tipos de conteúdos da galeria"
+        >
           {(
             [
               { id: 'photo', label: `Fotos (${photos.length})` },
@@ -158,9 +162,11 @@ export default function GalleryTabs({ items }: Props) {
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'rounded-lg px-4 py-2 text-sm transition-colors',
+                'min-w-[180px] snap-start rounded-lg px-4 py-2 text-sm transition-colors md:min-w-0',
                 activeTab === tab.id ? 'bg-[#0f4c36] text-white' : 'bg-transparent text-stone-700 hover:bg-stone-100'
               )}
             >
