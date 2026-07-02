@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import InstitutionalProgrammePage from '@/components/InstitutionalProgrammePage';
 import GalleryTabs from '@/components/GalleryTabs';
 import { listGalleryMedia } from '@/app/api/_lib/cms';
+import { escolaDosNossosAvosFallbackGallery } from '@/lib/escola-dos-nossos-avos-gallery';
 import { getPublicSiteLayoutSettings } from '@/lib/site-layout-settings';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,8 @@ export const metadata: Metadata = {
 export default async function EscolaDosNossosAvosPage() {
   const layout = await getPublicSiteLayoutSettings();
   const media = await listGalleryMedia('public', 'escola-dos-nossos-avos');
+  const hasPublishedPhotos = media.some((item) => item.type === 'photo');
+  const galleryItems = hasPublishedPhotos ? media : [...escolaDosNossosAvosFallbackGallery, ...media];
 
   return (
     <InstitutionalProgrammePage
@@ -29,7 +32,7 @@ export default async function EscolaDosNossosAvosPage() {
         <div className="mb-6">
           <h2 className="font-display text-3xl font-bold !text-[#0f4c36]">Conteúdos da Escola dos Nossos Avós</h2>
         </div>
-        <GalleryTabs items={media} />
+        <GalleryTabs items={galleryItems} />
       </section>
     </InstitutionalProgrammePage>
   );

@@ -1,6 +1,6 @@
 /* @vitest-environment node */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -18,6 +18,7 @@ const bibliotecaPageSource = readFileSync(resolve(process.cwd(), 'app/biblioteca
 const contactosPageSource = readFileSync(resolve(process.cwd(), 'app/contactos/page.tsx'), 'utf8');
 const galeriaPageSource = readFileSync(resolve(process.cwd(), 'app/galeria/page.tsx'), 'utf8');
 const institutionalProgrammePageSource = readFileSync(resolve(process.cwd(), 'components/InstitutionalProgrammePage.tsx'), 'utf8');
+const escolaDosNossosAvosGallerySource = readFileSync(resolve(process.cwd(), 'lib/escola-dos-nossos-avos-gallery.ts'), 'utf8');
 
 const requestedProgrammePages = [
   ['oficinaDoBurel', 'app/oficina-do-burel/page.tsx'],
@@ -167,11 +168,35 @@ describe('institutional pages', () => {
 
   it('renders Escola dos Nossos Avos content from its backoffice gallery context', () => {
     expect(escolaDosNossosAvosPageSource).toContain("listGalleryMedia('public', 'escola-dos-nossos-avos')");
-    expect(escolaDosNossosAvosPageSource).toContain('<GalleryTabs items={media} />');
+    expect(escolaDosNossosAvosPageSource).toContain("media.some((item) => item.type === 'photo')");
+    expect(escolaDosNossosAvosPageSource).toContain('hasPublishedPhotos ? media : [...escolaDosNossosAvosFallbackGallery, ...media]');
+    expect(escolaDosNossosAvosPageSource).toContain('<GalleryTabs items={galleryItems} />');
     expect(escolaDosNossosAvosPageSource).toContain('Conteúdos da Escola dos Nossos Avós');
     expect(escolaDosNossosAvosPageSource).not.toContain('publicados no backoffice');
     expect(institutionalProgrammePageSource).toContain('children?: React.ReactNode');
     expect(institutionalProgrammePageSource).toContain('{children}');
+  });
+
+  it('keeps the restored Escola dos Nossos Avos photos as optimized static assets', () => {
+    const restoredPhotoMatches = escolaDosNossosAvosGallerySource.match(/internal-pages\/escola-dos-nossos-avos\/foto-/g) ?? [];
+
+    expect(restoredPhotoMatches).toHaveLength(37);
+    expect(escolaDosNossosAvosGallerySource).toContain("context: 'escola-dos-nossos-avos'");
+    expect(escolaDosNossosAvosGallerySource).toContain("mimeType: 'image/jpeg'");
+
+    for (let index = 1; index <= 37; index += 1) {
+      const paddedIndex = String(index).padStart(2, '0');
+      const assetName = index === 37
+        ? 'foto-37-escola-dos-nossos-avos.jpg'
+        : (escolaDosNossosAvosGallerySource.match(new RegExp(`foto-${paddedIndex}-dsc-[0-9]+\\.jpg`))?.[0] ?? '');
+      const assetPath = resolve(process.cwd(), 'public/internal-pages/escola-dos-nossos-avos', assetName);
+
+      expect(assetName).not.toBe('');
+      expect(existsSync(assetPath)).toBe(true);
+      expect(statSync(assetPath).size).toBeLessThan(350_000);
+    }
+
+    expect(statSync(resolve(process.cwd(), 'public/internal-pages/publicacoes-f7.jpg')).size).toBeLessThan(250_000);
   });
 
   it('renders PON do Jueus content from its backoffice gallery context', () => {
@@ -192,7 +217,7 @@ describe('institutional pages', () => {
       [bibliotecaPageSource, "listGalleryMedia('public', 'biblioteca')"],
     ].forEach(([source, context]) => {
       expect(source).toContain(context);
-      expect(source).toContain('<GalleryTabs items={media} />');
+      expect(source).toContain(source === escolaDosNossosAvosPageSource ? '<GalleryTabs items={galleryItems} />' : '<GalleryTabs items={media} />');
     });
   });
 
