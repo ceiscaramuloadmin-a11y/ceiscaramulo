@@ -149,7 +149,10 @@ const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasE
   { id: 'sobre', label: 'Sobre Nós' },
 ];
 
-const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: string; context: string; description: string }> = {
+const ALL_GALLERY_MEDIA_TYPES: GalleryMediaType[] = ['photo', 'video', 'audio', 'document'];
+const SALES_GALLERY_MEDIA_TYPES: GalleryMediaType[] = ['photo', 'document'];
+
+const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: string; context: string; description: string; allowedTypes?: GalleryMediaType[] }> = {
   'gallery-oficina-do-burel': {
     label: 'Oficina do Burel',
     context: 'oficina-do-burel',
@@ -158,7 +161,8 @@ const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: str
   'gallery-artigos-para-venda': {
     label: 'Artigos para venda',
     context: 'artigos-para-venda',
-    description: 'Fotografias, vídeos e documentos associados à página Artigos para venda.',
+    allowedTypes: SALES_GALLERY_MEDIA_TYPES,
+    description: 'Fotografias e documentos associados à página Artigos para venda.',
   },
   'gallery-biblioteca-jrs': {
     label: 'Biblioteca JRS',
@@ -208,36 +212,27 @@ function galleryAcceptForType(type: GalleryMediaType) {
   return 'application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
 }
 
-const GALLERY_BATCH_ACCEPT = [
-  WEB_IMAGE_ACCEPT,
-  'video/*',
-  'audio/*',
-  'application/pdf',
-  '.pdf',
-  '.doc',
-  '.docx',
-  '.xls',
-  '.xlsx',
-  '.ppt',
-  '.pptx',
-  '.txt',
-].join(',');
+function galleryAcceptForTypes(types: GalleryMediaType[]) {
+  return types.map(galleryAcceptForType).join(',');
+}
 
-function inferGalleryBatchType(file: File, fallbackType: GalleryMediaType): GalleryMediaType | null {
+const GALLERY_BATCH_ACCEPT = galleryAcceptForTypes(ALL_GALLERY_MEDIA_TYPES);
+
+function inferGalleryBatchType(file: File, fallbackType: GalleryMediaType, allowedTypes = ALL_GALLERY_MEDIA_TYPES): GalleryMediaType | null {
   const mimeType = file.type.toLowerCase();
   const fileName = file.name.toLowerCase();
 
-  if (mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName)) return 'photo';
-  if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v|avi)$/i.test(fileName)) return 'video';
-  if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return 'audio';
+  if (mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName)) return allowedTypes.includes('photo') ? 'photo' : null;
+  if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v|avi)$/i.test(fileName)) return allowedTypes.includes('video') ? 'video' : null;
+  if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return allowedTypes.includes('audio') ? 'audio' : null;
   if (
     mimeType === 'application/pdf' ||
     /\.(pdf|docx?|xlsx?|pptx?|txt)$/i.test(fileName)
   ) {
-    return 'document';
+    return allowedTypes.includes('document') ? 'document' : null;
   }
 
-  return fallbackType === 'document' ? null : fallbackType;
+  return fallbackType === 'document' || !allowedTypes.includes(fallbackType) ? null : fallbackType;
 }
 
 function isGalleryAssetRoute(value: string) {
@@ -457,6 +452,36 @@ export default function BackofficePage() {
 
     return null;
   }, [activeSection]);
+  const galleryAllowedTypes = activeGalleryConfig?.allowedTypes ?? ALL_GALLERY_MEDIA_TYPES;
+  const galleryBatchAccept = galleryAcceptForTypes(galleryAllowedTypes);
+
+  useEffect(() => {
+    const fallbackType = galleryAllowedTypes[0] ?? 'photo';
+
+    if (!galleryAllowedTypes.includes(galleryBatchType)) {
+      setGalleryBatchType(fallbackType);
+    }
+
+    setGalleryForm((current) => (
+      galleryAllowedTypes.includes(current.type)
+        ? current
+        : { ...current, type: fallbackType, sourceFile: null }
+    ));
+
+    setGalleryBatchItems((current) => {
+      const allowedItems = current.filter((item) => galleryAllowedTypes.includes(item.type));
+
+      if (allowedItems.length === current.length) {
+        return current;
+      }
+
+      current
+        .filter((item) => !galleryAllowedTypes.includes(item.type))
+        .forEach((item) => URL.revokeObjectURL(item.previewUrl));
+
+      return allowedItems;
+    });
+  }, [galleryAllowedTypes, galleryBatchType]);
   const availableSections = useMemo(() => {
     if (!currentAdmin) {
       return [] as SectionId[];
@@ -1067,7 +1092,7 @@ export default function BackofficePage() {
     }
 
     const nextItems = Array.from(files)
-      .map((file) => ({ file, type: inferGalleryBatchType(file, galleryBatchType) }))
+      .map((file) => ({ file, type: inferGalleryBatchType(file, galleryBatchType, galleryAllowedTypes) }))
       .filter((item): item is { file: File; type: GalleryMediaType } => Boolean(item.type))
       .map(({ file, type }) => ({
           id: crypto.randomUUID(),
@@ -1080,7 +1105,11 @@ export default function BackofficePage() {
         }));
 
     if (nextItems.length === 0) {
-      toast.error('Seleciona ficheiros de imagem, vídeo, áudio ou PDF/documento para este carregamento em massa.');
+      toast.error(
+        galleryAllowedTypes.includes('video') || galleryAllowedTypes.includes('audio')
+          ? 'Seleciona ficheiros de imagem, vídeo, áudio ou PDF/documento para este carregamento em massa.'
+          : 'Seleciona ficheiros de imagem ou PDF/documento para este carregamento em massa.'
+      );
       return;
     }
 
@@ -1959,10 +1988,9 @@ export default function BackofficePage() {
                     onChange={(event) => setGalleryBatchType(event.target.value as GalleryMediaType)}
                     className="h-10 rounded-lg border border-stone-300 px-3"
                   >
-                    <option value="photo">Fotos</option>
-                    <option value="video">Vídeos</option>
-                    <option value="audio">Áudios</option>
-                    <option value="document">Documentos/PDFs</option>
+                    {galleryAllowedTypes.map((type) => (
+                      <option key={type} value={type}>{type === 'document' ? 'Documentos/PDFs' : `${galleryTypeLabel(type)}s`}</option>
+                    ))}
                   </select>
                 </label>
 
@@ -1970,7 +1998,7 @@ export default function BackofficePage() {
                   Ficheiros
                   <input
                     type="file"
-                    accept={GALLERY_BATCH_ACCEPT}
+                    accept={galleryBatchAccept}
                     multiple
                     onChange={(event) => {
                       handleGalleryBatchFiles(event.target.files);
@@ -2090,10 +2118,9 @@ export default function BackofficePage() {
                     onChange={(event) => setGalleryForm((c) => ({ ...c, type: (event.target.value as GalleryMediaType) }))}
                     className="h-10 rounded-lg border border-stone-300 px-3"
                   >
-                    <option value="photo">Foto</option>
-                    <option value="video">Vídeo</option>
-                    <option value="audio">Áudio</option>
-                    <option value="document">Documento/PDF</option>
+                    {galleryAllowedTypes.map((type) => (
+                      <option key={type} value={type}>{type === 'document' ? 'Documento/PDF' : galleryTypeLabel(type)}</option>
+                    ))}
                   </select>
                 </label>
 

@@ -481,11 +481,9 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("context: 'oficinas-de-formacao'");
     expect(backofficePageSource).toContain("context: 'publicacoes'");
     expect(backofficePageSource).toContain("context: 'biblioteca'");
-    expect(backofficePageSource).toContain('<option value="video">Vídeos</option>');
-    expect(backofficePageSource).toContain('<option value="document">Documentos/PDFs</option>');
-    expect(backofficePageSource).toContain('<option value="video">Vídeo</option>');
-    expect(backofficePageSource).toContain('<option value="document">Documento/PDF</option>');
     expect(backofficePageSource).toContain('const GALLERY_BATCH_ACCEPT');
+    expect(backofficePageSource).toContain('galleryAcceptForTypes(ALL_GALLERY_MEDIA_TYPES)');
+    expect(backofficePageSource).toContain('galleryAllowedTypes.map((type) => (');
     expect(backofficePageSource).toContain('function inferGalleryBatchType');
     expect(backofficePageSource).not.toContain("import { upload } from '@vercel/blob/client'");
     expect(backofficePageSource).not.toContain('async function uploadGalleryBatchFile');
@@ -503,9 +501,25 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Math.min(concurrency, queue.length)');
     expect(saveGalleryBatchBlock).toContain('await runGalleryBatchQueue(galleryBatchItems, uploadOne, 1)');
     expect(saveGalleryBatchBlock).not.toContain("fd.append('type', galleryBatchType)");
-    expect(backofficePageSource).toContain('accept={GALLERY_BATCH_ACCEPT}');
+    expect(backofficePageSource).toContain('accept={galleryBatchAccept}');
     expect(backofficePageSource).not.toContain('accept={galleryAcceptForType(galleryBatchType)}');
     expect(backofficePageSource).not.toContain('MAX_INLINE_AUDIO_UPLOAD_BYTES');
+  });
+
+  it('limits Artigos para venda uploads to photos and documents', () => {
+    const programmeGalleryConfigStart = backofficePageSource.indexOf('const PROGRAMME_GALLERY_SECTIONS');
+    const salesGalleryBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("'gallery-artigos-para-venda'", programmeGalleryConfigStart),
+      backofficePageSource.indexOf("'gallery-biblioteca-jrs'", programmeGalleryConfigStart)
+    );
+
+    expect(backofficePageSource).toContain("const SALES_GALLERY_MEDIA_TYPES: GalleryMediaType[] = ['photo', 'document']");
+    expect(salesGalleryBlock).toContain('allowedTypes: SALES_GALLERY_MEDIA_TYPES');
+    expect(salesGalleryBlock).toContain("description: 'Fotografias e documentos associados");
+    expect(salesGalleryBlock).not.toContain("'video'");
+    expect(salesGalleryBlock).not.toContain("'audio'");
+    expect(backofficePageSource).toContain('inferGalleryBatchType(file, galleryBatchType, galleryAllowedTypes)');
+    expect(backofficePageSource).toContain('accept={galleryBatchAccept}');
   });
 
   it('shows upload progress feedback for slow backoffice uploads', () => {
