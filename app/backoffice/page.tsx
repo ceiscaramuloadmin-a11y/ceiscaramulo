@@ -109,6 +109,7 @@ const PUBLICATION_TYPE_OPTIONS: Array<{ value: PublicationType; label: string }>
 type PublicationBatchItem = {
   id: string;
   file: File;
+  previewUrl: string;
   title: string;
   type: PublicationType;
   description: string;
@@ -255,6 +256,16 @@ function inferPublicationType(file: File): PublicationType {
   if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v)$/i.test(fileName)) return 'documento';
   if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return 'documento';
   return 'documento';
+}
+
+function previewKindForResourceFile(file: File): GalleryMediaType {
+  const mimeType = file.type.toLowerCase();
+  const fileName = file.name.toLowerCase();
+
+  if (mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName)) return 'photo';
+  if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v)$/i.test(fileName)) return 'video';
+  if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return 'audio';
+  return 'document';
 }
 
 const GALLERY_BATCH_ACCEPT = galleryAcceptForTypes(ALL_GALLERY_MEDIA_TYPES);
@@ -405,8 +416,6 @@ export default function BackofficePage() {
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento' as ActivityCategory, published: true, imageFile: null as File | null, removeImage: false });
   const [publicationForm, setPublicationForm] = useState(getEmptyPublicationForm);
   const [publicationFormResetKey, setPublicationFormResetKey] = useState(0);
-  const [publicationBatchAuthor, setPublicationBatchAuthor] = useState('CEISCaramulo');
-  const [publicationBatchYear, setPublicationBatchYear] = useState(String(new Date().getFullYear()));
   const [publicationBatchItems, setPublicationBatchItems] = useState<PublicationBatchItem[]>([]);
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
@@ -1038,6 +1047,7 @@ export default function BackofficePage() {
   function resetPublicationForm() {
     setEditingId(null);
     setPublicationForm(getEmptyPublicationForm());
+    clearPublicationBatchItems();
     setPublicationFormResetKey((value) => value + 1);
   }
 
@@ -1573,12 +1583,20 @@ export default function BackofficePage() {
     const nextItems = Array.from(files).map((file) => ({
       id: crypto.randomUUID(),
       file,
+      previewUrl: URL.createObjectURL(file),
       title: titleFromFileName(file.name),
       type: inferPublicationType(file),
       description: '',
     }));
 
     setPublicationBatchItems((current) => [...current, ...nextItems]);
+  }
+
+  function clearPublicationBatchItems() {
+    setPublicationBatchItems((current) => {
+      current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
   }
 
   function updatePublicationBatchItem(id: string, updates: Partial<Pick<PublicationBatchItem, 'title' | 'type' | 'description'>>) {
@@ -1588,7 +1606,13 @@ export default function BackofficePage() {
   }
 
   function removePublicationBatchItem(id: string) {
-    setPublicationBatchItems((current) => current.filter((item) => item.id !== id));
+    setPublicationBatchItems((current) => {
+      const item = current.find((entry) => entry.id === id);
+      if (item) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
+      return current.filter((item) => item.id !== id);
+    });
   }
 
   async function savePublicationBatch(event: FormEvent<HTMLFormElement>) {
@@ -1596,16 +1620,6 @@ export default function BackofficePage() {
 
     if (publicationBatchItems.length === 0) {
       toast.error('Adiciona pelo menos um ficheiro para carregar em massa.');
-      return;
-    }
-
-    if (!publicationBatchAuthor.trim()) {
-      toast.error('Indica o autor ou entidade para o lote de recursos.');
-      return;
-    }
-
-    if (!publicationBatchYear.trim()) {
-      toast.error('Indica o ano para o lote de recursos.');
       return;
     }
 
@@ -1632,8 +1646,8 @@ export default function BackofficePage() {
       const uploadOne = async (item: PublicationBatchItem) => {
         const fd = new FormData();
         fd.append('title', item.title.trim());
-        fd.append('author', publicationBatchAuthor.trim());
-        fd.append('year', publicationBatchYear.trim());
+        fd.append('author', 'CEISCaramulo');
+        fd.append('year', String(new Date().getFullYear()));
         fd.append('type', item.type);
         fd.append('description', item.description.trim());
         fd.append('downloadUrl', '');
@@ -1668,7 +1682,7 @@ export default function BackofficePage() {
       await runGalleryBatchQueue(publicationBatchItems, uploadOne, 1);
 
       toast.success(`${publicationBatchItems.length} recurso(s) carregado(s) com sucesso.`);
-      setPublicationBatchItems([]);
+      clearPublicationBatchItems();
       setOperationProgress({ label: 'A atualizar recursos', percent: 95, detail: `${totalItems}/${totalItems} concluidos` });
       await Promise.all([refreshContentSection('publications', true), refreshDashboardStats()]);
     } catch (error) {
@@ -1993,11 +2007,6 @@ export default function BackofficePage() {
                     </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Input label="Autor ou entidade do lote" value={publicationBatchAuthor} onChange={setPublicationBatchAuthor} required />
-                    <Input label="Ano do lote" value={publicationBatchYear} onChange={setPublicationBatchYear} required />
-                  </div>
-
                   <label className="grid gap-1 text-sm text-stone-700">
                     Ficheiros do lote
                     <input
@@ -2014,47 +2023,72 @@ export default function BackofficePage() {
 
                   {publicationBatchItems.length > 0 ? (
                     <div className="space-y-3">
-                      {publicationBatchItems.map((item, index) => (
-                        <article key={item.id} className="rounded-lg border border-stone-200 p-3">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
-                              Recurso {index + 1} · {item.file.name}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => removePublicationBatchItem(item.id)}
-                              className="rounded-lg border border-stone-300 px-3 py-1 text-xs text-stone-600"
-                            >
-                              Remover
-                            </button>
-                          </div>
-                          <div className="mt-3 grid gap-3">
-                            <Input
-                              label="Título"
-                              value={item.title}
-                              onChange={(value) => updatePublicationBatchItem(item.id, { title: value })}
-                              required
-                            />
-                            <label className="grid gap-1 text-sm text-stone-700">
-                              Tipo de recurso
-                              <select
-                                value={item.type}
-                                onChange={(event) => updatePublicationBatchItem(item.id, { type: event.target.value as PublicationType })}
-                                className="h-10 rounded-lg border border-stone-300 px-3"
+                      {publicationBatchItems.map((item, index) => {
+                        const previewKind = previewKindForResourceFile(item.file);
+
+                        return (
+                          <article key={item.id} className="rounded-lg border border-stone-200 p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
+                                Recurso {index + 1} · {item.file.name}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => removePublicationBatchItem(item.id)}
+                                className="rounded-lg border border-stone-300 px-3 py-1 text-xs text-stone-600"
                               >
-                                {PUBLICATION_TYPE_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>{option.label}</option>
-                                ))}
-                              </select>
-                            </label>
-                            <TextArea
-                              label="Resumo simples"
-                              value={item.description}
-                              onChange={(value) => updatePublicationBatchItem(item.id, { description: value })}
-                            />
-                          </div>
-                        </article>
-                      ))}
+                                Remover
+                              </button>
+                            </div>
+                            <div className="mt-3 grid gap-3 md:grid-cols-[120px_1fr]">
+                              <div className="rounded-lg bg-stone-100 p-2">
+                                {previewKind === 'photo' ? (
+                                  <img src={item.previewUrl} alt={item.title} className="h-28 w-full rounded-md object-cover" />
+                                ) : null}
+                                {previewKind === 'video' ? (
+                                  <video src={item.previewUrl} className="h-28 w-full rounded-md bg-black object-cover" controls preload="metadata" />
+                                ) : null}
+                                {previewKind === 'audio' ? (
+                                  <div className="grid min-h-28 content-center gap-2">
+                                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Áudio</span>
+                                    <audio src={item.previewUrl} controls preload="metadata" className="w-full" />
+                                  </div>
+                                ) : null}
+                                {previewKind === 'document' ? (
+                                  <div className="flex min-h-28 items-center justify-center rounded-md border border-dashed border-stone-300 px-3 text-center text-xs font-medium text-stone-600">
+                                    Documento
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="grid gap-3">
+                                <Input
+                                  label="Título"
+                                  value={item.title}
+                                  onChange={(value) => updatePublicationBatchItem(item.id, { title: value })}
+                                  required
+                                />
+                                <label className="grid gap-1 text-sm text-stone-700">
+                                  Tipo de recurso
+                                  <select
+                                    value={item.type}
+                                    onChange={(event) => updatePublicationBatchItem(item.id, { type: event.target.value as PublicationType })}
+                                    className="h-10 rounded-lg border border-stone-300 px-3"
+                                  >
+                                    {PUBLICATION_TYPE_OPTIONS.map((option) => (
+                                      <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <TextArea
+                                  label="Resumo simples"
+                                  value={item.description}
+                                  onChange={(value) => updatePublicationBatchItem(item.id, { description: value })}
+                                />
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   ) : null}
 

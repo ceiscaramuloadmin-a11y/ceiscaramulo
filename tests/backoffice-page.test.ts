@@ -200,15 +200,23 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('type PublicationBatchItem');
     expect(backofficePageSource).toContain('const [publicationBatchItems, setPublicationBatchItems]');
     expect(backofficePageSource).toContain('function handlePublicationBatchFiles(files: FileList | null)');
+    expect(backofficePageSource).toContain('function clearPublicationBatchItems()');
     expect(backofficePageSource).toContain('async function savePublicationBatch(event: FormEvent<HTMLFormElement>)');
+    expect(backofficePageSource).toContain('previewUrl: URL.createObjectURL(file)');
+    expect(backofficePageSource).toContain('URL.revokeObjectURL(item.previewUrl)');
+    expect(backofficePageSource).toContain('function previewKindForResourceFile(file: File)');
     expect(backofficePageSource).toContain("label: 'A carregar lote de recursos'");
     expect(backofficePageSource).toContain("await runGalleryBatchQueue(publicationBatchItems, uploadOne, 1)");
     expect(backofficePageSource).toContain("await Promise.all([refreshContentSection('publications', true), refreshDashboardStats()])");
     expect(resourcesBlock).toContain('Carregamento em massa');
     expect(resourcesBlock).toContain('multiple');
     expect(resourcesBlock).toContain('accept={RESOURCE_ATTACHMENT_ACCEPT}');
-    expect(resourcesBlock).toContain('Autor ou entidade do lote');
-    expect(resourcesBlock).toContain('Ano do lote');
+    expect(resourcesBlock).toContain('<img src={item.previewUrl}');
+    expect(resourcesBlock).toContain('<video src={item.previewUrl}');
+    expect(resourcesBlock).toContain('<audio src={item.previewUrl}');
+    expect(resourcesBlock).toContain('Documento');
+    expect(resourcesBlock).not.toContain('Autor ou entidade do lote');
+    expect(resourcesBlock).not.toContain('Ano do lote');
     expect(resourcesBlock).toContain('Carregar lote de recursos');
   });
 
@@ -237,6 +245,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("year: ''");
     expect(backofficePageSource).toContain("type: ''");
     expect(backofficePageSource).toContain('setPublicationForm(getEmptyPublicationForm())');
+    expect(backofficePageSource).toContain('clearPublicationBatchItems()');
     expect(resourcesBlock).toContain('onNew={resetPublicationForm}');
     expect(resourcesBlock).toContain('key={`publication-document-${publicationFormResetKey}`}');
     expect(resourcesBlock).toContain('key={`publication-cover-${publicationFormResetKey}`}');
