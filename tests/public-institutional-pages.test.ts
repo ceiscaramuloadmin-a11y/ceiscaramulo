@@ -78,9 +78,9 @@ describe('institutional pages', () => {
       ['public/internal-pages/pon-do-jueus.jpg', ponDoJueusPageSource, 'heroImage="/internal-pages/pon-do-jueus.jpg"'],
       ['public/internal-pages/sobre-nos.jpg', sobreNosPageSource, "const aboutHeroImage = '/internal-pages/sobre-nos.jpg'"],
       ['public/internal-pages/biblioteca.jpg', bibliotecaPageSource, "const bibliotecaHeroImage = '/internal-pages/biblioteca.jpg'"],
-      ['public/internal-pages/biblioteca-jrs.jpg', bibliotecaJrsPageSource, 'heroImage="/internal-pages/biblioteca-jrs.jpg"'],
-      ['public/internal-pages/oficinas-de-formacao.jpg', oficinasDeFormacaoPageSource, 'heroImage="/internal-pages/oficinas-de-formacao.jpg"'],
-      ['public/internal-pages/publicacoes.jpg', publicacoesPageSource, 'heroImage="/internal-pages/publicacoes.jpg"'],
+      ['public/internal-pages/biblioteca-jrs-f13.jpg', bibliotecaJrsPageSource, 'heroImage="/internal-pages/biblioteca-jrs-f13.jpg"'],
+      ['public/internal-pages/oficinas-de-formacao-f4.jpg', oficinasDeFormacaoPageSource, 'heroImage="/internal-pages/oficinas-de-formacao-f4.jpg"'],
+      ['public/internal-pages/publicacoes-f7.jpg', publicacoesPageSource, 'heroImage="/internal-pages/publicacoes-f7.jpg"'],
     ].forEach(([assetPath, pageSource, sourceNeedle]) => {
       expect(existsSync(resolve(process.cwd(), assetPath))).toBe(true);
       expect(pageSource).toContain(sourceNeedle);

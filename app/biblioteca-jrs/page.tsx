@@ -23,7 +23,7 @@ export default async function BibliotecaJrsPage() {
     <InstitutionalProgrammePage
       title={layout.pages.bibliotecaJrs.title}
       description={layout.pages.bibliotecaJrs.description}
-      heroImage="/internal-pages/biblioteca-jrs.jpg"
+      heroImage="/internal-pages/biblioteca-jrs-f13.jpg"
       heroTitleTone="green"
     >
       <div className="mt-10">
