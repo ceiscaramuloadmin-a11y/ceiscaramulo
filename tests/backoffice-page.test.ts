@@ -191,6 +191,27 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
   });
 
+  it('supports optimized batch uploads in the resources form', () => {
+    const resourcesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'contacts' ? (")
+    );
+
+    expect(backofficePageSource).toContain('type PublicationBatchItem');
+    expect(backofficePageSource).toContain('const [publicationBatchItems, setPublicationBatchItems]');
+    expect(backofficePageSource).toContain('function handlePublicationBatchFiles(files: FileList | null)');
+    expect(backofficePageSource).toContain('async function savePublicationBatch(event: FormEvent<HTMLFormElement>)');
+    expect(backofficePageSource).toContain("label: 'A carregar lote de recursos'");
+    expect(backofficePageSource).toContain("await runGalleryBatchQueue(publicationBatchItems, uploadOne, 1)");
+    expect(backofficePageSource).toContain("await Promise.all([refreshContentSection('publications', true), refreshDashboardStats()])");
+    expect(resourcesBlock).toContain('Carregamento em massa');
+    expect(resourcesBlock).toContain('multiple');
+    expect(resourcesBlock).toContain('accept={RESOURCE_ATTACHMENT_ACCEPT}');
+    expect(resourcesBlock).toContain('Autor ou entidade do lote');
+    expect(resourcesBlock).toContain('Ano do lote');
+    expect(resourcesBlock).toContain('Carregar lote de recursos');
+  });
+
   it('keeps the resources editor practical for managing the public library', () => {
     const resourcesBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("activeSection === 'publications' ? ("),

@@ -106,6 +106,14 @@ const PUBLICATION_TYPE_OPTIONS: Array<{ value: PublicationType; label: string }>
   { value: 'tese', label: 'Tese' },
 ];
 
+type PublicationBatchItem = {
+  id: string;
+  file: File;
+  title: string;
+  type: PublicationType;
+  description: string;
+};
+
 function getEmptyPublicationForm() {
   return {
     title: '',
@@ -232,6 +240,21 @@ function galleryAcceptForType(type: GalleryMediaType) {
 
 function galleryAcceptForTypes(types: GalleryMediaType[]) {
   return types.map(galleryAcceptForType).join(',');
+}
+
+function titleFromFileName(fileName: string) {
+  return fileName.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Sem titulo';
+}
+
+function inferPublicationType(file: File): PublicationType {
+  const mimeType = file.type.toLowerCase();
+  const fileName = file.name.toLowerCase();
+
+  if (mimeType === 'application/pdf' || /\.pdf$/i.test(fileName)) return 'documento';
+  if (mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName)) return 'documento';
+  if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v)$/i.test(fileName)) return 'documento';
+  if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return 'documento';
+  return 'documento';
 }
 
 const GALLERY_BATCH_ACCEPT = galleryAcceptForTypes(ALL_GALLERY_MEDIA_TYPES);
@@ -382,6 +405,9 @@ export default function BackofficePage() {
   const [activityForm, setActivityForm] = useState({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento' as ActivityCategory, published: true, imageFile: null as File | null, removeImage: false });
   const [publicationForm, setPublicationForm] = useState(getEmptyPublicationForm);
   const [publicationFormResetKey, setPublicationFormResetKey] = useState(0);
+  const [publicationBatchAuthor, setPublicationBatchAuthor] = useState('CEISCaramulo');
+  const [publicationBatchYear, setPublicationBatchYear] = useState(String(new Date().getFullYear()));
+  const [publicationBatchItems, setPublicationBatchItems] = useState<PublicationBatchItem[]>([]);
   const [galleryEditingId, setGalleryEditingId] = useState<string | null>(null);
   const [galleryForm, setGalleryForm] = useState({
     title: '',
@@ -1117,7 +1143,7 @@ export default function BackofficePage() {
           file,
           previewUrl: URL.createObjectURL(file),
           type,
-          title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Sem título',
+          title: titleFromFileName(file.name),
           description: '',
           published: true,
         }));
@@ -1539,6 +1565,120 @@ export default function BackofficePage() {
     await saveSection('publications', fd);
   }
 
+  function handlePublicationBatchFiles(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    const nextItems = Array.from(files).map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      title: titleFromFileName(file.name),
+      type: inferPublicationType(file),
+      description: '',
+    }));
+
+    setPublicationBatchItems((current) => [...current, ...nextItems]);
+  }
+
+  function updatePublicationBatchItem(id: string, updates: Partial<Pick<PublicationBatchItem, 'title' | 'type' | 'description'>>) {
+    setPublicationBatchItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...updates } : item))
+    );
+  }
+
+  function removePublicationBatchItem(id: string) {
+    setPublicationBatchItems((current) => current.filter((item) => item.id !== id));
+  }
+
+  async function savePublicationBatch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (publicationBatchItems.length === 0) {
+      toast.error('Adiciona pelo menos um ficheiro para carregar em massa.');
+      return;
+    }
+
+    if (!publicationBatchAuthor.trim()) {
+      toast.error('Indica o autor ou entidade para o lote de recursos.');
+      return;
+    }
+
+    if (!publicationBatchYear.trim()) {
+      toast.error('Indica o ano para o lote de recursos.');
+      return;
+    }
+
+    const firstInvalid = publicationBatchItems.find((item) => !item.title.trim());
+
+    if (firstInvalid) {
+      toast.error('Cada recurso precisa de um título antes de gravar.');
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const totalItems = publicationBatchItems.length;
+      let completedItems = 0;
+      const headers = await authHeaders();
+
+      setOperationProgress({
+        label: 'A carregar lote de recursos',
+        percent: 0,
+        detail: `0/${totalItems} concluidos`,
+      });
+
+      const uploadOne = async (item: PublicationBatchItem) => {
+        const fd = new FormData();
+        fd.append('title', item.title.trim());
+        fd.append('author', publicationBatchAuthor.trim());
+        fd.append('year', publicationBatchYear.trim());
+        fd.append('type', item.type);
+        fd.append('description', item.description.trim());
+        fd.append('downloadUrl', '');
+        fd.append('published', 'true');
+        fd.append('document', item.file);
+
+        const result = await requestJsonWithUploadProgress<Publication>(
+          '/api/publications',
+          'POST',
+          fd,
+          headers,
+          (filePercent) => {
+            const overallPercent = ((completedItems + filePercent / 100) / totalItems) * 100;
+            setOperationProgress({
+              label: 'A carregar lote de recursos',
+              percent: clampProgress(overallPercent),
+              detail: `${completedItems}/${totalItems} concluidos - ${item.file.name}`,
+            });
+          }
+        );
+
+        completedItems += 1;
+        setOperationProgress({
+          label: 'A carregar lote de recursos',
+          percent: clampProgress((completedItems / totalItems) * 100),
+          detail: `${completedItems}/${totalItems} concluidos`,
+        });
+
+        return result;
+      };
+
+      await runGalleryBatchQueue(publicationBatchItems, uploadOne, 1);
+
+      toast.success(`${publicationBatchItems.length} recurso(s) carregado(s) com sucesso.`);
+      setPublicationBatchItems([]);
+      setOperationProgress({ label: 'A atualizar recursos', percent: 95, detail: `${totalItems}/${totalItems} concluidos` });
+      await Promise.all([refreshContentSection('publications', true), refreshDashboardStats()]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha no carregamento em massa de recursos.');
+    } finally {
+      setOperationProgress(null);
+      setBusy(false);
+    }
+  }
+
   function startEdit(section: ContentSection, item: NewsArticle | Activity | Publication) {
     setActiveSection(section);
     setEditingId(item.id);
@@ -1823,7 +1963,108 @@ export default function BackofficePage() {
           onNew={resetPublicationForm}
           onEdit={(item) => startEdit('publications', item as Publication)}
           onDelete={(id) => void deleteSectionItem('publications', id)}
-          form={<form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}><Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required /><Input label="Autor ou entidade" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required /><Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required /><label className="grid gap-1 text-sm text-stone-700">Tipo de recurso<select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required><option value="" disabled>Selecionar tipo</option>{PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label><RichTextEditor label="Resumo simples" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled /><Input label="Link externo do recurso (opcional)" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} /><FileInput key={`publication-document-${publicationFormResetKey}`} label="Ficheiro do recurso (PDF, foto, vídeo ou áudio)" accept={RESOURCE_ATTACHMENT_ACCEPT} onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} /><FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa (opcional)" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} /><Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} /><button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button></form>}
+          form={
+            <div className="space-y-6">
+              <form className="space-y-3" onSubmit={(event) => void handlePublicationSubmit(event)}>
+                <Input label="Título" value={publicationForm.title} onChange={(v) => setPublicationForm((c) => ({ ...c, title: v }))} required />
+                <Input label="Autor ou entidade" value={publicationForm.author} onChange={(v) => setPublicationForm((c) => ({ ...c, author: v }))} required />
+                <Input label="Ano" value={publicationForm.year} onChange={(v) => setPublicationForm((c) => ({ ...c, year: v }))} required />
+                <label className="grid gap-1 text-sm text-stone-700">
+                  Tipo de recurso
+                  <select value={publicationForm.type} onChange={(event) => setPublicationForm((c) => ({ ...c, type: event.target.value as PublicationType }))} className="h-10 rounded-lg border border-stone-300 px-3" required>
+                    <option value="" disabled>Selecionar tipo</option>
+                    {PUBLICATION_TYPE_OPTIONS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                  </select>
+                </label>
+                <RichTextEditor label="Resumo simples" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled />
+                <Input label="Link externo do recurso (opcional)" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} />
+                <FileInput key={`publication-document-${publicationFormResetKey}`} label="Ficheiro do recurso (PDF, foto, vídeo ou áudio)" accept={RESOURCE_ATTACHMENT_ACCEPT} onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} />
+                <FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa (opcional)" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} />
+                <Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} />
+                <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>{backofficePrimaryActionLabel(busy, editingId ? 'Guardar alterações' : 'Criar recurso')}</button>
+              </form>
+
+              {!editingId ? (
+                <form className="space-y-4 rounded-xl border border-stone-200 p-4" onSubmit={(event) => void savePublicationBatch(event)}>
+                  <div>
+                    <h3 className="text-base font-semibold text-[#0f4c36]">Carregamento em massa</h3>
+                    <p className="mt-1 text-sm text-stone-600">
+                      Seleciona vários ficheiros e confirma os dados antes de gravar. A base de dados guarda apenas o URL otimizado de cada ficheiro.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input label="Autor ou entidade do lote" value={publicationBatchAuthor} onChange={setPublicationBatchAuthor} required />
+                    <Input label="Ano do lote" value={publicationBatchYear} onChange={setPublicationBatchYear} required />
+                  </div>
+
+                  <label className="grid gap-1 text-sm text-stone-700">
+                    Ficheiros do lote
+                    <input
+                      type="file"
+                      accept={RESOURCE_ATTACHMENT_ACCEPT}
+                      multiple
+                      onChange={(event) => {
+                        handlePublicationBatchFiles(event.target.files);
+                        event.target.value = '';
+                      }}
+                      className="block w-full text-sm"
+                    />
+                  </label>
+
+                  {publicationBatchItems.length > 0 ? (
+                    <div className="space-y-3">
+                      {publicationBatchItems.map((item, index) => (
+                        <article key={item.id} className="rounded-lg border border-stone-200 p-3">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
+                              Recurso {index + 1} · {item.file.name}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => removePublicationBatchItem(item.id)}
+                              className="rounded-lg border border-stone-300 px-3 py-1 text-xs text-stone-600"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                          <div className="mt-3 grid gap-3">
+                            <Input
+                              label="Título"
+                              value={item.title}
+                              onChange={(value) => updatePublicationBatchItem(item.id, { title: value })}
+                              required
+                            />
+                            <label className="grid gap-1 text-sm text-stone-700">
+                              Tipo de recurso
+                              <select
+                                value={item.type}
+                                onChange={(event) => updatePublicationBatchItem(item.id, { type: event.target.value as PublicationType })}
+                                className="h-10 rounded-lg border border-stone-300 px-3"
+                              >
+                                {PUBLICATION_TYPE_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <TextArea
+                              label="Resumo simples"
+                              value={item.description}
+                              onChange={(value) => updatePublicationBatchItem(item.id, { description: value })}
+                            />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <button className="w-full rounded-lg bg-[#0f4c36] px-4 py-2 text-sm text-white" disabled={busy}>
+                    {backofficePrimaryActionLabel(busy, 'Carregar lote de recursos')}
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          }
         />
       ) : null}
 
