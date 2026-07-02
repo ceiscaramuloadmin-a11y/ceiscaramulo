@@ -122,7 +122,7 @@ describe('backoffice page guards', () => {
       navigationBlock.indexOf("{ id: 'audit', label: 'Histórico' }")
     );
     expect(backofficePageSource).toContain("{ id: 'gallery-biblioteca', label: 'Recursos' }");
-    expect(backofficePageSource).toContain("{ id: 'publications', label: 'Lista de recursos' }");
+    expect(backofficePageSource).not.toContain("{ id: 'publications', label: 'Lista de recursos' }");
   });
 
   it('removes projects from the backoffice navigation, permissions and editors', () => {
@@ -158,7 +158,7 @@ describe('backoffice page guards', () => {
     );
 
     expect(permissionOptionsBlock).toContain("{ id: 'publications', label: 'Publicações' }");
-    expect(navigationBlock).toContain("{ id: 'publications', label: 'Lista de recursos' }");
+    expect(navigationBlock).not.toContain("{ id: 'publications', label: 'Lista de recursos' }");
     expect(navigationBlock).toContain("{ id: 'gallery-biblioteca', label: 'Recursos' }");
   });
 
@@ -234,7 +234,8 @@ describe('backoffice page guards', () => {
 
     expect(backofficePageSource).toContain("if (activeSection === 'gallery-biblioteca')");
     expect(backofficePageSource).toContain("void refreshContentSection('publications')");
-    expect(resourcesBlock).toContain("title={activeSection === 'gallery-biblioteca' ? 'Lista de recursos' : 'Recursos'}");
+    expect(resourcesBlock).toContain('title="Recursos"');
+    expect(resourcesBlock).not.toContain('Lista de recursos');
     expect(resourcesBlock).toContain('label="Autor ou entidade"');
     expect(resourcesBlock).toContain('label="Ano"');
     expect(resourcesBlock).toContain('Tipo de recurso');
@@ -502,14 +503,14 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain('<Card title="Galeria"');
   });
 
-  it('keeps only one Recursos entry in the backoffice navigation', () => {
+  it('keeps only the Recursos entry in the backoffice navigation', () => {
     const navigationBlock = backofficePageSource.slice(
       backofficePageSource.indexOf('const BACKOFFICE_NAV_ITEMS'),
       backofficePageSource.indexOf('const APPEARANCE_TABS')
     );
 
     expect(navigationBlock).toContain("{ id: 'gallery-biblioteca', label: 'Recursos' }");
-    expect(navigationBlock).toContain("{ id: 'publications', label: 'Lista de recursos' }");
+    expect(navigationBlock).not.toContain("{ id: 'publications', label: 'Lista de recursos' }");
     expect((navigationBlock.match(/label: 'Recursos'/g) || [])).toHaveLength(1);
   });
 

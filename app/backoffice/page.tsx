@@ -76,7 +76,6 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'about', label: 'Sobre Nós' },
   { id: 'news', label: 'Notícias' },
   { id: 'activities', label: 'Atividades' },
-  { id: 'publications', label: 'Lista de recursos' },
   { id: 'gallery-biblioteca', label: 'Recursos' },
   { id: 'gallery-oficina-do-burel', label: 'Oficina do Burel' },
   { id: 'gallery-artigos-para-venda', label: 'Artigos para venda' },
@@ -1832,7 +1831,7 @@ export default function BackofficePage() {
 
       {(activeSection === 'publications' || activeSection === 'gallery-biblioteca') ? (
         <SectionLayout
-          title={activeSection === 'gallery-biblioteca' ? 'Lista de recursos' : 'Recursos'}
+          title="Recursos"
           description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio) ou link quando existir."
           newButtonLabel="Novo recurso"
           list={publications}
