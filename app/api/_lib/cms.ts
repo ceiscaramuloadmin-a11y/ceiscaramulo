@@ -1,5 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
+import { extname } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@/src/generated/prisma/client';
 import prisma from '@/lib/prisma';
@@ -315,25 +314,16 @@ const adminEmails = String(process.env.ADMIN_EMAILS || '')
   .filter(Boolean);
 
 // Compatibilidade com deployments onde o Prisma Client em memória ainda não expõe novos delegates.
-const LOCAL_SITE_SETTINGS_DIR = join(process.cwd(), '.tmp', 'site-settings');
+// Mantém o fallback sem I/O em disco para não depender do filesystem efémero da Vercel.
+const siteSettingsMemoryFallback = new Map<string, string>();
 const SITE_SETTINGS_DB_TIMEOUT_MS = 5000;
 
-function localSiteSettingFilePath(key: string) {
-  const safeKey = key.replace(/[^a-z0-9._-]/gi, '_') || 'setting';
-  return join(LOCAL_SITE_SETTINGS_DIR, `${safeKey}.json`);
-}
-
 async function readLocalSiteSettingValue(key: string) {
-  try {
-    return await readFile(localSiteSettingFilePath(key), 'utf8');
-  } catch {
-    return null;
-  }
+  return siteSettingsMemoryFallback.get(key) ?? null;
 }
 
 async function writeLocalSiteSettingValue(key: string, value: string) {
-  await mkdir(LOCAL_SITE_SETTINGS_DIR, { recursive: true });
-  await writeFile(localSiteSettingFilePath(key), value, 'utf8');
+  siteSettingsMemoryFallback.set(key, value);
 }
 
 async function withSiteSettingsDbTimeout<T>(operation: Promise<T>, label: string) {

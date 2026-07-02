@@ -343,10 +343,13 @@ describe('gallery route', () => {
     expect(cmsSource).toContain('return createGalleryMediaInStorage({ ...input, context: galleryContext });');
   });
 
-  it('uses a local site-settings fallback when the database is slow or unavailable', () => {
-    expect(cmsSource).toContain("const LOCAL_SITE_SETTINGS_DIR = join(process.cwd(), '.tmp', 'site-settings')");
+  it('uses an in-memory site-settings fallback when the database is slow or unavailable', () => {
+    expect(cmsSource).toContain('const siteSettingsMemoryFallback = new Map<string, string>()');
     expect(cmsSource).toContain('const SITE_SETTINGS_DB_TIMEOUT_MS = 5000');
+    expect(cmsSource).toContain('return siteSettingsMemoryFallback.get(key) ?? null');
+    expect(cmsSource).toContain('siteSettingsMemoryFallback.set(key, value)');
     expect(cmsSource).toContain('return readLocalSiteSettingValue(key)');
     expect(cmsSource).toContain('await writeLocalSiteSettingValue(key, value)');
+    expect(cmsSource).not.toContain("join(process.cwd(), '.tmp', 'site-settings')");
   });
 });
