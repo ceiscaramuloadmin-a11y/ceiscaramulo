@@ -111,7 +111,7 @@ type PublicationBatchItem = {
   file: File;
   previewUrl: string;
   title: string;
-  type: PublicationType;
+  type: GalleryMediaType;
   description: string;
 };
 
@@ -245,17 +245,6 @@ function galleryAcceptForTypes(types: GalleryMediaType[]) {
 
 function titleFromFileName(fileName: string) {
   return fileName.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Sem titulo';
-}
-
-function inferPublicationType(file: File): PublicationType {
-  const mimeType = file.type.toLowerCase();
-  const fileName = file.name.toLowerCase();
-
-  if (mimeType === 'application/pdf' || /\.pdf$/i.test(fileName)) return 'documento';
-  if (mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName)) return 'documento';
-  if (mimeType.startsWith('video/') || /\.(mp4|webm|mov|m4v)$/i.test(fileName)) return 'documento';
-  if (mimeType.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|oga|flac)$/i.test(fileName)) return 'documento';
-  return 'documento';
 }
 
 function previewKindForResourceFile(file: File): GalleryMediaType {
@@ -1585,7 +1574,7 @@ export default function BackofficePage() {
       file,
       previewUrl: URL.createObjectURL(file),
       title: titleFromFileName(file.name),
-      type: inferPublicationType(file),
+      type: previewKindForResourceFile(file),
       description: '',
     }));
 
@@ -1646,16 +1635,14 @@ export default function BackofficePage() {
       const uploadOne = async (item: PublicationBatchItem) => {
         const fd = new FormData();
         fd.append('title', item.title.trim());
-        fd.append('author', 'CEISCaramulo');
-        fd.append('year', String(new Date().getFullYear()));
+        fd.append('context', 'biblioteca');
         fd.append('type', item.type);
         fd.append('description', item.description.trim());
-        fd.append('downloadUrl', '');
         fd.append('published', 'true');
-        fd.append('document', item.file);
+        fd.append('sourceFile', item.file);
 
-        const result = await requestJsonWithUploadProgress<Publication>(
-          '/api/publications',
+        const result = await requestJsonWithUploadProgress<GalleryMediaItem>(
+          '/api/gallery',
           'POST',
           fd,
           headers,
@@ -1683,8 +1670,10 @@ export default function BackofficePage() {
 
       toast.success(`${publicationBatchItems.length} recurso(s) carregado(s) com sucesso.`);
       clearPublicationBatchItems();
-      setOperationProgress({ label: 'A atualizar recursos', percent: 95, detail: `${totalItems}/${totalItems} concluidos` });
-      await Promise.all([refreshContentSection('publications', true), refreshDashboardStats()]);
+      cachedGalleryItemsByContextRef.current.delete('biblioteca');
+      loadedGalleryContextsRef.current.delete('biblioteca');
+      setOperationProgress({ label: 'A atualizar conteúdos de recursos', percent: 95, detail: `${totalItems}/${totalItems} concluidos` });
+      await refreshDashboardStats();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha no carregamento em massa de recursos.');
     } finally {
@@ -2068,14 +2057,14 @@ export default function BackofficePage() {
                                   required
                                 />
                                 <label className="grid gap-1 text-sm text-stone-700">
-                                  Tipo de recurso
+                                  Tipo de conteúdo
                                   <select
                                     value={item.type}
-                                    onChange={(event) => updatePublicationBatchItem(item.id, { type: event.target.value as PublicationType })}
+                                    onChange={(event) => updatePublicationBatchItem(item.id, { type: event.target.value as GalleryMediaType })}
                                     className="h-10 rounded-lg border border-stone-300 px-3"
                                   >
-                                    {PUBLICATION_TYPE_OPTIONS.map((option) => (
-                                      <option key={option.value} value={option.value}>{option.label}</option>
+                                    {ALL_GALLERY_MEDIA_TYPES.map((type) => (
+                                      <option key={type} value={type}>{type === 'document' ? 'Documento' : galleryTypeLabel(type)}</option>
                                     ))}
                                   </select>
                                 </label>

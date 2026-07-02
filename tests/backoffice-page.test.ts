@@ -207,7 +207,12 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('function previewKindForResourceFile(file: File)');
     expect(backofficePageSource).toContain("label: 'A carregar lote de recursos'");
     expect(backofficePageSource).toContain("await runGalleryBatchQueue(publicationBatchItems, uploadOne, 1)");
-    expect(backofficePageSource).toContain("await Promise.all([refreshContentSection('publications', true), refreshDashboardStats()])");
+    expect(backofficePageSource).toContain("fd.append('context', 'biblioteca')");
+    expect(backofficePageSource).toContain("fd.append('sourceFile', item.file)");
+    expect(backofficePageSource).toContain("requestJsonWithUploadProgress<GalleryMediaItem>");
+    expect(backofficePageSource).toContain("'/api/gallery'");
+    expect(backofficePageSource).toContain("cachedGalleryItemsByContextRef.current.delete('biblioteca')");
+    expect(backofficePageSource).toContain("loadedGalleryContextsRef.current.delete('biblioteca')");
     expect(resourcesBlock).toContain('Carregamento em massa');
     expect(resourcesBlock).toContain('multiple');
     expect(resourcesBlock).toContain('accept={RESOURCE_ATTACHMENT_ACCEPT}');
@@ -215,6 +220,8 @@ describe('backoffice page guards', () => {
     expect(resourcesBlock).toContain('<video src={item.previewUrl}');
     expect(resourcesBlock).toContain('<audio src={item.previewUrl}');
     expect(resourcesBlock).toContain('Documento');
+    expect(resourcesBlock).toContain('Tipo de conteúdo');
+    expect(resourcesBlock).toContain('ALL_GALLERY_MEDIA_TYPES.map');
     expect(resourcesBlock).not.toContain('Autor ou entidade do lote');
     expect(resourcesBlock).not.toContain('Ano do lote');
     expect(resourcesBlock).toContain('Carregar lote de recursos');
