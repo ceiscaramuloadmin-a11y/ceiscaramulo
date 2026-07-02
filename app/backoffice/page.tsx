@@ -858,6 +858,9 @@ export default function BackofficePage() {
 
     if (activeGalleryConfig) {
       void refreshGallery();
+      if (activeSection === 'gallery-biblioteca') {
+        void refreshContentSection('publications');
+      }
     }
   }, [
     activeGalleryConfig,
@@ -1956,9 +1959,9 @@ export default function BackofficePage() {
         />
       ) : null}
 
-      {activeSection === 'publications' ? (
+      {(activeSection === 'publications' || activeSection === 'gallery-biblioteca') ? (
         <SectionLayout
-          title="Recursos"
+          title={activeSection === 'gallery-biblioteca' ? 'Lista de recursos' : 'Recursos'}
           description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio) ou link quando existir."
           newButtonLabel="Novo recurso"
           list={publications}

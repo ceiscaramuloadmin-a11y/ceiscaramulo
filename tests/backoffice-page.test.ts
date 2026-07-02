@@ -195,7 +195,7 @@ describe('backoffice page guards', () => {
 
   it('supports optimized batch uploads in the resources form', () => {
     const resourcesBlock = backofficePageSource.slice(
-      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'publications' || activeSection === 'gallery-biblioteca'"),
       backofficePageSource.indexOf("activeSection === 'contacts' ? (")
     );
 
@@ -231,7 +231,7 @@ describe('backoffice page guards', () => {
 
   it('keeps the resources editor practical for managing the public library', () => {
     const resourcesBlock = backofficePageSource.slice(
-      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'publications' || activeSection === 'gallery-biblioteca'"),
       backofficePageSource.indexOf("activeSection === 'contacts' ? (")
     );
 
@@ -244,9 +244,29 @@ describe('backoffice page guards', () => {
     expect(resourcesBlock).toContain('label="Capa (opcional)"');
   });
 
+  it('also shows the legacy resource catalogue form inside the Recursos media page', () => {
+    const resourcesBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf("activeSection === 'publications' || activeSection === 'gallery-biblioteca'"),
+      backofficePageSource.indexOf("activeSection === 'contacts' ? (")
+    );
+
+    expect(backofficePageSource).toContain("if (activeSection === 'gallery-biblioteca')");
+    expect(backofficePageSource).toContain("void refreshContentSection('publications')");
+    expect(resourcesBlock).toContain("title={activeSection === 'gallery-biblioteca' ? 'Lista de recursos' : 'Recursos'}");
+    expect(resourcesBlock).toContain('label="Autor ou entidade"');
+    expect(resourcesBlock).toContain('label="Ano"');
+    expect(resourcesBlock).toContain('Tipo de recurso');
+    expect(resourcesBlock).toContain('Selecionar tipo');
+    expect(backofficePageSource).toContain("{ value: 'documento', label: 'Documento' }");
+    expect(backofficePageSource).toContain("{ value: 'livro', label: 'Livro' }");
+    expect(backofficePageSource).toContain("{ value: 'artigo', label: 'Artigo' }");
+    expect(backofficePageSource).toContain("{ value: 'relatorio', label: 'Relat");
+    expect(backofficePageSource).toContain("{ value: 'tese', label: 'Tese' }");
+  });
+
   it('keeps resources always public and clears the resources form when creating a new item', () => {
     const resourcesBlock = backofficePageSource.slice(
-      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'publications' || activeSection === 'gallery-biblioteca'"),
       backofficePageSource.indexOf("activeSection === 'contacts' ? (")
     );
 
@@ -265,7 +285,7 @@ describe('backoffice page guards', () => {
 
   it('limits resource types to values accepted by the database', () => {
     const resourcesBlock = backofficePageSource.slice(
-      backofficePageSource.indexOf("activeSection === 'publications' ? ("),
+      backofficePageSource.indexOf("activeSection === 'publications' || activeSection === 'gallery-biblioteca'"),
       backofficePageSource.indexOf("activeSection === 'contacts' ? (")
     );
 
@@ -305,7 +325,7 @@ describe('backoffice page guards', () => {
     );
     const activitiesBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("activeSection === 'activities' ? ("),
-      backofficePageSource.indexOf("activeSection === 'publications' ? (")
+      backofficePageSource.indexOf("activeSection === 'publications' || activeSection === 'gallery-biblioteca'")
     );
 
     expect(newsBlock).toContain('Check label="Remover foto de capa atual"');
