@@ -76,7 +76,7 @@ export const sectionConfig: Record<ContentSection, SectionConfig> = {
     uploadField: 'image',
   },
   activities: {
-    listOrder: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { date: 'desc' }],
+    listOrder: [{ date: 'asc' }, { createdAt: 'desc' }],
     publicWhere: { published: true },
     findUnique: (identifier) => ({ id: identifier }),
     uploadField: 'image',

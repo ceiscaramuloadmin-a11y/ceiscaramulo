@@ -65,7 +65,7 @@ async function getPublicActivities() {
   try {
     const activities = await prisma.activity.findMany({
       where: { published: true },
-      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { date: 'desc' }],
+      orderBy: [{ date: 'asc' }, { createdAt: 'desc' }],
     });
     return activities.map((activity) => withPublicContentAsset('activities', activity));
   } catch (error) {
@@ -117,7 +117,22 @@ export default async function AtividadesPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+            <div className="space-y-10">
+              <section
+                aria-label="Calendário interativo de atividades"
+                className="rounded-2xl border border-border bg-card/40 p-5 shadow-sm backdrop-blur"
+              >
+                <div className="flex flex-col gap-2 pb-8 text-center sm:text-left">
+                  <h2 className="font-display text-2xl font-bold leading-tight text-foreground">
+                    Mapa rápido de datas
+                  </h2>
+                  <p className="max-w-xl text-sm text-muted-foreground">
+                    Dias com iniciativas publicadas ficam destacados. Clica para abrir a ficha quando existirem registos coincidentes.
+                  </p>
+                </div>
+                <ActivitiesMonthCalendar entries={calendarEntries} />
+              </section>
+
               <div className="grid gap-8 md:grid-cols-2">
               {activities.map((activity) => (
                 <Link
@@ -161,20 +176,6 @@ export default async function AtividadesPage() {
                 </Link>
               ))}
               </div>
-              <section
-                aria-label="Calendário interativo de atividades"
-                className="rounded-2xl border border-border bg-card/40 p-5 shadow-sm backdrop-blur lg:sticky lg:top-28"
-              >
-                <div className="flex flex-col gap-2 pb-8 text-center sm:text-left">
-                  <h2 className="font-display text-2xl font-bold leading-tight text-foreground">
-                    Mapa rápido de datas
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Dias com iniciativas publicadas ficam destacados. Clica para abrir a ficha quando existirem registos coincidentes.
-                  </p>
-                </div>
-                <ActivitiesMonthCalendar entries={calendarEntries} />
-              </section>
             </div>
           )}
         </div>
