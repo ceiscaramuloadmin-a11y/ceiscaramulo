@@ -7,7 +7,7 @@ type ContentSection = 'news' | 'activities' | 'projects' | 'publications';
 type ContentComment = {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   message: string;
   createdAt: string;
 };
@@ -23,7 +23,7 @@ export default function ContentComments({ section, identifier, title }: ContentC
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [form, setForm] = useState({ name: '', message: '' });
 
   const endpoint = useMemo(() => `/api/${section}/${identifier}/comments`, [section, identifier]);
 
@@ -87,7 +87,7 @@ export default function ContentComments({ section, identifier, title }: ContentC
 
       const createdComment = payload as ContentComment;
       setComments((current) => [createdComment, ...current]);
-      setForm({ name: '', email: '', message: '' });
+      setForm({ name: '', message: '' });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Erro inesperado ao enviar comentário.');
     } finally {
@@ -103,7 +103,7 @@ export default function ContentComments({ section, identifier, title }: ContentC
       <p className="mt-2 text-sm text-muted-foreground">Partilhe a sua opinião sobre “{title}”.</p>
 
       <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4">
           <label className="grid gap-2 text-sm text-muted-foreground">
             <span>Nome</span>
             <input
@@ -115,17 +115,6 @@ export default function ContentComments({ section, identifier, title }: ContentC
             />
           </label>
 
-          <label className="grid gap-2 text-sm text-muted-foreground">
-            <span>Email</span>
-            <input
-              required
-              type="email"
-              autoComplete="email"
-              value={form.email}
-              onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-              className={inputClassName}
-            />
-          </label>
         </div>
 
         <label className="grid gap-2 text-sm text-muted-foreground">
@@ -139,8 +128,7 @@ export default function ContentComments({ section, identifier, title }: ContentC
           />
         </label>
 
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">O email é usado apenas para validação e não é mostrado publicamente.</p>
+        <div className="flex items-center justify-end gap-4">
           <button
             type="submit"
             disabled={isSubmitting}

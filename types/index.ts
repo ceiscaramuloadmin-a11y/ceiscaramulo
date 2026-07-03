@@ -80,7 +80,7 @@ export interface ContentComment {
   contentId: string;
   contentTitle?: string | null;
   name: string;
-  email: string;
+  email?: string;
   message: string;
   createdAt: string;
 }

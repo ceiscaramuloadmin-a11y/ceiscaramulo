@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { findContent, isContentSection, isValidEmail, jsonError } from '@/app/api/_lib/cms';
+import { findContent, isContentSection, jsonError } from '@/app/api/_lib/cms';
 
 export const runtime = 'nodejs';
 
@@ -49,7 +49,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const body = await request.json().catch(() => ({}));
     const name = String(body?.name || '').trim();
-    const email = String(body?.email || '').trim().toLowerCase();
     const message = String(body?.message || '').trim();
 
     if (!name) {
@@ -60,16 +59,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return jsonError('A mensagem é obrigatória.', 400);
     }
 
-    if (!email || !isValidEmail(email)) {
-      return jsonError('Indique um email válido.', 400);
-    }
-
     const comment = await prisma.contentComment.create({
       data: {
         contentType: section,
         contentId: content.id,
         name,
-        email,
+        email: '',
         message,
       },
     });

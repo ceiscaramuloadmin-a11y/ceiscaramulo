@@ -2146,7 +2146,9 @@ export default function BackofficePage() {
                         {comment.contentTitle ? ` - ${comment.contentTitle}` : ''}
                       </p>
                       <h3 className="mt-1 text-sm font-semibold text-stone-900">{comment.name}</h3>
-                      <p className="text-xs text-stone-500">{comment.email} · {new Date(comment.createdAt).toLocaleString('pt-PT')}</p>
+                      <p className="text-xs text-stone-500">
+                        {[comment.email, new Date(comment.createdAt).toLocaleString('pt-PT')].filter(Boolean).join(' · ')}
+                      </p>
                     </div>
                     <button
                       type="button"
