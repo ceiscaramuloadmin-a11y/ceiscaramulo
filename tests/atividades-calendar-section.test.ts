@@ -14,20 +14,19 @@ describe('activities calendar section', () => {
     expect(pageSource).toContain('/atividades/${activity.id}');
     expect(pageSource).not.toContain('getActivitySlug');
     expect(pageSource).toContain('Mapa rápido de datas');
-    expect(pageSource).toContain('className="space-y-10"');
-    expect(pageSource).not.toContain('lg:grid-cols-[minmax(0,1fr)_20rem]');
-    expect(pageSource).not.toContain('lg:sticky lg:top-28');
-    expect(pageSource.indexOf('<ActivitiesMonthCalendar entries={calendarEntries} />')).toBeLessThan(
-      pageSource.indexOf('{activities.map((activity) => (')
+    expect(pageSource).toContain('lg:grid-cols-[minmax(0,1fr)_20rem]');
+    expect(pageSource).toContain('lg:sticky lg:top-28');
+    expect(pageSource.indexOf('{activities.map((activity) => (')).toBeLessThan(
+      pageSource.indexOf('<ActivitiesMonthCalendar entries={calendarEntries} />')
     );
-    expect(pageSource).toContain("orderBy: [{ date: 'asc' }, { createdAt: 'desc' }]");
+    expect(pageSource).toContain("orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]");
   });
 
   it('keeps the homepage activities section simple and calendar-free', () => {
     expect(homeSource).not.toContain('ActivitiesMonthCalendar');
     expect(homeSource).not.toContain('Calendário de atividades na página inicial');
     expect(homeSource).not.toContain('Próximas');
-    expect(homeSource).toContain("orderBy: [{ date: 'asc' }, { createdAt: 'desc' }]");
+    expect(homeSource).toContain("orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]");
     expect(homeSource).toContain('take: 3');
   });
 });
