@@ -24,8 +24,8 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
   });
 
-  it('shows the newest created news and activities first', () => {
-    expect(homePageSource).toContain("orderBy: [{ createdAt: 'desc' }, { publishedAt: 'desc' }]");
+  it('shows news by editorial publication date and activities by publication creation date', () => {
+    expect(homePageSource).toContain("orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
     expect(homePageSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
   });
 

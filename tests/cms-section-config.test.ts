@@ -15,8 +15,8 @@ describe('cms section configuration', () => {
     expect(cmsSource).toContain("listOrder: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
   });
 
-  it('orders activities by event date before technical creation date', () => {
-    expect(cmsSource).toContain("listOrder: [{ date: 'asc' }, { createdAt: 'desc' }]");
+  it('orders activities by publication creation date before event date', () => {
+    expect(cmsSource).toContain("listOrder: [{ createdAt: 'desc' }, { date: 'desc' }]");
   });
 
   it('bounds heavy admin listings so the backoffice does not pull unbounded database rows', () => {
