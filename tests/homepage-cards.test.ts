@@ -24,9 +24,9 @@ describe('homepage cards', () => {
     expect(homePageSource).toContain('richTextToPlainText(article.excerpt)');
   });
 
-  it('shows news by editorial publication date and activities by publication creation date', () => {
+  it('shows news by editorial publication date and activities by latest publication update', () => {
     expect(homePageSource).toContain("orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
-    expect(homePageSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
+    expect(homePageSource).toContain("orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { date: 'desc' }]");
   });
 
   it('limits homepage highlights to 3 activities and 3 news', () => {

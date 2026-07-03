@@ -16,14 +16,14 @@ describe('activities calendar section', () => {
     expect(pageSource).toContain('Mapa rápido de datas');
     expect(pageSource).toContain('lg:grid-cols-[minmax(0,1fr)_20rem]');
     expect(pageSource).toContain('lg:sticky lg:top-28');
-    expect(pageSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
+    expect(pageSource).toContain("orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { date: 'desc' }]");
   });
 
   it('keeps the homepage activities section simple and calendar-free', () => {
     expect(homeSource).not.toContain('ActivitiesMonthCalendar');
     expect(homeSource).not.toContain('Calendário de atividades na página inicial');
     expect(homeSource).not.toContain('Próximas');
-    expect(homeSource).toContain("orderBy: [{ createdAt: 'desc' }, { date: 'desc' }]");
+    expect(homeSource).toContain("orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { date: 'desc' }]");
     expect(homeSource).toContain('take: 3');
   });
 });

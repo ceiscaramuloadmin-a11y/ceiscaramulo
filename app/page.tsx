@@ -137,7 +137,7 @@ async function getPublicActivities() {
   try {
     const activities = await prisma.activity.findMany({
       where: { published: true },
-      orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { date: 'desc' }],
       take: 3,
     });
     return activities.map((activity) => withPublicContentAsset('activities', activity));
