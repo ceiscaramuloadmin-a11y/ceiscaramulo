@@ -26,6 +26,7 @@ export interface Activity {
   image?: string | null;
   location?: string | null;
   published: boolean;
+  sortOrder?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -39,6 +40,7 @@ export interface NewsArticle {
   image?: string | null;
   author: string;
   published: boolean;
+  sortOrder?: number;
   publishedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;

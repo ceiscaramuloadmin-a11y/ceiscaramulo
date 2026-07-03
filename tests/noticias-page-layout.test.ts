@@ -8,7 +8,7 @@ const noticiasPageSource = readFileSync(resolve(process.cwd(), 'app/noticias/pag
 
 describe('noticias page layout', () => {
   it('lists news by the editorial published date before technical creation date', () => {
-    expect(noticiasPageSource).toContain("orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
+    expect(noticiasPageSource).toContain("orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }]");
   });
 
   it('uses compact responsive cards for the news listing', () => {

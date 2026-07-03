@@ -19,14 +19,14 @@ describe('activities calendar section', () => {
     expect(pageSource.indexOf('{activities.map((activity) => (')).toBeLessThan(
       pageSource.indexOf('<ActivitiesMonthCalendar entries={calendarEntries} />')
     );
-    expect(pageSource).toContain("orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]");
+    expect(pageSource).toContain("orderBy: [{ sortOrder: 'asc' }, { date: 'desc' }, { createdAt: 'desc' }]");
   });
 
   it('keeps the homepage activities section simple and calendar-free', () => {
     expect(homeSource).not.toContain('ActivitiesMonthCalendar');
     expect(homeSource).not.toContain('Calendário de atividades na página inicial');
     expect(homeSource).not.toContain('Próximas');
-    expect(homeSource).toContain("orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]");
+    expect(homeSource).toContain("orderBy: [{ sortOrder: 'asc' }, { date: 'desc' }, { createdAt: 'desc' }]");
     expect(homeSource).toContain('take: 3');
   });
 });

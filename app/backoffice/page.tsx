@@ -1226,6 +1226,57 @@ export default function BackofficePage() {
     }
   }
 
+  async function moveContentItem(section: 'news' | 'activities', id: string, direction: 'up' | 'down') {
+    const currentList = section === 'news' ? news : activities;
+    const currentIndex = currentList.findIndex((item) => item.id === id);
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= currentList.length) {
+      return;
+    }
+
+    const nextList = [...currentList];
+    const [movedItem] = nextList.splice(currentIndex, 1);
+    nextList.splice(targetIndex, 0, movedItem);
+
+    if (section === 'news') {
+      setNews(nextList as NewsArticle[]);
+    } else {
+      setActivities(nextList as Activity[]);
+    }
+
+    setBusy(true);
+    try {
+      const headers = await authHeaders();
+      const response = await fetch(`/api/${section}/reorder`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: nextList.map((item, index) => ({
+            id: item.id,
+            sortOrder: index + 1,
+          })),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Erro ao guardar a ordenação.');
+      }
+
+      toast.success('Ordem atualizada com sucesso.');
+      await refreshContentSection(section, true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao atualizar a ordem.');
+      await refreshContentSection(section, true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function resetGalleryForm() {
     setGalleryEditingId(null);
     setGalleryForm({
@@ -1939,6 +1990,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setNewsForm({ title: '', excerpt: '', content: '', author: '', published: true, publishedAt: '', imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('news', item as NewsArticle)}
           onDelete={(id) => void deleteSectionItem('news', id)}
+          onMove={(id, direction) => void moveContentItem('news', id, direction)}
           form={
             <form className="space-y-3" onSubmit={(event) => void handleNewsSubmit(event)}>
               <Input label="Título" value={newsForm.title} onChange={(v) => setNewsForm((c) => ({ ...c, title: v }))} required />
@@ -1965,6 +2017,7 @@ export default function BackofficePage() {
           onNew={() => { setEditingId(null); setActivityForm({ title: '', description: '', date: '', endDate: '', location: '', category: 'evento', published: true, imageFile: null, removeImage: false }); }}
           onEdit={(item) => startEdit('activities', item as Activity)}
           onDelete={(id) => void deleteSectionItem('activities', id)}
+          onMove={(id, direction) => void moveContentItem('activities', id, direction)}
           form={
             <form className="space-y-3" onSubmit={(event) => void handleActivitySubmit(event)}>
               <Input label="Título" value={activityForm.title} onChange={(v) => setActivityForm((c) => ({ ...c, title: v }))} required />
@@ -3206,6 +3259,7 @@ function SectionLayout({
   form,
   onEdit,
   onDelete,
+  onMove,
   onNew,
   busy,
   loading = false,
@@ -3217,6 +3271,7 @@ function SectionLayout({
   form: React.ReactNode;
   onEdit: (item: { id: string; title?: string }) => void;
   onDelete: (id: string) => void;
+  onMove?: (id: string, direction: 'up' | 'down') => void;
   onNew: () => void;
   busy: boolean;
   loading?: boolean;
@@ -3244,10 +3299,30 @@ function SectionLayout({
         </div>
         <div className="space-y-3">
           {loading ? <SectionListSkeleton /> : null}
-          {list.map((item) => (
+          {list.map((item, index) => (
             <article key={item.id} className="rounded-lg border border-stone-200 p-3">
               <p className="font-medium text-[#0f4c36]">{item.title || item.id}</p>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
+                {onMove ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onMove(item.id, 'up')}
+                      disabled={busy || index === 0}
+                      className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+                    >
+                      Subir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onMove(item.id, 'down')}
+                      disabled={busy || index === list.length - 1}
+                      className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+                    >
+                      Descer
+                    </button>
+                  </>
+                ) : null}
                 <button type="button" onClick={() => onEdit(item)} disabled={busy} className="rounded border px-2 py-1 text-xs disabled:opacity-50">
                   Editar
                 </button>

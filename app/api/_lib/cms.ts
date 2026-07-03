@@ -70,13 +70,13 @@ const REQUESTED_FOOTER_BRAND_DESCRIPTION = '';
 // Configuração transversal por secção.
 export const sectionConfig: Record<ContentSection, SectionConfig> = {
   news: {
-    listOrder: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+    listOrder: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }],
     publicWhere: { published: true },
     findUnique: (identifier) => ({ OR: [{ id: identifier }, { slug: identifier }] }),
     uploadField: 'image',
   },
   activities: {
-    listOrder: [{ date: 'desc' }, { createdAt: 'desc' }],
+    listOrder: [{ sortOrder: 'asc' }, { date: 'desc' }, { createdAt: 'desc' }],
     publicWhere: { published: true },
     findUnique: (identifier) => ({ id: identifier }),
     uploadField: 'image',

@@ -592,6 +592,15 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Exportar CSV');
   });
 
+  it('adds lightweight manual ordering controls for news and activities', () => {
+    expect(backofficePageSource).toContain("async function moveContentItem(section: 'news' | 'activities'");
+    expect(backofficePageSource).toContain("fetch(`/api/${section}/reorder`");
+    expect(backofficePageSource).toContain("onMove={(id, direction) => void moveContentItem('news', id, direction)}");
+    expect(backofficePageSource).toContain("onMove={(id, direction) => void moveContentItem('activities', id, direction)}");
+    expect(backofficePageSource).toContain('Subir');
+    expect(backofficePageSource).toContain('Descer');
+  });
+
   it('sends runtime backoffice sign out to Auth0 login without using the failing logout endpoint', () => {
     const signOutBlock = backofficePageSource.slice(
       backofficePageSource.indexOf('await adminAuthClient.adapter.signOut();'),

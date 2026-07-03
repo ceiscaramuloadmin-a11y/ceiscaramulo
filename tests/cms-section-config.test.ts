@@ -9,14 +9,23 @@ const sectionRouteSource = readFileSync(resolve(process.cwd(), 'app/api/[section
 const galleryRouteSource = readFileSync(resolve(process.cwd(), 'app/api/gallery/route.ts'), 'utf8');
 const contactMessagesRouteSource = readFileSync(resolve(process.cwd(), 'app/api/admin/contact-messages/route.ts'), 'utf8');
 const auditRouteSource = readFileSync(resolve(process.cwd(), 'app/api/admin/audit/route.ts'), 'utf8');
+const prismaSchemaSource = readFileSync(resolve(process.cwd(), 'prisma/schema.prisma'), 'utf8');
+const reorderMigrationSource = readFileSync(resolve(process.cwd(), 'prisma/migrations/20260703230000_add_manual_sort_order/migration.sql'), 'utf8');
 
 describe('cms section configuration', () => {
   it('orders news by editorial publication date before technical creation date', () => {
-    expect(cmsSource).toContain("listOrder: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
+    expect(cmsSource).toContain("listOrder: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }]");
   });
 
   it('orders activities chronologically from newest event date to oldest', () => {
-    expect(cmsSource).toContain("listOrder: [{ date: 'desc' }, { createdAt: 'desc' }]");
+    expect(cmsSource).toContain("listOrder: [{ sortOrder: 'asc' }, { date: 'desc' }, { createdAt: 'desc' }]");
+  });
+
+  it('keeps manual ordering lightweight in the database', () => {
+    expect(prismaSchemaSource).toContain('sortOrder   Int');
+    expect(reorderMigrationSource).toContain('ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0');
+    expect(reorderMigrationSource).toContain('CREATE INDEX "news_sortOrder_idx"');
+    expect(reorderMigrationSource).toContain('CREATE INDEX "activities_sortOrder_idx"');
   });
 
   it('bounds heavy admin listings so the backoffice does not pull unbounded database rows', () => {

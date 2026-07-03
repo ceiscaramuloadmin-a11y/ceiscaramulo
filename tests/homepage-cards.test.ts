@@ -25,8 +25,8 @@ describe('homepage cards', () => {
   });
 
   it('shows news by editorial publication date and activities from newest event date to oldest', () => {
-    expect(homePageSource).toContain("orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
-    expect(homePageSource).toContain("orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]");
+    expect(homePageSource).toContain("orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }]");
+    expect(homePageSource).toContain("orderBy: [{ sortOrder: 'asc' }, { date: 'desc' }, { createdAt: 'desc' }]");
   });
 
   it('limits homepage highlights to 3 activities and 3 news', () => {
