@@ -163,7 +163,7 @@ export default async function AtividadesPage() {
               </div>
               <section
                 aria-label="Calendário interativo de atividades"
-                className="rounded-2xl border border-border bg-card/40 p-5 shadow-sm backdrop-blur lg:sticky lg:top-28"
+                className="rounded-2xl border border-border bg-card/40 p-5 shadow-sm backdrop-blur"
               >
                 <div className="flex flex-col gap-2 pb-8 text-center sm:text-left">
                   <h2 className="font-display text-2xl font-bold leading-tight text-foreground">

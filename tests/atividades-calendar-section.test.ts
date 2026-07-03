@@ -15,7 +15,7 @@ describe('activities calendar section', () => {
     expect(pageSource).not.toContain('getActivitySlug');
     expect(pageSource).toContain('Mapa rápido de datas');
     expect(pageSource).toContain('lg:grid-cols-[minmax(0,1fr)_20rem]');
-    expect(pageSource).toContain('lg:sticky lg:top-28');
+    expect(pageSource).not.toContain('lg:sticky lg:top-28');
     expect(pageSource.indexOf('{activities.map((activity) => (')).toBeLessThan(
       pageSource.indexOf('<ActivitiesMonthCalendar entries={calendarEntries} />')
     );
