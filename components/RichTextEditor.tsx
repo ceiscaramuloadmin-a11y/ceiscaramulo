@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   AudioLines,
   Bold,
+  FileText,
   Image as ImageIcon,
   Italic,
   Link as LinkIcon,
@@ -26,13 +27,14 @@ type RichTextEditorProps = {
   fullscreenEnabled?: boolean;
 };
 
-type MediaKind = 'image' | 'audio' | 'video';
+type MediaKind = 'image' | 'audio' | 'video' | 'document';
 
 export default function RichTextEditor({ label, value, onChange, onUploadMedia, fullscreenEnabled = false }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const documentInputRef = useRef<HTMLInputElement | null>(null);
   const selectionRef = useRef<Range | null>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
@@ -171,6 +173,7 @@ export default function RichTextEditor({ label, value, onChange, onUploadMedia, 
       image: `<figure><img src="${sourceUrl}" alt="${escapedName}" /><figcaption>${escapedName}</figcaption></figure>`,
       audio: `<figure><audio controls src="${sourceUrl}"></audio><figcaption>${escapedName}</figcaption></figure>`,
       video: `<figure><video controls src="${sourceUrl}"></video><figcaption>${escapedName}</figcaption></figure>`,
+      document: `<figure><a href="${sourceUrl}" target="_blank" rel="noopener noreferrer">${escapedName}</a></figure>`,
     };
 
     editorRef.current?.focus();
@@ -248,6 +251,7 @@ export default function RichTextEditor({ label, value, onChange, onUploadMedia, 
           <ToolbarButton label="Inserir imagem" onClick={() => imageInputRef.current?.click()}><ImageIcon className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Inserir áudio" onClick={() => audioInputRef.current?.click()}><AudioLines className="h-4 w-4" /></ToolbarButton>
           <ToolbarButton label="Inserir vídeo" onClick={() => videoInputRef.current?.click()}><Video className="h-4 w-4" /></ToolbarButton>
+          <ToolbarButton label="Inserir PDF" onClick={() => documentInputRef.current?.click()}><FileText className="h-4 w-4" /></ToolbarButton>
         </div>
 
         <div
@@ -288,6 +292,13 @@ export default function RichTextEditor({ label, value, onChange, onUploadMedia, 
         accept="video/*"
         className="hidden"
         onChange={(event) => handleFileChange(event.target.files?.[0], 'video', insertMedia, event.currentTarget)}
+      />
+      <input
+        ref={documentInputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="hidden"
+        onChange={(event) => handleFileChange(event.target.files?.[0], 'document', insertMedia, event.currentTarget)}
       />
     </div>
   );

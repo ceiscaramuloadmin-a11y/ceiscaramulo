@@ -153,4 +153,29 @@ describe('RichTextEditor', () => {
       );
     });
   });
+
+  it('uploads PDF documents and inserts a link instead of inline file data', async () => {
+    const execCommand = vi.fn();
+    const uploadMedia = vi.fn().mockResolvedValue('/uploads/backoffice/rich-text-news-document/catalogo.pdf');
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    render(<RichTextEditor label="Conteúdo" value="<p>Texto</p>" onChange={vi.fn()} onUploadMedia={uploadMedia} />);
+
+    const input = document.querySelector('input[accept="application/pdf,.pdf"]') as HTMLInputElement;
+    const file = new File(['pdf'], 'catalogo.pdf', { type: 'application/pdf' });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(uploadMedia).toHaveBeenCalledWith(file, 'document');
+      expect(execCommand).toHaveBeenCalledWith(
+        'insertHTML',
+        false,
+        '<figure><a href="/uploads/backoffice/rich-text-news-document/catalogo.pdf" target="_blank" rel="noopener noreferrer">catalogo.pdf</a></figure>'
+      );
+    });
+  });
 });

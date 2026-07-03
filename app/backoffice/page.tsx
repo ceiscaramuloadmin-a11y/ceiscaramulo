@@ -642,7 +642,7 @@ export default function BackofficePage() {
   );
 
   const uploadRichTextMedia = useCallback(
-    async (section: ContentSection, file: File, kind: 'image' | 'audio' | 'video') => {
+    async (section: ContentSection, file: File, kind: 'image' | 'audio' | 'video' | 'document') => {
       const fd = new FormData();
       fd.append('section', section);
       fd.append('kind', kind);

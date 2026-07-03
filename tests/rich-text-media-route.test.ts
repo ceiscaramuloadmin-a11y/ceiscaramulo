@@ -93,6 +93,30 @@ describe('rich text media upload route', () => {
     expect(storeUploadedFile).not.toHaveBeenCalled();
   });
 
+  it('stores news editor PDFs as document upload URLs', async () => {
+    storeUploadedFile.mockResolvedValue('/uploads/backoffice/rich-text-news-document/catalogo.pdf');
+
+    const { POST } = await import('@/app/api/content-assets/rich-text/route');
+    const formData = new FormData();
+    const file = new File(['pdf'], 'catalogo.pdf', { type: 'application/pdf' });
+
+    formData.set('section', 'news');
+    formData.set('kind', 'document');
+    formData.set('file', file);
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/content-assets/rich-text', {
+        method: 'POST',
+        body: formData,
+      })
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      url: '/uploads/backoffice/rich-text-news-document/catalogo.pdf',
+    });
+    expect(storeUploadedFile).toHaveBeenCalledWith(file, 'rich-text-news-document');
+  });
+
   it('rejects media that does not match the declared kind', async () => {
     const { POST } = await import('@/app/api/content-assets/rich-text/route');
     const formData = new FormData();

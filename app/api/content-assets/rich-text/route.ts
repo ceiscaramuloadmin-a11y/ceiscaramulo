@@ -15,6 +15,7 @@ const ACCEPTED_MEDIA = {
   image: 'image/',
   audio: 'audio/',
   video: 'video/',
+  document: 'application/pdf',
 } as const;
 
 const INLINE_RICH_TEXT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
@@ -55,7 +56,10 @@ export async function POST(request: NextRequest) {
       return jsonError('Ficheiro obrigatório.', 400);
     }
 
-    if (!file.type.startsWith(ACCEPTED_MEDIA[kind])) {
+    const expectedType = ACCEPTED_MEDIA[kind];
+    const matchesExpectedType = expectedType.endsWith('/') ? file.type.startsWith(expectedType) : file.type === expectedType;
+
+    if (!matchesExpectedType) {
       return jsonError('O ficheiro não corresponde ao tipo de media escolhido.', 400);
     }
 
