@@ -592,6 +592,19 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Exportar CSV');
   });
 
+  it('keeps backoffice sign out local so Auth0 logout errors do not block admins', () => {
+    const signOutBlock = backofficePageSource.slice(
+      backofficePageSource.indexOf('await adminAuthClient.adapter.signOut();'),
+      backofficePageSource.indexOf('{operationProgress ?')
+    );
+
+    expect(backofficePageSource).not.toContain('AUTH0_ADMIN_LOGOUT_PATH');
+    expect(signOutBlock).toContain('await adminAuthClient.adapter.signOut()');
+    expect(signOutBlock).toContain("router.replace('/backoffice/login')");
+    expect(signOutBlock).not.toContain('window.location.assign');
+    expect(signOutBlock).not.toContain('/auth/logout');
+  });
+
   it('keeps page media editing lightweight after admin listings replace data URLs with asset routes', () => {
     const startEditGalleryBlock = backofficePageSource.slice(
       backofficePageSource.indexOf('function startEditGallery'),

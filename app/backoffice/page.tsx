@@ -5,7 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { AUTH0_ADMIN_LOGOUT_PATH, adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
+import { adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
 import RichTextEditor from '@/components/RichTextEditor';
 import { backofficePrimaryActionLabel } from '@/lib/backoffice-primary-label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1806,12 +1806,7 @@ export default function BackofficePage() {
               type="button"
               onClick={async () => {
                 await adminAuthClient.adapter.signOut();
-                if (exportAuthMode || typeof window === 'undefined') {
-                  router.replace('/backoffice/login');
-                  return;
-                }
-
-                window.location.assign(AUTH0_ADMIN_LOGOUT_PATH);
+                router.replace('/backoffice/login');
               }}
               className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
             >
