@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 const noticiasPageSource = readFileSync(resolve(process.cwd(), 'app/noticias/page.tsx'), 'utf8');
 
 describe('noticias page layout', () => {
-  it('lists the newest created news first on the public page', () => {
-    expect(noticiasPageSource).toContain("orderBy: [{ createdAt: 'desc' }, { publishedAt: 'desc' }]");
+  it('lists news by the editorial published date before technical creation date', () => {
+    expect(noticiasPageSource).toContain("orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
   });
 
   it('uses compact responsive cards for the news listing', () => {

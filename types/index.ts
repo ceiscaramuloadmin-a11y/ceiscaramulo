@@ -78,9 +78,16 @@ export interface ContentComment {
   id: string;
   contentType: ContentSection;
   contentId: string;
+  contentTitle?: string | null;
   name: string;
   email: string;
   message: string;
+  createdAt: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
   createdAt: string;
 }
 

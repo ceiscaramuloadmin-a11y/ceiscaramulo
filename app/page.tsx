@@ -102,7 +102,7 @@ async function getPublicNews() {
   try {
     const news = await prisma.news.findMany({
       where: { published: true },
-      orderBy: [{ createdAt: 'desc' }, { publishedAt: 'desc' }],
+      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
       take: 3,
     });
     return news.map((article) => withPublicContentAsset('news', article));
@@ -137,7 +137,7 @@ async function getPublicActivities() {
   try {
     const activities = await prisma.activity.findMany({
       where: { published: true },
-      orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
+      orderBy: [{ date: 'asc' }, { createdAt: 'desc' }],
       take: 3,
     });
     return activities.map((activity) => withPublicContentAsset('activities', activity));

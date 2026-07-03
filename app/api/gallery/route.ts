@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
     const published = normalizeBoolean(formData.get('published'));
     const sourceUrl = String(formData.get('sourceUrl') || '').trim();
     const thumbUrl = String(formData.get('thumbnailUrl') || '').trim();
+    const mimeType = String(formData.get('mimeType') || '').trim() || null;
 
     const sourceFileRaw = formData.get('sourceFile');
     const sourceFile = sourceFileRaw instanceof File && sourceFileRaw.size > 0 ? sourceFileRaw : null;
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       context: galleryContext,
       source,
       thumbnail,
-      mimeType: sourceFile?.type || null,
+      mimeType: sourceFile?.type || mimeType,
       published,
     });
 

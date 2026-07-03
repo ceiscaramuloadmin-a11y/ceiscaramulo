@@ -1,5 +1,6 @@
 'use client';
 
+import { upload } from '@vercel/blob/client';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ import type {
   AdminUser,
   AuditLogEntry,
   ContactMessage,
+  ContentComment,
   ContentSection,
   FooterContactSettings,
   GalleryMediaItem,
@@ -33,6 +35,7 @@ import type {
   ActivityCategory,
   LayoutIconName,
   NewsArticle,
+  NewsletterSubscriber,
   Publication,
   PublicationType,
   SiteLayoutSettings,
@@ -48,7 +51,7 @@ type ProgrammeGallerySectionId =
   | 'gallery-publicacoes'
   | 'gallery-biblioteca';
 type GallerySectionId = 'gallery' | ProgrammeGallerySectionId;
-type SectionId = 'overview' | 'profile' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | ContentSection | GallerySectionId;
+type SectionId = 'overview' | 'profile' | 'about' | 'admins' | 'audit' | 'layout' | 'contacts' | 'comments' | 'newsletter' | ContentSection | GallerySectionId;
 type AppearanceTab = 'pages' | 'footer' | 'icons' | 'colors' | 'logos' | 'seo';
 type AppearancePageKey = keyof SiteLayoutSettings['pages'];
 type DashboardStats = {
@@ -87,6 +90,8 @@ const BACKOFFICE_NAV_ITEMS: Array<{ id: SectionId; label: string }> = [
   { id: 'layout', label: 'Aparência' },
   { id: 'admins', label: 'Admins' },
   { id: 'contacts', label: 'Mensagens' },
+  { id: 'comments', label: 'Comentários' },
+  { id: 'newsletter', label: 'Newsletter' },
   { id: 'audit', label: 'Histórico' },
 ];
 
@@ -132,6 +137,8 @@ const ADMIN_CONTENT_LIST_LIMIT = 80;
 const ADMIN_CONTACT_MESSAGES_LIMIT = 80;
 const ADMIN_AUDIT_LIMIT = 100;
 const ADMIN_GALLERY_LIST_LIMIT = 120;
+const ADMIN_COMMENTS_LIMIT = 120;
+const ADMIN_NEWSLETTER_LIMIT = 300;
 
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
@@ -150,7 +157,6 @@ const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasE
 ];
 
 const ALL_GALLERY_MEDIA_TYPES: GalleryMediaType[] = ['photo', 'video', 'audio', 'document'];
-const SALES_GALLERY_MEDIA_TYPES: GalleryMediaType[] = ['photo', 'document'];
 
 const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: string; context: string; description: string; allowedTypes?: GalleryMediaType[] }> = {
   'gallery-oficina-do-burel': {
@@ -161,8 +167,7 @@ const PROGRAMME_GALLERY_SECTIONS: Record<ProgrammeGallerySectionId, { label: str
   'gallery-artigos-para-venda': {
     label: 'Artigos para venda',
     context: 'artigos-para-venda',
-    allowedTypes: SALES_GALLERY_MEDIA_TYPES,
-    description: 'Fotografias e documentos associados à página Artigos para venda.',
+    description: 'Fotografias, vídeos, áudios e documentos associados à página Artigos para venda.',
   },
   'gallery-biblioteca-jrs': {
     label: 'Biblioteca JRS',
@@ -271,6 +276,19 @@ function isGalleryAssetRoute(value: string) {
   return value.trim().startsWith('/api/gallery/assets/');
 }
 
+function sanitizeUploadFileName(value: string) {
+  const [name = 'ficheiro', ...rest] = value.split('.');
+  const extension = rest.length ? `.${rest.at(-1)?.replace(/[^a-z0-9]/gi, '').toLowerCase()}` : '';
+  const safeName = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'ficheiro';
+
+  return `${safeName}${extension}`;
+}
+
 type UploadProgress = {
   label: string;
   percent: number;
@@ -322,7 +340,7 @@ function requestJsonWithUploadProgress<T>(
       }
 
       if (request.status === 413) {
-        reject(new Error('O ficheiro é demasiado grande para ser enviado de uma vez. Usa um PDF/imagem mais leve ou coloca o ficheiro por URL.'));
+        reject(new Error('O ficheiro é demasiado grande para ser enviado de uma vez. Usa um ficheiro mais leve ou coloca o ficheiro por URL.'));
         return;
       }
 
@@ -366,6 +384,8 @@ export default function BackofficePage() {
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [isLoadingGovernance, setIsLoadingGovernance] = useState(true);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
+  const [isLoadingComments, setIsLoadingComments] = useState(true);
+  const [isLoadingNewsletter, setIsLoadingNewsletter] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
   const [isLoadingLayout, setIsLoadingLayout] = useState(true);
   const [operationProgress, setOperationProgress] = useState<UploadProgress | null>(null);
@@ -374,6 +394,8 @@ export default function BackofficePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [contentComments, setContentComments] = useState<ContentComment[]>([]);
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryMediaItem[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
@@ -424,6 +446,8 @@ export default function BackofficePage() {
   const loadedAdminUsersRef = useRef(false);
   const loadedAuditLogsRef = useRef(false);
   const loadedContactMessagesRef = useRef(false);
+  const loadedCommentsRef = useRef(false);
+  const loadedNewsletterRef = useRef(false);
   const loadedLayoutRef = useRef(false);
   const loadedGalleryContextsRef = useRef<Set<string>>(new Set());
   const cachedGalleryItemsByContextRef = useRef<Map<string, GalleryMediaItem[]>>(new Map());
@@ -535,7 +559,18 @@ export default function BackofficePage() {
       }
     }
 
-    if (currentAdmin.role === 'owner' || permissionSet.has('contacts')) sections.push('contacts');
+    if (currentAdmin.role === 'owner' || permissionSet.has('contacts')) {
+      sections.push('contacts');
+      sections.push('newsletter');
+    }
+    if (
+      currentAdmin.role === 'owner' ||
+      permissionSet.has('news') ||
+      permissionSet.has('activities') ||
+      permissionSet.has('publications')
+    ) {
+      sections.push('comments');
+    }
     if (currentAdmin.role === 'owner' || permissionSet.has('gallery')) {
       sections.push(...(Object.keys(PROGRAMME_GALLERY_SECTIONS) as ProgrammeGallerySectionId[]));
     }
@@ -636,6 +671,29 @@ export default function BackofficePage() {
     [authHeaders]
   );
 
+  const uploadGalleryFileToBlob = useCallback(
+    async (file: File, galleryContext: string, onProgress?: (percent: number) => void) => {
+      const safeContext = galleryContext.replace(/[^a-z0-9-]/g, '-') || 'global';
+      const safeName = sanitizeUploadFileName(file.name || 'ficheiro');
+      const pathname = `backoffice/gallery-${safeContext}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+
+      const blob = await upload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/gallery/client-upload',
+        contentType: file.type || undefined,
+        onUploadProgress: (event) => {
+          if (event.total) {
+            onProgress?.(clampProgress((event.loaded / event.total) * 100));
+          }
+        },
+      });
+
+      onProgress?.(100);
+      return blob.url;
+    },
+    []
+  );
+
   const refreshDashboardStats = useCallback(async () => {
     setIsLoadingDashboardStats(true);
     const data = await fetchAdminEndpoint<DashboardStats>('/api/admin/stats').catch(() => null);
@@ -709,6 +767,30 @@ export default function BackofficePage() {
     setIsLoadingContacts(false);
   }, [fetchAdminEndpoint]);
 
+  const refreshContentComments = useCallback(async (force = false) => {
+    if (!force && loadedCommentsRef.current) {
+      return;
+    }
+
+    setIsLoadingComments(true);
+    const data = await fetchAdminEndpoint<ContentComment[]>(`/api/admin/comments?limit=${ADMIN_COMMENTS_LIMIT}`).catch(() => []);
+    setContentComments(data);
+    loadedCommentsRef.current = true;
+    setIsLoadingComments(false);
+  }, [fetchAdminEndpoint]);
+
+  const refreshNewsletterSubscribers = useCallback(async (force = false) => {
+    if (!force && loadedNewsletterRef.current) {
+      return;
+    }
+
+    setIsLoadingNewsletter(true);
+    const data = await fetchAdminEndpoint<NewsletterSubscriber[]>(`/api/admin/newsletter?limit=${ADMIN_NEWSLETTER_LIMIT}`).catch(() => []);
+    setNewsletterSubscribers(data);
+    loadedNewsletterRef.current = true;
+    setIsLoadingNewsletter(false);
+  }, [fetchAdminEndpoint]);
+
   const refreshLayout = useCallback(async (force = false) => {
     if (!force && loadedLayoutRef.current) {
       return;
@@ -762,6 +844,8 @@ export default function BackofficePage() {
           setIsLoadingContent(false);
           setIsLoadingGovernance(false);
           setIsLoadingContacts(false);
+          setIsLoadingComments(false);
+          setIsLoadingNewsletter(false);
           setIsLoadingGallery(false);
           setIsLoadingLayout(false);
           return;
@@ -784,6 +868,8 @@ export default function BackofficePage() {
         setIsLoadingContent(false);
         setIsLoadingGovernance(false);
         setIsLoadingContacts(false);
+        setIsLoadingComments(false);
+        setIsLoadingNewsletter(false);
         setIsLoadingGallery(false);
         setIsLoadingLayout(false);
       }
@@ -809,6 +895,44 @@ export default function BackofficePage() {
     }
   }
 
+  async function deleteContentComment(id: string) {
+    if (!window.confirm('Tens a certeza de que queres eliminar este comentário?')) return;
+
+    setBusy(true);
+
+    try {
+      await fetchAdminEndpoint<null>(`/api/admin/comments?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      toast.success('Comentário eliminado com sucesso.');
+      await refreshContentComments(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao eliminar comentário.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function exportNewsletterSubscribers() {
+    try {
+      const headers = await authHeaders();
+      const response = await fetch(`/api/admin/newsletter?format=csv&limit=${ADMIN_NEWSLETTER_LIMIT}`, { headers });
+      const csv = await response.text();
+
+      if (!response.ok) {
+        throw new Error(csv || 'Falha ao exportar newsletter.');
+      }
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'newsletter-ceiscaramulo.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao exportar newsletter.');
+    }
+  }
+
   useEffect(() => {
     if (!availableSections.includes(activeSection)) {
       setActiveSection('overview');
@@ -827,6 +951,16 @@ export default function BackofficePage() {
 
     if (activeSection === 'contacts') {
       void refreshContactMessages();
+      return;
+    }
+
+    if (activeSection === 'comments') {
+      void refreshContentComments();
+      return;
+    }
+
+    if (activeSection === 'newsletter') {
+      void refreshNewsletterSubscribers();
       return;
     }
 
@@ -858,7 +992,9 @@ export default function BackofficePage() {
     refreshAdminUsers,
     refreshAuditLogs,
     refreshContentSection,
+    refreshContentComments,
     refreshContactMessages,
+    refreshNewsletterSubscribers,
     refreshGallery,
     refreshLayout,
   ]);
@@ -1053,7 +1189,7 @@ export default function BackofficePage() {
 
       if (!response.ok) {
         if (response.status === 413) {
-          throw new Error('O ficheiro é demasiado grande para ser enviado de uma vez. Usa um PDF/imagem mais leve ou coloca o ficheiro por URL.');
+          throw new Error('O ficheiro é demasiado grande para ser enviado de uma vez. Usa um ficheiro mais leve ou coloca o ficheiro por URL.');
         }
 
         throw new Error(payload?.message || responseText.trim() || 'Erro ao guardar registo.');
@@ -1207,15 +1343,34 @@ export default function BackofficePage() {
       });
 
       const fd = new FormData();
+      const galleryContext = activeGalleryConfig?.context || 'global';
+      const sourceUrl = galleryForm.sourceFile
+        ? await uploadGalleryFileToBlob(galleryForm.sourceFile, galleryContext, (percent) =>
+            setOperationProgress({
+              label: galleryEditingId ? 'A enviar ficheiro para Blob' : 'A enviar ficheiro para Blob',
+              percent,
+              detail: uploadDetail,
+            })
+          )
+        : galleryForm.sourceUrl;
+      const thumbnailUrl = galleryForm.thumbnailFile
+        ? await uploadGalleryFileToBlob(galleryForm.thumbnailFile, `${galleryContext}-thumbnails`, (percent) =>
+            setOperationProgress({
+              label: 'A enviar thumbnail para Blob',
+              percent,
+              detail: galleryForm.thumbnailFile?.name || uploadDetail,
+            })
+          )
+        : galleryForm.thumbnailUrl;
+
       fd.append('context', activeGalleryConfig?.context || 'global');
       fd.append('title', galleryForm.title);
       fd.append('description', galleryForm.description);
       fd.append('type', galleryForm.type);
-      fd.append('sourceUrl', galleryForm.sourceUrl);
-      fd.append('thumbnailUrl', galleryForm.thumbnailUrl);
+      fd.append('sourceUrl', sourceUrl);
+      fd.append('thumbnailUrl', thumbnailUrl);
+      fd.append('mimeType', galleryForm.sourceFile?.type || '');
       fd.append('published', String(galleryForm.published));
-      if (galleryForm.sourceFile) fd.append('sourceFile', galleryForm.sourceFile);
-      if (galleryForm.thumbnailFile) fd.append('thumbnailFile', galleryForm.thumbnailFile);
 
       const headers = await authHeaders();
       await requestJsonWithUploadProgress<GalleryMediaItem>(
@@ -1336,13 +1491,23 @@ export default function BackofficePage() {
       });
 
       const uploadOne = async (item: (typeof galleryBatchItems)[number]) => {
+        const sourceUrl = await uploadGalleryFileToBlob(item.file, galleryContext, (filePercent) => {
+          const overallPercent = ((completedItems + filePercent / 100) / totalItems) * 100;
+          setOperationProgress({
+            label: 'A carregar lote da galeria',
+            percent: clampProgress(overallPercent),
+            detail: `${completedItems}/${totalItems} concluidos - ${item.file.name}`,
+          });
+        });
+
         const fd = new FormData();
         fd.append('title', item.title.trim());
         fd.append('description', item.description.trim());
         fd.append('type', item.type);
         fd.append('context', galleryContext);
         fd.append('published', String(item.published));
-        fd.append('sourceFile', item.file);
+        fd.append('sourceUrl', sourceUrl);
+        fd.append('mimeType', item.file.type || '');
 
         const result = await requestJsonWithUploadProgress<GalleryMediaItem>(
           '/api/gallery',
@@ -1941,6 +2106,111 @@ export default function BackofficePage() {
               ) : null}
             </div>
           </div>
+        </section>
+      ) : null}
+
+      {activeSection === 'comments' ? (
+        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-[#0f4c36]">Comentários públicos</h2>
+              <p className="mt-1 text-sm text-stone-600">Comentários deixados em notícias, atividades e recursos.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refreshContentComments(true)}
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700"
+              disabled={busy}
+            >
+              Atualizar
+            </button>
+          </div>
+
+          {isLoadingComments ? (
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full rounded-lg" />
+              <Skeleton className="h-20 w-full rounded-lg" />
+            </div>
+          ) : contentComments.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500">
+              Ainda não existem comentários públicos.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {contentComments.map((comment) => (
+                <article key={comment.id} className="rounded-lg border border-stone-200 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.12em] text-stone-500">
+                        {comment.contentType === 'news' ? 'Notícia' : comment.contentType === 'activities' ? 'Atividade' : 'Recurso'}
+                        {comment.contentTitle ? ` - ${comment.contentTitle}` : ''}
+                      </p>
+                      <h3 className="mt-1 text-sm font-semibold text-stone-900">{comment.name}</h3>
+                      <p className="text-xs text-stone-500">{comment.email} · {new Date(comment.createdAt).toLocaleString('pt-PT')}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void deleteContentComment(comment.id)}
+                      className="rounded-lg border border-rose-300 px-3 py-2 text-sm text-rose-700"
+                      disabled={busy}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-stone-700">{comment.message}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      {activeSection === 'newsletter' ? (
+        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[#0f4c36]">Newsletter</h2>
+              <p className="mt-1 text-sm text-stone-600">Emails registados pelo formulário público da newsletter.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void refreshNewsletterSubscribers(true)}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700"
+                disabled={busy}
+              >
+                Atualizar
+              </button>
+              <button
+                type="button"
+                onClick={() => void exportNewsletterSubscribers()}
+                className="rounded-lg bg-[#0f4c36] px-3 py-2 text-sm text-white"
+                disabled={busy || newsletterSubscribers.length === 0}
+              >
+                Exportar CSV
+              </button>
+            </div>
+          </div>
+
+          {isLoadingNewsletter ? (
+            <div className="space-y-3">
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+            </div>
+          ) : newsletterSubscribers.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500">
+              Ainda não existem subscritores registados.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-lg border border-stone-200">
+              {newsletterSubscribers.map((subscriber) => (
+                <div key={subscriber.id} className="flex flex-col gap-1 border-b border-stone-100 px-4 py-3 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="font-medium text-stone-900">{subscriber.email}</span>
+                  <span className="text-xs text-stone-500">{new Date(subscriber.createdAt).toLocaleString('pt-PT')}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       ) : null}
 

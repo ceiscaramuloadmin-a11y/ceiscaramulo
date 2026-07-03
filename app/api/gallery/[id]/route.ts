@@ -81,6 +81,7 @@ export async function PUT(
     const published = normalizeBoolean(formData.get('published'));
     const sourceUrl = String(formData.get('sourceUrl') || '').trim();
     const thumbnailUrl = String(formData.get('thumbnailUrl') || '').trim();
+    const mimeType = String(formData.get('mimeType') || '').trim() || null;
 
     const sourceFileRaw = formData.get('sourceFile');
     const sourceFile = sourceFileRaw instanceof File && sourceFileRaw.size > 0 ? sourceFileRaw : null;
@@ -102,7 +103,7 @@ export async function PUT(
       context: galleryContext,
       source,
       thumbnail,
-      mimeType: sourceFile?.type || current.mimeType || null,
+      mimeType: sourceFile?.type || mimeType || current.mimeType || null,
       published,
     });
 

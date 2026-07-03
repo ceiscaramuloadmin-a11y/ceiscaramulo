@@ -11,12 +11,12 @@ const contactMessagesRouteSource = readFileSync(resolve(process.cwd(), 'app/api/
 const auditRouteSource = readFileSync(resolve(process.cwd(), 'app/api/admin/audit/route.ts'), 'utf8');
 
 describe('cms section configuration', () => {
-  it('orders news by newest created records first with publication date as fallback', () => {
-    expect(cmsSource).toContain("listOrder: [{ createdAt: 'desc' }, { publishedAt: 'desc' }]");
+  it('orders news by editorial publication date before technical creation date', () => {
+    expect(cmsSource).toContain("listOrder: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]");
   });
 
-  it('orders activities by newest created records first with event date as fallback', () => {
-    expect(cmsSource).toContain("listOrder: [{ createdAt: 'desc' }, { date: 'desc' }]");
+  it('orders activities by event date before technical creation date', () => {
+    expect(cmsSource).toContain("listOrder: [{ date: 'asc' }, { createdAt: 'desc' }]");
   });
 
   it('bounds heavy admin listings so the backoffice does not pull unbounded database rows', () => {

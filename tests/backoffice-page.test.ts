@@ -531,18 +531,18 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('galleryAcceptForTypes(ALL_GALLERY_MEDIA_TYPES)');
     expect(backofficePageSource).toContain('galleryAllowedTypes.map((type) => (');
     expect(backofficePageSource).toContain('function inferGalleryBatchType');
-    expect(backofficePageSource).not.toContain("import { upload } from '@vercel/blob/client'");
-    expect(backofficePageSource).not.toContain('async function uploadGalleryBatchFile');
-    expect(backofficePageSource).not.toContain("handleUploadUrl: '/api/gallery/client-upload'");
+    expect(backofficePageSource).toContain("import { upload } from '@vercel/blob/client'");
+    expect(backofficePageSource).toContain('const uploadGalleryFileToBlob = useCallback');
+    expect(backofficePageSource).toContain("handleUploadUrl: '/api/gallery/client-upload'");
     expect(backofficePageSource).toContain('O tipo é detetado automaticamente.');
     expect(backofficePageSource).toContain("if (type === 'video') return 'video/*'");
     expect(backofficePageSource).toContain("application/pdf,.pdf");
     expect(backofficePageSource).toContain("fd.append('context', activeGalleryConfig?.context || 'global')");
     expect(saveGalleryBatchBlock).toContain("fd.append('type', item.type)");
-    expect(saveGalleryBatchBlock).not.toContain('const sourceUrl = await uploadGalleryBatchFile(item.file, galleryContext)');
-    expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceUrl', sourceUrl)");
-    expect(saveGalleryBatchBlock).toContain("fd.append('sourceFile', item.file)");
-    expect(saveGalleryBatchBlock).toContain('requestJsonWithUploadProgress<GalleryMediaItem>');
+    expect(saveGalleryBatchBlock).toContain('const sourceUrl = await uploadGalleryFileToBlob(item.file, galleryContext');
+    expect(saveGalleryBatchBlock).toContain("fd.append('sourceUrl', sourceUrl)");
+    expect(saveGalleryBatchBlock).toContain("fd.append('mimeType', item.file.type || '')");
+    expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceFile', item.file)");
     expect(backofficePageSource).toContain('async function runGalleryBatchQueue');
     expect(backofficePageSource).toContain('Math.min(concurrency, queue.length)');
     expect(saveGalleryBatchBlock).toContain('await runGalleryBatchQueue(galleryBatchItems, uploadOne, 1)');
@@ -552,18 +552,16 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain('MAX_INLINE_AUDIO_UPLOAD_BYTES');
   });
 
-  it('limits Artigos para venda uploads to photos and documents', () => {
+  it('allows Artigos para venda uploads to use all supported media types', () => {
     const programmeGalleryConfigStart = backofficePageSource.indexOf('const PROGRAMME_GALLERY_SECTIONS');
     const salesGalleryBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("'gallery-artigos-para-venda'", programmeGalleryConfigStart),
       backofficePageSource.indexOf("'gallery-biblioteca-jrs'", programmeGalleryConfigStart)
     );
 
-    expect(backofficePageSource).toContain("const SALES_GALLERY_MEDIA_TYPES: GalleryMediaType[] = ['photo', 'document']");
-    expect(salesGalleryBlock).toContain('allowedTypes: SALES_GALLERY_MEDIA_TYPES');
-    expect(salesGalleryBlock).toContain("description: 'Fotografias e documentos associados");
-    expect(salesGalleryBlock).not.toContain("'video'");
-    expect(salesGalleryBlock).not.toContain("'audio'");
+    expect(backofficePageSource).not.toContain('const SALES_GALLERY_MEDIA_TYPES');
+    expect(salesGalleryBlock).not.toContain('allowedTypes:');
+    expect(salesGalleryBlock).toContain('Fotografias, vídeos, áudios e documentos associados');
     expect(backofficePageSource).toContain('inferGalleryBatchType(file, galleryBatchType, galleryAllowedTypes)');
     expect(backofficePageSource).toContain('accept={galleryBatchAccept}');
   });
@@ -582,6 +580,16 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('aria-live="polite"');
     expect(backofficePageSource).toContain('A carregar lote da galeria');
     expect(backofficePageSource).toContain('tabular-nums');
+  });
+
+  it('adds lightweight management screens for public comments and newsletter subscribers', () => {
+    expect(backofficePageSource).toContain("{ id: 'comments', label: 'Comentários' }");
+    expect(backofficePageSource).toContain("{ id: 'newsletter', label: 'Newsletter' }");
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<ContentComment[]>(`/api/admin/comments?limit=${ADMIN_COMMENTS_LIMIT}`)");
+    expect(backofficePageSource).toContain("fetchAdminEndpoint<NewsletterSubscriber[]>(`/api/admin/newsletter?limit=${ADMIN_NEWSLETTER_LIMIT}`)");
+    expect(backofficePageSource).toContain('async function deleteContentComment');
+    expect(backofficePageSource).toContain('async function exportNewsletterSubscribers');
+    expect(backofficePageSource).toContain('Exportar CSV');
   });
 
   it('keeps page media editing lightweight after admin listings replace data URLs with asset routes', () => {
