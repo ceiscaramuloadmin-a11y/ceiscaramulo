@@ -139,6 +139,8 @@ const ADMIN_AUDIT_LIMIT = 100;
 const ADMIN_GALLERY_LIST_LIMIT = 120;
 const ADMIN_COMMENTS_LIMIT = 120;
 const ADMIN_NEWSLETTER_LIMIT = 300;
+const INLINE_RICH_TEXT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const CLIENT_MULTIPART_UPLOAD_MIN_BYTES = 8 * 1024 * 1024;
 
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
@@ -297,6 +299,10 @@ type UploadProgress = {
 
 function clampProgress(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function shouldUseClientMultipartUpload(file: File) {
+  return file.size >= CLIENT_MULTIPART_UPLOAD_MIN_BYTES || file.type.startsWith('video/') || file.type.startsWith('audio/');
 }
 
 function requestJsonWithUploadProgress<T>(
@@ -641,8 +647,58 @@ export default function BackofficePage() {
     [authHeaders]
   );
 
+  const uploadContentAssetFileToBlob = useCallback(
+    async (
+      file: File,
+      assetContext: string,
+      clientPayload: { section: ContentSection; kind: 'image' | 'audio' | 'video' | 'document' | 'publication-attachment' },
+      onProgress?: (percent: number) => void
+    ) => {
+      const safeContext = assetContext.replace(/[^a-z0-9-]/g, '-') || 'content';
+      const safeName = sanitizeUploadFileName(file.name || 'ficheiro');
+      const pathname = `backoffice/${safeContext}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+
+      const blob = await upload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/content-assets/client-upload',
+        contentType: file.type || undefined,
+        clientPayload: JSON.stringify(clientPayload),
+        multipart: shouldUseClientMultipartUpload(file),
+        onUploadProgress: (event) => {
+          if (event.total) {
+            onProgress?.(clampProgress((event.loaded / event.total) * 100));
+          }
+        },
+      });
+
+      onProgress?.(100);
+      return blob.url;
+    },
+    []
+  );
+
   const uploadRichTextMedia = useCallback(
     async (section: ContentSection, file: File, kind: 'image' | 'audio' | 'video' | 'document') => {
+      if (!(kind === 'image' && file.size <= INLINE_RICH_TEXT_IMAGE_MAX_BYTES)) {
+        try {
+          setOperationProgress({ label: 'A carregar ficheiro do editor', percent: 5, detail: file.name });
+          const url = await uploadContentAssetFileToBlob(
+            file,
+            `rich-text-${section}-${kind}`,
+            { section, kind },
+            (percent) => setOperationProgress({ label: 'A carregar ficheiro do editor', percent, detail: file.name })
+          );
+
+          if (!url) {
+            throw new Error('Nao foi possivel guardar o ficheiro.');
+          }
+
+          return url;
+        } finally {
+          setOperationProgress(null);
+        }
+      }
+
       const fd = new FormData();
       fd.append('section', section);
       fd.append('kind', kind);
@@ -668,7 +724,7 @@ export default function BackofficePage() {
         setOperationProgress(null);
       }
     },
-    [authHeaders]
+    [authHeaders, uploadContentAssetFileToBlob]
   );
 
   const uploadGalleryFileToBlob = useCallback(
@@ -681,6 +737,7 @@ export default function BackofficePage() {
         access: 'public',
         handleUploadUrl: '/api/gallery/client-upload',
         contentType: file.type || undefined,
+        multipart: shouldUseClientMultipartUpload(file),
         onUploadProgress: (event) => {
           if (event.total) {
             onProgress?.(clampProgress((event.loaded / event.total) * 100));
@@ -1758,17 +1815,32 @@ export default function BackofficePage() {
 
   async function handlePublicationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    let resourceDownloadUrl = publicationForm.downloadUrl;
+
+    if (publicationForm.documentFile) {
+      try {
+        setOperationProgress({ label: 'A carregar ficheiro do recurso', percent: 5, detail: publicationForm.documentFile.name });
+        resourceDownloadUrl = await uploadContentAssetFileToBlob(
+          publicationForm.documentFile,
+          'publications-media',
+          { section: 'publications', kind: 'publication-attachment' },
+          (percent) => setOperationProgress({ label: 'A carregar ficheiro do recurso', percent, detail: publicationForm.documentFile?.name })
+        );
+      } finally {
+        setOperationProgress(null);
+      }
+    }
+
     const fd = new FormData();
     fd.append('title', publicationForm.title);
     fd.append('author', publicationForm.author);
     fd.append('year', publicationForm.year);
     fd.append('type', publicationForm.type);
     fd.append('description', publicationForm.description);
-    fd.append('downloadUrl', publicationForm.downloadUrl);
+    fd.append('downloadUrl', resourceDownloadUrl);
     fd.append('published', 'true');
     fd.append('removeImage', String(publicationForm.removeImage));
     if (publicationForm.coverImageFile) fd.append('coverImage', publicationForm.coverImageFile);
-    if (publicationForm.documentFile) fd.append('document', publicationForm.documentFile);
     await saveSection('publications', fd);
   }
 

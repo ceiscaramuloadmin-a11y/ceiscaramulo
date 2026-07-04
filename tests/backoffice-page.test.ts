@@ -190,7 +190,10 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('audio/*');
     expect(backofficePageSource).toContain('label="Ficheiro do recurso (PDF, foto, vídeo ou áudio)"');
     expect(backofficePageSource).toContain('accept={RESOURCE_ATTACHMENT_ACCEPT}');
-    expect(backofficePageSource).toContain("fd.append('document', publicationForm.documentFile)");
+    expect(backofficePageSource).toContain("resourceDownloadUrl = await uploadContentAssetFileToBlob(");
+    expect(backofficePageSource).toContain("{ section: 'publications', kind: 'publication-attachment' }");
+    expect(backofficePageSource).toContain("fd.append('downloadUrl', resourceDownloadUrl)");
+    expect(backofficePageSource).not.toContain("fd.append('document', publicationForm.documentFile)");
   });
 
   it('keeps the resources form focused on single optimized resource uploads', () => {
@@ -534,6 +537,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("import { upload } from '@vercel/blob/client'");
     expect(backofficePageSource).toContain('const uploadGalleryFileToBlob = useCallback');
     expect(backofficePageSource).toContain("handleUploadUrl: '/api/gallery/client-upload'");
+    expect(backofficePageSource).toContain('multipart: shouldUseClientMultipartUpload(file)');
     expect(backofficePageSource).toContain('O tipo é detetado automaticamente.');
     expect(backofficePageSource).toContain("if (type === 'video') return 'video/*'");
     expect(backofficePageSource).toContain("application/pdf,.pdf");
@@ -646,8 +650,18 @@ describe('backoffice page guards', () => {
 
   it('uploads rich text media before saving news content so audio is not persisted inline', () => {
     expect(backofficePageSource).toContain('uploadRichTextMedia');
+    expect(backofficePageSource).toContain('const INLINE_RICH_TEXT_IMAGE_MAX_BYTES');
+    expect(backofficePageSource).toContain('const CLIENT_MULTIPART_UPLOAD_MIN_BYTES');
+    expect(backofficePageSource).toContain('function shouldUseClientMultipartUpload(file: File)');
+    expect(backofficePageSource).toContain("file.type.startsWith('video/')");
+    expect(backofficePageSource).toContain("file.type.startsWith('audio/')");
+    expect(backofficePageSource).toContain('const uploadContentAssetFileToBlob = useCallback');
+    expect(backofficePageSource).toContain("handleUploadUrl: '/api/content-assets/client-upload'");
+    expect(backofficePageSource).toContain('multipart: shouldUseClientMultipartUpload(file)');
+    expect(backofficePageSource).toContain("`rich-text-${section}-${kind}`");
     expect(backofficePageSource).toContain("requestJsonWithUploadProgress<{ url: string }>");
     expect(backofficePageSource).toContain("'/api/content-assets/rich-text'");
+    expect(backofficePageSource).toContain("kind === 'image' && file.size <= INLINE_RICH_TEXT_IMAGE_MAX_BYTES");
     expect(backofficePageSource).toContain("onUploadMedia={(file, kind) => uploadRichTextMedia('news', file, kind)}");
   });
 
