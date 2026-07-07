@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         return {
           allowedContentTypes: ALLOWED_GALLERY_UPLOAD_CONTENT_TYPES,
           addRandomSuffix: false,
+          maximumSizeInBytes: 500 * 1024 * 1024,
           tokenPayload: JSON.stringify({
             adminEmail: context.email,
           }),

@@ -1,5 +1,6 @@
 'use client';
 
+import { upload } from '@vercel/blob/client';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -138,6 +139,7 @@ const ADMIN_AUDIT_LIMIT = 100;
 const ADMIN_GALLERY_LIST_LIMIT = 120;
 const ADMIN_COMMENTS_LIMIT = 120;
 const ADMIN_NEWSLETTER_LIMIT = 300;
+const CLIENT_MULTIPART_UPLOAD_MIN_BYTES = 8 * 1024 * 1024;
 
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
@@ -275,6 +277,19 @@ function isGalleryAssetRoute(value: string) {
   return value.trim().startsWith('/api/gallery/assets/');
 }
 
+function sanitizeUploadFileName(value: string) {
+  const [name = 'ficheiro', ...rest] = value.split('.');
+  const extension = rest.length ? `.${rest.at(-1)?.replace(/[^a-z0-9]/gi, '').toLowerCase()}` : '';
+  const safeName = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'ficheiro';
+
+  return `${safeName}${extension}`;
+}
+
 type UploadProgress = {
   label: string;
   percent: number;
@@ -283,6 +298,10 @@ type UploadProgress = {
 
 function clampProgress(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function shouldUseClientMultipartUpload(file: File) {
+  return file.size >= CLIENT_MULTIPART_UPLOAD_MIN_BYTES || file.type.startsWith('video/') || file.type.startsWith('audio/');
 }
 
 function requestJsonWithUploadProgress<T>(
@@ -655,6 +674,31 @@ export default function BackofficePage() {
       }
     },
     [authHeaders]
+  );
+
+  const uploadGalleryFileToBlob = useCallback(
+    async (file: File, galleryContext: string, onProgress?: (percent: number) => void) => {
+      const safeContext = galleryContext.replace(/[^a-z0-9-]/g, '-') || 'global';
+      const safeName = sanitizeUploadFileName(file.name || 'ficheiro');
+      const relativePath = `gallery-${safeContext}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+      const pathname = `backoffice/${relativePath}`;
+
+      await upload(pathname, file, {
+        access: 'private',
+        handleUploadUrl: '/api/gallery/client-upload',
+        contentType: file.type || undefined,
+        multipart: shouldUseClientMultipartUpload(file),
+        onUploadProgress: (event) => {
+          if (event.total) {
+            onProgress?.(clampProgress((event.loaded / event.total) * 100));
+          }
+        },
+      });
+
+      onProgress?.(100);
+      return `/uploads/backoffice/${relativePath}`;
+    },
+    []
   );
 
   const refreshDashboardStats = useCallback(async () => {
@@ -1358,16 +1402,33 @@ export default function BackofficePage() {
 
       const fd = new FormData();
       const galleryContext = activeGalleryConfig?.context || 'global';
+      const sourceUrl = galleryForm.sourceFile
+        ? await uploadGalleryFileToBlob(galleryForm.sourceFile, galleryContext, (percent) =>
+            setOperationProgress({
+              label: 'A enviar ficheiro de media',
+              percent,
+              detail: uploadDetail,
+            })
+          )
+        : galleryForm.sourceUrl;
+      const thumbnailUrl = galleryForm.thumbnailFile
+        ? await uploadGalleryFileToBlob(galleryForm.thumbnailFile, `${galleryContext}-thumbnails`, (percent) =>
+            setOperationProgress({
+              label: 'A enviar thumbnail',
+              percent,
+              detail: galleryForm.thumbnailFile?.name || uploadDetail,
+            })
+          )
+        : galleryForm.thumbnailUrl;
+
       fd.append('context', activeGalleryConfig?.context || 'global');
       fd.append('title', galleryForm.title);
       fd.append('description', galleryForm.description);
       fd.append('type', galleryForm.type);
-      fd.append('sourceUrl', galleryForm.sourceFile ? '' : galleryForm.sourceUrl);
-      fd.append('thumbnailUrl', galleryForm.thumbnailFile ? '' : galleryForm.thumbnailUrl);
+      fd.append('sourceUrl', sourceUrl);
+      fd.append('thumbnailUrl', thumbnailUrl);
       fd.append('mimeType', galleryForm.sourceFile?.type || '');
       fd.append('published', String(galleryForm.published));
-      if (galleryForm.sourceFile) fd.append('sourceFile', galleryForm.sourceFile);
-      if (galleryForm.thumbnailFile) fd.append('thumbnailFile', galleryForm.thumbnailFile);
 
       const headers = await authHeaders();
       await requestJsonWithUploadProgress<GalleryMediaItem>(
@@ -1488,14 +1549,22 @@ export default function BackofficePage() {
       });
 
       const uploadOne = async (item: (typeof galleryBatchItems)[number]) => {
+        const sourceUrl = await uploadGalleryFileToBlob(item.file, galleryContext, (filePercent) => {
+          const overallPercent = ((completedItems + filePercent / 100) / totalItems) * 100;
+          setOperationProgress({
+            label: 'A carregar lote da galeria',
+            percent: clampProgress(overallPercent),
+            detail: `${completedItems}/${totalItems} concluidos - ${item.file.name}`,
+          });
+        });
+
         const fd = new FormData();
         fd.append('title', item.title.trim());
         fd.append('description', item.description.trim());
         fd.append('type', item.type);
         fd.append('context', galleryContext);
         fd.append('published', String(item.published));
-        fd.append('sourceUrl', '');
-        fd.append('sourceFile', item.file);
+        fd.append('sourceUrl', sourceUrl);
         fd.append('mimeType', item.file.type || '');
 
         const result = await requestJsonWithUploadProgress<GalleryMediaItem>(

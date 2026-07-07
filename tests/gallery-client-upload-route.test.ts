@@ -59,6 +59,7 @@ describe('gallery client upload route', () => {
         clientToken: 'client-token',
         tokenConfig: expect.objectContaining({
           addRandomSuffix: false,
+          maximumSizeInBytes: 500 * 1024 * 1024,
           allowedContentTypes: expect.arrayContaining([
             'image/png',
             'video/mp4',
