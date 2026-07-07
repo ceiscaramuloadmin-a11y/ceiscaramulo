@@ -79,7 +79,7 @@ describe('newsletter subscribe route', () => {
     expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('joao@example.pt');
   });
 
-  it('still confirms the subscription on screen when the confirmation email cannot be sent', async () => {
+  it('shows a simple saved message when the confirmation email cannot be sent', async () => {
     upsert.mockResolvedValue({ id: 'sub_3' });
     sendNewsletterInternalNotification.mockResolvedValue({ ok: true });
     sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: false, reason: 'missing_api_key' });
@@ -95,7 +95,7 @@ describe('newsletter subscribe route', () => {
 
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
-      message: expect.stringContaining('email de confirmação não foi enviado'),
+      message: 'Email guardado com sucesso. Para qualquer questão, contacta o CEISCaramulo.',
     });
   });
 
