@@ -34,6 +34,8 @@ export type NewsletterDeliveryResult = {
   skippedReason?: 'not_first_publish' | 'missing_sender' | 'no_subscribers';
 };
 
+export type NewsletterSingleEmailResult = { ok: true } | { ok: false; reason: string };
+
 /** Envia durante o pedido para não depender de microtasks descartáveis em serverless. */
 export async function enqueueNewsPublishedNotifications(
   previousPublished: boolean | null,
@@ -179,6 +181,41 @@ export async function sendNewsletterSubscriptionConfirmation(email: string) {
   });
 }
 
+export function resolveNewsletterNotificationAddress(): string | null {
+  return (
+    process.env.NEWSLETTER_NOTIFICATION_TO?.trim() ||
+    process.env.NEWSLETTER_NOTIFY_TO?.trim() ||
+    process.env.CEIS_NEWSLETTER_EMAIL?.trim() ||
+    'ceiscaramulo@gmail.com'
+  );
+}
+
+export async function sendNewsletterInternalNotification(email: string): Promise<NewsletterSingleEmailResult> {
+  const from = resolveMailSenderAddress();
+
+  if (!from) {
+    console.warn('[newsletter] MAIL_FROM / RESEND_MAIL_FROM ausente: aviso interno de subscricao nao enviado.');
+    return { ok: false, reason: 'missing_sender' };
+  }
+
+  const to = resolveNewsletterNotificationAddress();
+
+  if (!to) {
+    console.warn('[newsletter] NEWSLETTER_NOTIFICATION_TO ausente: aviso interno de subscricao nao enviado.');
+    return { ok: false, reason: 'missing_recipient' };
+  }
+
+  const origin = publicSiteOrigin();
+
+  return sendEmailViaResend({
+    from,
+    to,
+    subject: 'Nova subscricao da newsletter - CEISCaramulo',
+    html: buildSubscriptionInternalNotificationHtml({ email, link: origin }),
+    text: `Nova subscricao da newsletter CEISCaramulo.\n\nEmail: ${email}\n\nConsulta o backoffice ou exporta a lista de subscritores para gerir a newsletter.\n\nSite: ${origin}`,
+  });
+}
+
 function buildNewsEmailHtml(parts: { title: string; teaser: string; link: string; ctaLabel: string }) {
   return `
 <!DOCTYPE html>
@@ -218,6 +255,31 @@ function buildSubscriptionConfirmationHtml(parts: { link: string }) {
             <a href="${parts.link}" style="display:inline-block;background:#0f4c36;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">
               Visitar CEISCaramulo
             </a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`.trim();
+}
+
+function buildSubscriptionInternalNotificationHtml(parts: { email: string; link: string }) {
+  return `
+<!DOCTYPE html>
+<html lang="pt">
+  <body style="margin:0;font-family:system-ui,sans-serif;background:#f6f5f2;color:#1f2a16;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td style="padding:32px 16px;">
+          <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e3e4dd;">
+            <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#0f4c36;">CEISCaramulo</p>
+            <h1 style="margin:16px 0 12px;font-size:22px;line-height:1.2;">Nova subscricao da newsletter</h1>
+            <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#374151;">Foi registado um novo contacto para a newsletter:</p>
+            <p style="margin:0 0 22px;font-size:16px;font-weight:700;color:#0f4c36;">${escapeEmailAttr(parts.email)}</p>
+            <a href="${parts.link}/backoffice" style="display:inline-block;background:#0f4c36;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">
+              Abrir backoffice
+            </a>
+            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Este aviso nao guarda ficheiros nem pesa a base de dados; a base guarda apenas o email do subscritor.</p>
           </div>
         </td>
       </tr>

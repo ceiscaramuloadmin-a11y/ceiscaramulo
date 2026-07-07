@@ -145,6 +145,57 @@ describe('notifySubscribersAboutPublishedActivity', () => {
   });
 });
 
+describe('sendNewsletterInternalNotification', () => {
+  beforeEach(() => {
+    vi.mocked(mailResend.sendEmailViaResend).mockReset().mockResolvedValue({ ok: true });
+    vi.mocked(mailResend.resolveMailSenderAddress).mockReset().mockReturnValue('Boletim <noreply@test.pt>');
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://mysite.pt';
+    process.env.RESEND_API_KEY = 're_test';
+    delete process.env.NEWSLETTER_NOTIFICATION_TO;
+    delete process.env.NEWSLETTER_NOTIFY_TO;
+    delete process.env.CEIS_NEWSLETTER_EMAIL;
+  });
+
+  afterEach(() => {
+    delete process.env.RESEND_API_KEY;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.NEWSLETTER_NOTIFICATION_TO;
+    delete process.env.NEWSLETTER_NOTIFY_TO;
+    delete process.env.CEIS_NEWSLETTER_EMAIL;
+  });
+
+  it('sends a subscription alert to the CEISCaramulo email by default', async () => {
+    const result = await newsletter.sendNewsletterInternalNotification('nova@sub.pt');
+
+    expect(result).toEqual({ ok: true });
+    expect(mailResend.sendEmailViaResend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: 'Boletim <noreply@test.pt>',
+        to: 'ceiscaramulo@gmail.com',
+        subject: 'Nova subscricao da newsletter - CEISCaramulo',
+        text: expect.stringContaining('nova@sub.pt'),
+      })
+    );
+  });
+
+  it('uses NEWSLETTER_NOTIFICATION_TO when the company sets a specific recipient', async () => {
+    process.env.NEWSLETTER_NOTIFICATION_TO = 'newsletter@ceiscaramulo.pt';
+
+    await newsletter.sendNewsletterInternalNotification('nova@sub.pt');
+
+    expect(vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0].to).toBe('newsletter@ceiscaramulo.pt');
+  });
+
+  it('does not call Resend when the sender is not configured', async () => {
+    vi.mocked(mailResend.resolveMailSenderAddress).mockReturnValue(null);
+
+    const result = await newsletter.sendNewsletterInternalNotification('nova@sub.pt');
+
+    expect(result).toEqual({ ok: false, reason: 'missing_sender' });
+    expect(mailResend.sendEmailViaResend).not.toHaveBeenCalled();
+  });
+});
+
 describe('enqueueNewsPublishedNotifications', () => {
   beforeEach(() => {
     vi.mocked(mailResend.sendEmailViaResend).mockReset().mockResolvedValue({ ok: true });

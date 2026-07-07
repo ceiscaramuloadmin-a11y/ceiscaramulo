@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { sendNewsletterSubscriptionConfirmation } from '@/lib/newsletter-on-publish';
+import { sendNewsletterInternalNotification, sendNewsletterSubscriptionConfirmation } from '@/lib/newsletter-on-publish';
 
 const bodySchema = z.object({
   email: z.string().trim().email('Email inválido.').max(320),
@@ -52,9 +52,14 @@ export async function POST(request: Request) {
   }
 
   const confirmation = await sendNewsletterSubscriptionConfirmation(normalized);
+  const internalNotification = await sendNewsletterInternalNotification(normalized);
 
   if (!confirmation.ok) {
     console.warn('Subscrição guardada, mas email de confirmação não enviado:', confirmation.reason);
+  }
+
+  if (!internalNotification.ok) {
+    console.warn('Subscricao guardada, mas aviso interno da newsletter nao enviado:', internalNotification.reason);
   }
 
   return Response.json({

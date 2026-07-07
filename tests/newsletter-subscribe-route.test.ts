@@ -2,8 +2,9 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { upsert, sendNewsletterSubscriptionConfirmation } = vi.hoisted(() => ({
+const { upsert, sendNewsletterInternalNotification, sendNewsletterSubscriptionConfirmation } = vi.hoisted(() => ({
   upsert: vi.fn(),
+  sendNewsletterInternalNotification: vi.fn(),
   sendNewsletterSubscriptionConfirmation: vi.fn(),
 }));
 
@@ -14,6 +15,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 vi.mock('@/lib/newsletter-on-publish', () => ({
+  sendNewsletterInternalNotification,
   sendNewsletterSubscriptionConfirmation,
 }));
 
@@ -21,11 +23,13 @@ describe('newsletter subscribe route', () => {
   afterEach(() => {
     vi.resetModules();
     upsert.mockReset();
+    sendNewsletterInternalNotification.mockReset();
     sendNewsletterSubscriptionConfirmation.mockReset();
   });
 
   it('stores the normalized email successfully', async () => {
     upsert.mockResolvedValue({ id: 'sub_1' });
+    sendNewsletterInternalNotification.mockResolvedValue({ ok: true });
     sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: true });
 
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
@@ -46,10 +50,12 @@ describe('newsletter subscribe route', () => {
       update: {},
     });
     expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('maria@test.pt');
+    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('maria@test.pt');
   });
 
   it('accepts form submissions from the newsletter button', async () => {
     upsert.mockResolvedValue({ id: 'sub_2' });
+    sendNewsletterInternalNotification.mockResolvedValue({ ok: true });
     sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: true });
 
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
@@ -70,10 +76,12 @@ describe('newsletter subscribe route', () => {
       update: {},
     });
     expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('joao@example.pt');
+    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('joao@example.pt');
   });
 
   it('still confirms the subscription on screen when the confirmation email cannot be sent', async () => {
     upsert.mockResolvedValue({ id: 'sub_3' });
+    sendNewsletterInternalNotification.mockResolvedValue({ ok: true });
     sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: false, reason: 'missing_api_key' });
 
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
@@ -89,6 +97,25 @@ describe('newsletter subscribe route', () => {
       ok: true,
       message: expect.stringContaining('email de confirmação não foi enviado'),
     });
+  });
+
+  it('still stores the subscription when the internal notification cannot be sent', async () => {
+    upsert.mockResolvedValue({ id: 'sub_4' });
+    sendNewsletterSubscriptionConfirmation.mockResolvedValue({ ok: true });
+    sendNewsletterInternalNotification.mockResolvedValue({ ok: false, reason: 'missing_api_key' });
+
+    const { POST } = await import('@/app/api/newsletter/subscribe/route');
+    const response = await POST(
+      new Request('http://localhost/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'aviso@site.pt' }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true });
+    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('aviso@site.pt');
   });
 
   it('rejects payloads without a usable email shape', async () => {
