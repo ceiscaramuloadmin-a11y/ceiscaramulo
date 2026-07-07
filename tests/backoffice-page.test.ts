@@ -604,7 +604,7 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('Descer');
   });
 
-  it('sends runtime backoffice sign out to Auth0 login without using the failing logout endpoint', () => {
+  it('sends runtime backoffice sign out to the login page without restoring Auth0 automatically', () => {
     const signOutBlock = backofficePageSource.slice(
       backofficePageSource.indexOf('await adminAuthClient.adapter.signOut();'),
       backofficePageSource.indexOf('{operationProgress ?')
@@ -613,7 +613,8 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).not.toContain('AUTH0_ADMIN_LOGOUT_PATH');
     expect(signOutBlock).toContain('await adminAuthClient.adapter.signOut()');
     expect(signOutBlock).toContain("router.replace('/backoffice/login')");
-    expect(signOutBlock).toContain('window.location.assign(`${getAuth0AdminLoginHref()}&prompt=login`)');
+    expect(signOutBlock).not.toContain('window.location.assign');
+    expect(signOutBlock).not.toContain('getAuth0AdminLoginHref');
     expect(signOutBlock).not.toContain('/auth/logout');
   });
 

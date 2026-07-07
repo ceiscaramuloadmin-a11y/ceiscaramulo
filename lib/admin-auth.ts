@@ -16,8 +16,12 @@ import {
 
 export const AUTH0_ADMIN_LOGIN_PATH = '/auth/login?returnTo=%2Fbackoffice';
 export const AUTH0_ADMIN_LOGOUT_PATH = '/auth/logout?returnTo=%2Fbackoffice%2Flogin';
+export const ADMIN_FORCE_AUTH0_LOGIN_KEY = 'ceiscaramulo.admin.forceAuth0Login';
 
 type Auth0LoginLocation = Pick<Location, 'hostname' | 'port'>;
+type Auth0LoginOptions = {
+  promptLogin?: boolean;
+};
 
 type SignInResult =
   | { data: { session: AdminSession }; error: null }
@@ -74,6 +78,34 @@ function persistSession(session: AdminSession | null) {
   }
 
   notifyListeners();
+}
+
+function readForceAuth0LoginMarker() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.sessionStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY) === '1';
+}
+
+export function markForceAuth0Login() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(ADMIN_FORCE_AUTH0_LOGIN_KEY, '1');
+}
+
+export function clearForceAuth0Login() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.removeItem(ADMIN_FORCE_AUTH0_LOGIN_KEY);
+}
+
+export function shouldForceAuth0Login() {
+  return readForceAuth0LoginMarker();
 }
 
 export function getFirebaseAuthErrorMessage(error: unknown) {
@@ -228,16 +260,17 @@ export function isExportAdminAuthMode() {
   return getPublicAdminAuthMode() === 'export';
 }
 
-export function getAuth0AdminLoginHref(locationLike?: Auth0LoginLocation) {
+export function getAuth0AdminLoginHref(locationLike?: Auth0LoginLocation | null, options: Auth0LoginOptions = {}) {
   const currentLocation = locationLike ?? (typeof window !== 'undefined' ? window.location : null);
   const hostname = currentLocation?.hostname;
+  const loginPath = options.promptLogin ? `${AUTH0_ADMIN_LOGIN_PATH}&prompt=login` : AUTH0_ADMIN_LOGIN_PATH;
 
   if (hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
     const port = currentLocation?.port ? `:${currentLocation.port}` : '';
-    return `http://localhost${port}${AUTH0_ADMIN_LOGIN_PATH}`;
+    return `http://localhost${port}${loginPath}`;
   }
 
-  return AUTH0_ADMIN_LOGIN_PATH;
+  return loginPath;
 }
 
 export function getStoredAdminSession() {
@@ -258,12 +291,17 @@ export const adminAuthClient = {
   adapter: {
     async getSession(): Promise<SessionResult> {
       const mode: AdminAuthMode = getPublicAdminAuthMode();
+      if (mode === 'runtime' && shouldForceAuth0Login()) {
+        return { data: null };
+      }
+
       const session = mode === 'export' ? readStoredSession() : await refreshRuntimeSession();
       return { data: session ? { session } : null };
     },
     async signOut() {
       if (getPublicAdminAuthMode() === 'runtime') {
         await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
+        markForceAuth0Login();
       }
       persistSession(null);
       return { error: null };

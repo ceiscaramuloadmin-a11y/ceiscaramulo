@@ -2,7 +2,14 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AUTH0_ADMIN_LOGIN_PATH, adminAuthClient, getAuth0AdminLoginHref, isExportAdminAuthMode } from '@/lib/admin-auth';
+import {
+  AUTH0_ADMIN_LOGIN_PATH,
+  adminAuthClient,
+  clearForceAuth0Login,
+  getAuth0AdminLoginHref,
+  isExportAdminAuthMode,
+  shouldForceAuth0Login,
+} from '@/lib/admin-auth';
 
 export default function BackofficeLoginPage() {
   const router = useRouter();
@@ -14,7 +21,12 @@ export default function BackofficeLoginPage() {
   const [auth0LoginHref, setAuth0LoginHref] = useState(AUTH0_ADMIN_LOGIN_PATH);
 
   useEffect(() => {
-    setAuth0LoginHref(getAuth0AdminLoginHref());
+    const forceAuth0Login = shouldForceAuth0Login();
+    setAuth0LoginHref(getAuth0AdminLoginHref(null, { promptLogin: forceAuth0Login }));
+
+    if (forceAuth0Login) {
+      return;
+    }
 
     const checkSession = async () => {
       const sessionResult = await adminAuthClient.adapter.getSession();
@@ -102,6 +114,7 @@ export default function BackofficeLoginPage() {
           </p>
           <a
             href={auth0LoginHref}
+            onClick={() => clearForceAuth0Login()}
             className="inline-flex w-full justify-center rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b3d2b]"
           >
             Entrar com Auth0

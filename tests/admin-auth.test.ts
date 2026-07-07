@@ -8,7 +8,10 @@ describe('admin auth runtime mode', () => {
   });
 
   afterEach(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     vi.resetModules();
   });
 
@@ -34,6 +37,23 @@ describe('admin auth runtime mode', () => {
     expect(getAuth0AdminLoginHref({ hostname: '127.0.0.1', port: '3000' })).toBe(
       'http://localhost:3000/auth/login?returnTo=%2Fbackoffice'
     );
+    expect(getAuth0AdminLoginHref({ hostname: '127.0.0.1', port: '3000' }, { promptLogin: true })).toBe(
+      'http://localhost:3000/auth/login?returnTo=%2Fbackoffice&prompt=login'
+    );
     expect(getAuth0AdminLoginHref({ hostname: 'localhost', port: '3000' })).toBe('/auth/login?returnTo=%2Fbackoffice');
+  });
+
+  it('marks Auth0 runtime sign out so sessions are not restored automatically on reload', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { ADMIN_FORCE_AUTH0_LOGIN_KEY, adminAuthClient } = await import('@/lib/admin-auth');
+
+    await adminAuthClient.adapter.signOut();
+    const sessionResult = await adminAuthClient.adapter.getSession();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/admin/session', { method: 'DELETE' });
+    expect(window.sessionStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY)).toBe('1');
+    expect(sessionResult).toEqual({ data: null });
   });
 });

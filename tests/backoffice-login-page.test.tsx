@@ -2,11 +2,13 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BackofficeLoginPage from '@/app/backoffice/login/page';
 
-const { replace, getSession, getAuth0AdminLoginHref, isExportAdminAuthMode } = vi.hoisted(() => ({
+const { replace, clearForceAuth0Login, getSession, getAuth0AdminLoginHref, isExportAdminAuthMode, shouldForceAuth0Login } = vi.hoisted(() => ({
   replace: vi.fn(),
+  clearForceAuth0Login: vi.fn(),
   getSession: vi.fn(),
   getAuth0AdminLoginHref: vi.fn(),
   isExportAdminAuthMode: vi.fn(),
+  shouldForceAuth0Login: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -17,8 +19,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/admin-auth', () => ({
   AUTH0_ADMIN_LOGIN_PATH: '/auth/login?returnTo=%2Fbackoffice',
+  clearForceAuth0Login,
   getAuth0AdminLoginHref,
   isExportAdminAuthMode,
+  shouldForceAuth0Login,
   adminAuthClient: {
     adapter: {
       getSession,
@@ -32,6 +36,7 @@ describe('BackofficeLoginPage', () => {
     getSession.mockResolvedValue({ data: null });
     getAuth0AdminLoginHref.mockReturnValue('/auth/login?returnTo=%2Fbackoffice');
     isExportAdminAuthMode.mockReturnValue(false);
+    shouldForceAuth0Login.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -68,6 +73,20 @@ describe('BackofficeLoginPage', () => {
       );
     });
     expect(screen.getByText(/Usar 127\.0\.0\.1 pode invalidar o state do Auth0/i)).toBeInTheDocument();
+  });
+
+  it('does not restore an Auth0 session automatically immediately after sign out', async () => {
+    shouldForceAuth0Login.mockReturnValue(true);
+    getAuth0AdminLoginHref.mockReturnValue('/auth/login?returnTo=%2Fbackoffice&prompt=login');
+    render(<BackofficeLoginPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Entrar com Auth0' })).toHaveAttribute(
+        'href',
+        '/auth/login?returnTo=%2Fbackoffice&prompt=login'
+      );
+    });
+    expect(getSession).not.toHaveBeenCalled();
   });
 
   it('does not expose public account creation controls', () => {
