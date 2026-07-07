@@ -610,12 +610,11 @@ describe('backoffice page guards', () => {
       backofficePageSource.indexOf('{operationProgress ?')
     );
 
-    expect(backofficePageSource).not.toContain('AUTH0_ADMIN_LOGOUT_PATH');
+    expect(backofficePageSource).toContain('getAuth0AdminLogoutHref');
     expect(signOutBlock).toContain('await adminAuthClient.adapter.signOut()');
     expect(signOutBlock).toContain("router.replace('/backoffice/login')");
-    expect(signOutBlock).not.toContain('window.location.assign');
+    expect(signOutBlock).toContain('window.location.assign(getAuth0AdminLogoutHref())');
     expect(signOutBlock).not.toContain('getAuth0AdminLoginHref');
-    expect(signOutBlock).not.toContain('/auth/logout');
   });
 
   it('keeps page media editing lightweight after admin listings replace data URLs with asset routes', () => {

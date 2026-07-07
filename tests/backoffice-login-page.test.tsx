@@ -77,15 +77,16 @@ describe('BackofficeLoginPage', () => {
 
   it('does not restore an Auth0 session automatically immediately after sign out', async () => {
     shouldForceAuth0Login.mockReturnValue(true);
-    getAuth0AdminLoginHref.mockReturnValue('/auth/login?returnTo=%2Fbackoffice&prompt=login');
+    getAuth0AdminLoginHref.mockReturnValue('/api/admin/auth0-login');
     render(<BackofficeLoginPage />);
 
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Entrar com Auth0' })).toHaveAttribute(
         'href',
-        '/auth/login?returnTo=%2Fbackoffice&prompt=login'
+        '/api/admin/auth0-login'
       );
     });
+    expect(getAuth0AdminLoginHref).toHaveBeenCalledWith(null, { promptLogin: true });
     expect(getSession).not.toHaveBeenCalled();
   });
 

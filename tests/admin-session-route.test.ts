@@ -1,6 +1,8 @@
 /* @vitest-environment node */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
+import { ADMIN_SIGNED_OUT_COOKIE } from '@/lib/admin-auth-shared';
 
 const getAdminAuthSession = vi.fn();
 const getAdminByEmail = vi.fn();
@@ -132,5 +134,28 @@ describe('admin session route', () => {
         expiresAt: '2099-01-01T00:00:00.000Z',
       },
     });
+  });
+
+  it('marks runtime sessions as signed out when deleting the admin session', async () => {
+    const { DELETE } = await import('@/app/api/admin/session/route');
+    const response = await DELETE();
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('set-cookie')).toContain(`${ADMIN_SIGNED_OUT_COOKIE}=1`);
+  });
+
+  it('does not recreate an admin session while the signed out marker is present', async () => {
+    const { GET } = await import('@/app/api/admin/session/route');
+    const request = new NextRequest('http://localhost/api/admin/session', {
+      headers: {
+        cookie: `${ADMIN_SIGNED_OUT_COOKIE}=1`,
+      },
+    });
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(401);
+    expect(getAdminAuthSession).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({ message: 'Sessão terminada. Inicie sessão novamente.' });
   });
 });

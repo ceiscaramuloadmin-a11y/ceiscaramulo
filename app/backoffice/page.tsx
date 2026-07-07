@@ -5,7 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { adminAuthClient, getAdminAccessToken, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
+import { adminAuthClient, getAdminAccessToken, getAuth0AdminLogoutHref, getStoredAdminSession, isExportAdminAuthMode } from '@/lib/admin-auth';
 import RichTextEditor from '@/components/RichTextEditor';
 import { backofficePrimaryActionLabel } from '@/lib/backoffice-primary-label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1869,7 +1869,7 @@ export default function BackofficePage() {
                   return;
                 }
 
-                router.replace('/backoffice/login');
+                window.location.assign(getAuth0AdminLogoutHref());
               }}
               className="rounded-lg border border-stone-300 px-4 py-2 text-sm text-stone-700"
             >

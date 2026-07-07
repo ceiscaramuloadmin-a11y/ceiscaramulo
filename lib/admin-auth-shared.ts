@@ -1,6 +1,8 @@
 import type { AdminPermission, AdminRole } from '@/types';
 
 export const ADMIN_SESSION_STORAGE_KEY = 'ceis.admin.session';
+export const ADMIN_SIGNED_OUT_COOKIE = 'ceis.admin.signedOut';
+export const ADMIN_SIGNED_OUT_COOKIE_MAX_AGE_SECONDS = 60 * 10;
 export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 export type AdminAuthMode = 'runtime' | 'export';

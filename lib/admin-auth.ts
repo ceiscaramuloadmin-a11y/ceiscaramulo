@@ -18,7 +18,7 @@ export const AUTH0_ADMIN_LOGIN_PATH = '/auth/login?returnTo=%2Fbackoffice';
 export const AUTH0_ADMIN_LOGOUT_PATH = '/auth/logout?returnTo=%2Fbackoffice%2Flogin';
 export const ADMIN_FORCE_AUTH0_LOGIN_KEY = 'ceiscaramulo.admin.forceAuth0Login';
 
-type Auth0LoginLocation = Pick<Location, 'hostname' | 'port'>;
+type Auth0LoginLocation = Pick<Location, 'hostname' | 'port' | 'protocol'>;
 type Auth0LoginOptions = {
   promptLogin?: boolean;
 };
@@ -85,7 +85,7 @@ function readForceAuth0LoginMarker() {
     return false;
   }
 
-  return window.sessionStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY) === '1';
+  return window.sessionStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY) === '1' || window.localStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY) === '1';
 }
 
 export function markForceAuth0Login() {
@@ -94,6 +94,7 @@ export function markForceAuth0Login() {
   }
 
   window.sessionStorage.setItem(ADMIN_FORCE_AUTH0_LOGIN_KEY, '1');
+  window.localStorage.setItem(ADMIN_FORCE_AUTH0_LOGIN_KEY, '1');
 }
 
 export function clearForceAuth0Login() {
@@ -102,6 +103,7 @@ export function clearForceAuth0Login() {
   }
 
   window.sessionStorage.removeItem(ADMIN_FORCE_AUTH0_LOGIN_KEY);
+  window.localStorage.removeItem(ADMIN_FORCE_AUTH0_LOGIN_KEY);
 }
 
 export function shouldForceAuth0Login() {
@@ -260,17 +262,46 @@ export function isExportAdminAuthMode() {
   return getPublicAdminAuthMode() === 'export';
 }
 
+function getAuth0Origin(locationLike?: Auth0LoginLocation | null) {
+  const currentLocation = locationLike ?? (typeof window !== 'undefined' ? window.location : null);
+  const hostname = currentLocation?.hostname;
+  const normalizedHostname = hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]' ? 'localhost' : hostname;
+
+  if (!normalizedHostname) {
+    return null;
+  }
+
+  const protocol = currentLocation?.protocol || (normalizedHostname === 'localhost' ? 'http:' : 'https:');
+  const port = currentLocation?.port ? `:${currentLocation.port}` : '';
+
+  return `${protocol}//${normalizedHostname}${port}`;
+}
+
 export function getAuth0AdminLoginHref(locationLike?: Auth0LoginLocation | null, options: Auth0LoginOptions = {}) {
   const currentLocation = locationLike ?? (typeof window !== 'undefined' ? window.location : null);
   const hostname = currentLocation?.hostname;
-  const loginPath = options.promptLogin ? `${AUTH0_ADMIN_LOGIN_PATH}&prompt=login` : AUTH0_ADMIN_LOGIN_PATH;
+
+  if (options.promptLogin) {
+    const origin = getAuth0Origin(currentLocation);
+    return origin && hostname !== 'localhost' ? `${origin}/api/admin/auth0-login` : '/api/admin/auth0-login';
+  }
 
   if (hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
     const port = currentLocation?.port ? `:${currentLocation.port}` : '';
-    return `http://localhost${port}${loginPath}`;
+    return `http://localhost${port}${AUTH0_ADMIN_LOGIN_PATH}`;
   }
 
-  return loginPath;
+  return AUTH0_ADMIN_LOGIN_PATH;
+}
+
+export function getAuth0AdminLogoutHref(locationLike?: Auth0LoginLocation | null) {
+  const origin = getAuth0Origin(locationLike);
+
+  if (!origin) {
+    return AUTH0_ADMIN_LOGOUT_PATH;
+  }
+
+  return `${origin}/auth/logout?returnTo=${encodeURIComponent(`${origin}/backoffice/login`)}`;
 }
 
 export function getStoredAdminSession() {
@@ -300,8 +331,8 @@ export const adminAuthClient = {
     },
     async signOut() {
       if (getPublicAdminAuthMode() === 'runtime') {
-        await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
         markForceAuth0Login();
+        await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
       }
       persistSession(null);
       return { error: null };
