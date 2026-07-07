@@ -209,9 +209,11 @@ model SiteLayout {
 }
 
 model NewsletterSubscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique @db.VarChar(320)
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  email           String   @unique @db.VarChar(320)
+  wantsNews       Boolean  @default(true)
+  wantsActivities Boolean  @default(true)
+  createdAt       DateTime @default(now())
 
   @@index([createdAt])
   @@map("newsletter_subscribers")

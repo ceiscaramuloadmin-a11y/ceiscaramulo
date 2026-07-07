@@ -2,21 +2,22 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { sendNewsletterInternalNotification, sendNewsletterSubscriptionConfirmation } from '@/lib/newsletter-on-publish';
 
-const bodySchema = z.object({
-  email: z.string().trim().email('Email inválido.').max(320),
-});
+const bodySchema = z
+  .object({
+    email: z.string().trim().email('Email invalido.').max(320),
+    wantsNews: z.boolean().optional().default(true),
+    wantsActivities: z.boolean().optional().default(true),
+  })
+  .refine((value) => value.wantsNews || value.wantsActivities, {
+    message: 'Seleciona pelo menos noticias ou atividades.',
+  });
 
-/**
- * Aceita subscrições públicas de newsletter sem autenticação.
- * Mensagens devem permanecer genéricas para não revelar se o email já existia na base (privacidade).
- */
 export async function POST(request: Request) {
   if (!isNewsletterPersistenceReady()) {
     return Response.json(
       {
         ok: false,
-        message:
-          'O serviço de subscrição está temporariamente indisponível. Tenta mais tarde ou contacta através da página Contactos.',
+        message: 'O servico de subscricao esta temporariamente indisponivel. Tenta mais tarde ou contacta atraves da pagina Contactos.',
       },
       { status: 503 }
     );
@@ -27,9 +28,10 @@ export async function POST(request: Request) {
     const unknown = await readNewsletterPayload(request);
     parsed = bodySchema.parse(unknown);
   } catch {
-    return Response.json({ ok: false, message: 'Corpo inválido. Envia apenas { "email": "..." } com um email válido.' }, {
-      status: 400,
-    });
+    return Response.json(
+      { ok: false, message: 'Corpo invalido. Envia um email valido e seleciona pelo menos noticias ou atividades.' },
+      { status: 400 }
+    );
   }
 
   const normalized = parsed.email.trim().toLowerCase();
@@ -37,25 +39,36 @@ export async function POST(request: Request) {
   try {
     await prisma.newsletterSubscriber.upsert({
       where: { email: normalized },
-      create: { email: normalized },
-      update: {},
+      create: {
+        email: normalized,
+        wantsNews: parsed.wantsNews,
+        wantsActivities: parsed.wantsActivities,
+      },
+      update: {
+        wantsNews: parsed.wantsNews,
+        wantsActivities: parsed.wantsActivities,
+      },
     });
   } catch (error) {
-    console.warn('Erro ao guardar subscrição da newsletter:', error);
+    console.warn('Erro ao guardar subscricao da newsletter:', error);
     return Response.json(
       {
         ok: false,
-        message: 'Não foi possível concluir a subscrição. Tenta mais tarde ou usa a página de Contactos.',
+        message: 'Nao foi possivel concluir a subscricao. Tenta mais tarde ou usa a pagina de Contactos.',
       },
       { status: 503 }
     );
   }
 
+  const preferences = {
+    wantsNews: parsed.wantsNews,
+    wantsActivities: parsed.wantsActivities,
+  };
   const confirmation = await sendNewsletterSubscriptionConfirmation(normalized);
-  const internalNotification = await sendNewsletterInternalNotification(normalized);
+  const internalNotification = await sendNewsletterInternalNotification(normalized, preferences);
 
   if (!confirmation.ok) {
-    console.warn('Subscrição guardada, mas email de confirmação não enviado:', confirmation.reason);
+    console.warn('Subscricao guardada, mas email de confirmacao nao enviado:', confirmation.reason);
   }
 
   if (!internalNotification.ok) {
@@ -65,8 +78,8 @@ export async function POST(request: Request) {
   return Response.json({
     ok: true,
     message: confirmation.ok
-      ? 'Subscrição confirmada. Enviámos um email de confirmação para a tua caixa de correio.'
-      : 'Email guardado com sucesso. Para qualquer questão, contacta o CEISCaramulo.',
+      ? 'Subscricao confirmada. Enviamos um email de confirmacao para a tua caixa de correio.'
+      : 'Email guardado com sucesso. Para qualquer questao, contacta o CEISCaramulo.',
   });
 }
 
@@ -75,15 +88,25 @@ async function readNewsletterPayload(request: Request) {
 
   if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
     const formData = await request.formData();
-    return { email: formData.get('email') || formData.get('newsletter-email') };
+    return {
+      email: formData.get('email') || formData.get('newsletter-email'),
+      wantsNews: parseFormBoolean(formData.get('wantsNews'), true),
+      wantsActivities: parseFormBoolean(formData.get('wantsActivities'), true),
+    };
   }
 
   return request.json();
 }
 
+function parseFormBoolean(value: FormDataEntryValue | null, fallback: boolean) {
+  if (value === null) {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 'on' || normalized === 'true' || normalized === '1';
+}
+
 function isNewsletterPersistenceReady(): boolean {
-  return (
-    'newsletterSubscriber' in prisma &&
-    typeof prisma.newsletterSubscriber?.upsert === 'function'
-  );
+  return 'newsletterSubscriber' in prisma && typeof prisma.newsletterSubscriber?.upsert === 'function';
 }

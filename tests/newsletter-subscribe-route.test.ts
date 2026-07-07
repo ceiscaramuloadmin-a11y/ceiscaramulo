@@ -38,7 +38,7 @@ describe('newsletter subscribe route', () => {
       new Request('http://localhost/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'MARIA@test.PT ' }),
+        body: JSON.stringify({ email: 'MARIA@test.PT ', wantsNews: true, wantsActivities: false }),
       })
     );
 
@@ -46,11 +46,14 @@ describe('newsletter subscribe route', () => {
     await expect(response.json()).resolves.toMatchObject({ ok: true });
     expect(upsert).toHaveBeenCalledWith({
       where: { email: 'maria@test.pt' },
-      create: { email: 'maria@test.pt' },
-      update: {},
+      create: { email: 'maria@test.pt', wantsNews: true, wantsActivities: false },
+      update: { wantsNews: true, wantsActivities: false },
     });
     expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('maria@test.pt');
-    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('maria@test.pt');
+    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('maria@test.pt', {
+      wantsNews: true,
+      wantsActivities: false,
+    });
   });
 
   it('accepts form submissions from the newsletter button', async () => {
@@ -61,6 +64,8 @@ describe('newsletter subscribe route', () => {
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
     const formData = new FormData();
     formData.append('newsletter-email', 'JOAO@EXAMPLE.PT');
+    formData.append('wantsNews', 'false');
+    formData.append('wantsActivities', 'true');
 
     const response = await POST(
       new Request('http://localhost/api/newsletter/subscribe', {
@@ -72,11 +77,14 @@ describe('newsletter subscribe route', () => {
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledWith({
       where: { email: 'joao@example.pt' },
-      create: { email: 'joao@example.pt' },
-      update: {},
+      create: { email: 'joao@example.pt', wantsNews: false, wantsActivities: true },
+      update: { wantsNews: false, wantsActivities: true },
     });
     expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('joao@example.pt');
-    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('joao@example.pt');
+    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('joao@example.pt', {
+      wantsNews: false,
+      wantsActivities: true,
+    });
   });
 
   it('shows a simple saved message when the confirmation email cannot be sent', async () => {
@@ -95,7 +103,7 @@ describe('newsletter subscribe route', () => {
 
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
-      message: 'Email guardado com sucesso. Para qualquer questão, contacta o CEISCaramulo.',
+      message: 'Email guardado com sucesso. Para qualquer questao, contacta o CEISCaramulo.',
     });
   });
 
@@ -115,7 +123,10 @@ describe('newsletter subscribe route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ ok: true });
-    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('aviso@site.pt');
+    expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('aviso@site.pt', {
+      wantsNews: true,
+      wantsActivities: true,
+    });
   });
 
   it('rejects payloads without a usable email shape', async () => {

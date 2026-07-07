@@ -68,14 +68,17 @@ describe('notifySubscribersAboutPublishedArticle', () => {
     });
 
     expect(result).toEqual({ attempted: true, sent: 2, failed: 0 });
-    expect(findMany).toHaveBeenCalledTimes(1);
+    expect(findMany).toHaveBeenCalledWith({
+      select: { email: true },
+      where: { wantsNews: true },
+    });
     expect(mailResend.sendEmailViaResend).toHaveBeenCalledTimes(2);
 
     const firstPayload = vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0];
     expect(firstPayload).toMatchObject({
       from: 'Boletim <noreply@test.pt>',
       to: 'a@test.pt',
-      subject: 'Nova notícia: Titulo',
+      subject: 'Nova noticia: Titulo',
     });
     expect(firstPayload.html).toContain('https://mysite.pt/noticias/minha-slug');
     expect(firstPayload.text).toContain('https://mysite.pt/noticias/minha-slug');
@@ -134,6 +137,10 @@ describe('notifySubscribersAboutPublishedActivity', () => {
     });
 
     expect(result).toEqual({ attempted: true, sent: 1, failed: 0 });
+    expect(findMany).toHaveBeenCalledWith({
+      select: { email: true },
+      where: { wantsActivities: true },
+    });
     const firstPayload = vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0];
     expect(firstPayload).toMatchObject({
       from: 'Boletim <noreply@test.pt>',
@@ -221,7 +228,7 @@ describe('enqueueNewsPublishedNotifications', () => {
 
     expect(result).toEqual({ attempted: true, sent: 1, failed: 0 });
     expect(mailResend.sendEmailViaResend).toHaveBeenCalled();
-    expect(vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0].subject).toBe('Nova notícia: Titulo novo');
+    expect(vi.mocked(mailResend.sendEmailViaResend).mock.calls[0][0].subject).toBe('Nova noticia: Titulo novo');
   });
 
   it('does not send when this is not the first publication', async () => {

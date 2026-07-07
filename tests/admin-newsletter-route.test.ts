@@ -30,7 +30,13 @@ describe('admin newsletter route', () => {
     });
     hasAdminPermission.mockReturnValue(true);
     findMany.mockResolvedValue([
-      { id: 's1', email: 'ana@test.pt', createdAt: new Date('2026-07-01T10:00:00.000Z') },
+      {
+        id: 's1',
+        email: 'ana@test.pt',
+        wantsNews: true,
+        wantsActivities: false,
+        createdAt: new Date('2026-07-01T10:00:00.000Z'),
+      },
     ]);
   });
 
@@ -44,7 +50,13 @@ describe('admin newsletter route', () => {
       take: 50,
     });
     await expect(response.json()).resolves.toEqual([
-      { id: 's1', email: 'ana@test.pt', createdAt: '2026-07-01T10:00:00.000Z' },
+      {
+        id: 's1',
+        email: 'ana@test.pt',
+        wantsNews: true,
+        wantsActivities: false,
+        createdAt: '2026-07-01T10:00:00.000Z',
+      },
     ]);
   });
 
@@ -53,6 +65,6 @@ describe('admin newsletter route', () => {
     const response = await GET(new NextRequest('http://localhost/api/admin/newsletter?format=csv') as never);
 
     expect(response.headers.get('content-type')).toContain('text/csv');
-    await expect(response.text()).resolves.toContain('ana@test.pt,2026-07-01T10:00:00.000Z');
+    await expect(response.text()).resolves.toContain('ana@test.pt,sim,nao,2026-07-01T10:00:00.000Z');
   });
 });

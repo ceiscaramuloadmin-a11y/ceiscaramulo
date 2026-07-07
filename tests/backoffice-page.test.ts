@@ -593,6 +593,8 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('async function deleteContentComment');
     expect(backofficePageSource).toContain('async function exportNewsletterSubscribers');
     expect(backofficePageSource).toContain('Exportar CSV');
+    expect(backofficePageSource).toContain('function newsletterPreferenceLabel');
+    expect(backofficePageSource).toContain('newsletterPreferenceLabel(subscriber)');
   });
 
   it('adds lightweight manual ordering controls for news and activities', () => {

@@ -90,6 +90,8 @@ export interface ContentComment {
 export interface NewsletterSubscriber {
   id: string;
   email: string;
+  wantsNews?: boolean;
+  wantsActivities?: boolean;
   createdAt: string;
 }
 

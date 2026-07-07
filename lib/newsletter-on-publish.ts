@@ -2,16 +2,9 @@ import prisma from '@/lib/prisma';
 import { resolveMailSenderAddress, sendEmailViaResend } from '@/lib/mail-resend';
 import { richTextToPlainText } from '@/lib/richText';
 
-/** Decisão pura: só vale o disparo na primeira publicação efetiva. */
 export function shouldAnnounceNewsEmail(previousPublished: boolean | null, nextPublished: boolean): boolean {
-  if (!nextPublished) {
-    return false;
-  }
-
-  if (previousPublished === null) {
-    return nextPublished;
-  }
-
+  if (!nextPublished) return false;
+  if (previousPublished === null) return nextPublished;
   return !previousPublished && nextPublished;
 }
 
@@ -35,8 +28,8 @@ export type NewsletterDeliveryResult = {
 };
 
 export type NewsletterSingleEmailResult = { ok: true } | { ok: false; reason: string };
+export type NewsletterPreferences = { wantsNews?: boolean; wantsActivities?: boolean };
 
-/** Envia durante o pedido para não depender de microtasks descartáveis em serverless. */
 export async function enqueueNewsPublishedNotifications(
   previousPublished: boolean | null,
   article: ArticleEmailShape & { published: boolean }
@@ -45,8 +38,11 @@ export async function enqueueNewsPublishedNotifications(
     return { attempted: false, sent: 0, failed: 0, skippedReason: 'not_first_publish' };
   }
 
-  const { slug, title, excerpt } = article;
-  return notifySubscribersAboutPublishedArticle({ slug, title, excerpt });
+  return notifySubscribersAboutPublishedArticle({
+    slug: article.slug,
+    title: article.title,
+    excerpt: article.excerpt,
+  });
 }
 
 export async function enqueueActivityPublishedNotifications(
@@ -57,22 +53,19 @@ export async function enqueueActivityPublishedNotifications(
     return { attempted: false, sent: 0, failed: 0, skippedReason: 'not_first_publish' };
   }
 
-  const { id, title, description } = activity;
-  return notifySubscribersAboutPublishedActivity({ id, title, description });
+  return notifySubscribersAboutPublishedActivity({
+    id: activity.id,
+    title: activity.title,
+    description: activity.description,
+  });
 }
 
 function publicSiteOrigin() {
   const raw = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || process.env.APP_BASE_URL || process.env.VERCEL_URL;
-  if (!raw?.trim()) {
-    return 'https://ceiscaramulo.pt';
-  }
+  if (!raw?.trim()) return 'https://ceiscaramulo.pt';
 
   const trimmed = raw.trim();
-
-  if (!trimmed.includes('://')) {
-    return `https://${trimmed.replace(/\/+$/, '')}`;
-  }
-
+  if (!trimmed.includes('://')) return `https://${trimmed.replace(/\/+$/, '')}`;
   return trimmed.replace(/\/+$/, '');
 }
 
@@ -85,8 +78,9 @@ export async function notifySubscribersAboutPublishedArticle(article: ArticleEma
     title: article.title,
     teaser,
     link,
-    subject: `Nova notícia: ${article.title}`,
-    ctaLabel: 'Ler notícia completa',
+    subject: `Nova noticia: ${article.title}`,
+    ctaLabel: 'Ler noticia completa',
+    preferenceField: 'wantsNews',
   });
 }
 
@@ -101,6 +95,7 @@ export async function notifySubscribersAboutPublishedActivity(activity: Activity
     link,
     subject: `Nova atividade: ${activity.title}`,
     ctaLabel: 'Ver atividade',
+    preferenceField: 'wantsActivities',
   });
 }
 
@@ -110,16 +105,18 @@ async function notifySubscribersAboutPublishedContent(parts: {
   link: string;
   subject: string;
   ctaLabel: string;
+  preferenceField: 'wantsNews' | 'wantsActivities';
 }): Promise<NewsletterDeliveryResult> {
   const from = resolveMailSenderAddress();
 
   if (!from) {
-    console.warn('[newsletter] MAIL_FROM / RESEND_MAIL_FROM ausente: subscritores não receberam email.');
+    console.warn('[newsletter] MAIL_FROM / RESEND_MAIL_FROM ausente: subscritores nao receberam email.');
     return { attempted: false, sent: 0, failed: 0, skippedReason: 'missing_sender' };
   }
 
   const subscribers = await prisma.newsletterSubscriber.findMany({
     select: { email: true },
+    where: { [parts.preferenceField]: true },
   });
 
   if (!subscribers.length) {
@@ -156,7 +153,7 @@ async function notifySubscribersAboutPublishedContent(parts: {
   }
 
   if (!process.env.RESEND_API_KEY?.trim()) {
-    console.warn('[newsletter] RESEND_API_KEY ausente: destinatários listados mas emails não entregues.');
+    console.warn('[newsletter] RESEND_API_KEY ausente: destinatarios listados mas emails nao entregues.');
   }
 
   return { attempted: true, sent, failed };
@@ -166,7 +163,7 @@ export async function sendNewsletterSubscriptionConfirmation(email: string) {
   const from = resolveMailSenderAddress();
 
   if (!from) {
-    console.warn('[newsletter] MAIL_FROM / RESEND_MAIL_FROM ausente: confirmação de subscrição não enviada.');
+    console.warn('[newsletter] MAIL_FROM / RESEND_MAIL_FROM ausente: confirmacao de subscricao nao enviada.');
     return { ok: false as const, reason: 'missing_sender' };
   }
 
@@ -175,9 +172,9 @@ export async function sendNewsletterSubscriptionConfirmation(email: string) {
   return sendEmailViaResend({
     from,
     to: email,
-    subject: 'Subscrição confirmada - CEISCaramulo',
+    subject: 'Subscricao confirmada - CEISCaramulo',
     html: buildSubscriptionConfirmationHtml({ link: origin }),
-    text: `Subscrição confirmada.\n\nObrigado por subscreveres a newsletter do CEISCaramulo. Vais receber novidades e notícias quando forem publicadas.\n\nSite: ${origin}`,
+    text: `Subscricao confirmada.\n\nObrigado por subscreveres a newsletter do CEISCaramulo.\n\nSite: ${origin}`,
   });
 }
 
@@ -190,7 +187,10 @@ export function resolveNewsletterNotificationAddress(): string | null {
   );
 }
 
-export async function sendNewsletterInternalNotification(email: string): Promise<NewsletterSingleEmailResult> {
+export async function sendNewsletterInternalNotification(
+  email: string,
+  preferences: NewsletterPreferences = {}
+): Promise<NewsletterSingleEmailResult> {
   const from = resolveMailSenderAddress();
 
   if (!from) {
@@ -206,13 +206,14 @@ export async function sendNewsletterInternalNotification(email: string): Promise
   }
 
   const origin = publicSiteOrigin();
+  const preferenceLabel = formatNewsletterPreferences(preferences);
 
   return sendEmailViaResend({
     from,
     to,
     subject: 'Nova subscricao da newsletter - CEISCaramulo',
-    html: buildSubscriptionInternalNotificationHtml({ email, link: origin }),
-    text: `Nova subscricao da newsletter CEISCaramulo.\n\nEmail: ${email}\n\nConsulta o backoffice ou exporta a lista de subscritores para gerir a newsletter.\n\nSite: ${origin}`,
+    html: buildSubscriptionInternalNotificationHtml({ email, link: origin, preferenceLabel }),
+    text: `Nova subscricao da newsletter CEISCaramulo.\n\nEmail: ${email}\nPreferencias: ${preferenceLabel}\n\nConsulta o backoffice ou exporta a lista de subscritores para gerir a newsletter.\n\nSite: ${origin}`,
   });
 }
 
@@ -231,7 +232,7 @@ function buildNewsEmailHtml(parts: { title: string; teaser: string; link: string
             <a href="${parts.link}" style="display:inline-block;background:#0f4c36;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">
               ${escapeEmailAttr(parts.ctaLabel)}
             </a>
-            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Se não quiseres estes avisos, responde pedindo remoção ou contacta CEISCaramulo.</p>
+            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Se nao quiseres estes avisos, responde pedindo remocao ou contacta CEISCaramulo.</p>
           </div>
         </td>
       </tr>
@@ -250,8 +251,8 @@ function buildSubscriptionConfirmationHtml(parts: { link: string }) {
         <td style="padding:32px 16px;">
           <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e3e4dd;">
             <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#0f4c36;">CEISCaramulo</p>
-            <h1 style="margin:16px 0 12px;font-size:22px;line-height:1.2;">Subscrição confirmada</h1>
-            <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">Obrigado por subscreveres a newsletter. A partir de agora vais receber novidades e notícias quando forem publicadas.</p>
+            <h1 style="margin:16px 0 12px;font-size:22px;line-height:1.2;">Subscricao confirmada</h1>
+            <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">Obrigado por subscreveres a newsletter. A partir de agora vais receber apenas as comunicacoes que selecionaste.</p>
             <a href="${parts.link}" style="display:inline-block;background:#0f4c36;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">
               Visitar CEISCaramulo
             </a>
@@ -263,7 +264,7 @@ function buildSubscriptionConfirmationHtml(parts: { link: string }) {
 </html>`.trim();
 }
 
-function buildSubscriptionInternalNotificationHtml(parts: { email: string; link: string }) {
+function buildSubscriptionInternalNotificationHtml(parts: { email: string; link: string; preferenceLabel: string }) {
   return `
 <!DOCTYPE html>
 <html lang="pt">
@@ -275,17 +276,25 @@ function buildSubscriptionInternalNotificationHtml(parts: { email: string; link:
             <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#0f4c36;">CEISCaramulo</p>
             <h1 style="margin:16px 0 12px;font-size:22px;line-height:1.2;">Nova subscricao da newsletter</h1>
             <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#374151;">Foi registado um novo contacto para a newsletter:</p>
-            <p style="margin:0 0 22px;font-size:16px;font-weight:700;color:#0f4c36;">${escapeEmailAttr(parts.email)}</p>
+            <p style="margin:0 0 10px;font-size:16px;font-weight:700;color:#0f4c36;">${escapeEmailAttr(parts.email)}</p>
+            <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">Preferencias: ${escapeEmailAttr(parts.preferenceLabel)}</p>
             <a href="${parts.link}/backoffice" style="display:inline-block;background:#0f4c36;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;">
               Abrir backoffice
             </a>
-            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Este aviso nao guarda ficheiros nem pesa a base de dados; a base guarda apenas o email do subscritor.</p>
+            <p style="margin:24px 0 0;font-size:12px;color:#6b7280;">Este aviso nao guarda ficheiros nem pesa a base de dados; guarda apenas email e preferencias simples.</p>
           </div>
         </td>
       </tr>
     </table>
   </body>
 </html>`.trim();
+}
+
+function formatNewsletterPreferences(preferences: NewsletterPreferences) {
+  const labels = [];
+  if (preferences.wantsNews !== false) labels.push('noticias');
+  if (preferences.wantsActivities !== false) labels.push('atividades');
+  return labels.length ? labels.join(' e ') : 'sem preferencias selecionadas';
 }
 
 function escapeEmailAttr(value: string) {

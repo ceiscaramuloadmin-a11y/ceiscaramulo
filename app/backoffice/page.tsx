@@ -229,6 +229,15 @@ function galleryTypeLabel(type: GalleryMediaType) {
   return 'Documento';
 }
 
+function newsletterPreferenceLabel(subscriber: NewsletterSubscriber) {
+  const labels = [];
+
+  if (subscriber.wantsNews !== false) labels.push('Notícias');
+  if (subscriber.wantsActivities !== false) labels.push('Atividades');
+
+  return labels.length ? labels.join(' e ') : 'Sem preferências';
+}
+
 function galleryAcceptForType(type: GalleryMediaType) {
   if (type === 'photo') return WEB_IMAGE_ACCEPT;
   if (type === 'video') return 'video/*';
@@ -2267,7 +2276,10 @@ export default function BackofficePage() {
             <div className="overflow-hidden rounded-lg border border-stone-200">
               {newsletterSubscribers.map((subscriber) => (
                 <div key={subscriber.id} className="flex flex-col gap-1 border-b border-stone-100 px-4 py-3 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="font-medium text-stone-900">{subscriber.email}</span>
+                  <div>
+                    <span className="font-medium text-stone-900">{subscriber.email}</span>
+                    <span className="mt-1 block text-xs text-[#0f4c36]">{newsletterPreferenceLabel(subscriber)}</span>
+                  </div>
                   <span className="text-xs text-stone-500">{new Date(subscriber.createdAt).toLocaleString('pt-PT')}</span>
                 </div>
               ))}

@@ -32,8 +32,10 @@ export async function GET(request: NextRequest) {
 
   if (format === 'csv') {
     const csv = [
-      'email,createdAt',
-      ...subscribers.map((subscriber) => `${subscriber.email},${subscriber.createdAt.toISOString()}`),
+      'email,wantsNews,wantsActivities,createdAt',
+      ...subscribers.map((subscriber) =>
+        `${subscriber.email},${subscriber.wantsNews ? 'sim' : 'nao'},${subscriber.wantsActivities ? 'sim' : 'nao'},${subscriber.createdAt.toISOString()}`
+      ),
     ].join('\n');
 
     return new NextResponse(csv, {
