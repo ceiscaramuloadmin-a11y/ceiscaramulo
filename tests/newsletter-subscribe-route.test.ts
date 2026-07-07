@@ -38,7 +38,7 @@ describe('newsletter subscribe route', () => {
       new Request('http://localhost/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'MARIA@test.PT ', wantsNews: true, wantsActivities: false }),
+        body: JSON.stringify({ email: 'MARIA@test.PT ' }),
       })
     );
 
@@ -46,13 +46,13 @@ describe('newsletter subscribe route', () => {
     await expect(response.json()).resolves.toMatchObject({ ok: true });
     expect(upsert).toHaveBeenCalledWith({
       where: { email: 'maria@test.pt' },
-      create: { email: 'maria@test.pt', wantsNews: true, wantsActivities: false },
-      update: { wantsNews: true, wantsActivities: false },
+      create: { email: 'maria@test.pt', wantsNews: true, wantsActivities: true },
+      update: { wantsNews: true, wantsActivities: true },
     });
     expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('maria@test.pt');
     expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('maria@test.pt', {
       wantsNews: true,
-      wantsActivities: false,
+      wantsActivities: true,
     });
   });
 
@@ -64,8 +64,6 @@ describe('newsletter subscribe route', () => {
     const { POST } = await import('@/app/api/newsletter/subscribe/route');
     const formData = new FormData();
     formData.append('newsletter-email', 'JOAO@EXAMPLE.PT');
-    formData.append('wantsNews', 'false');
-    formData.append('wantsActivities', 'true');
 
     const response = await POST(
       new Request('http://localhost/api/newsletter/subscribe', {
@@ -77,12 +75,12 @@ describe('newsletter subscribe route', () => {
     expect(response.status).toBe(200);
     expect(upsert).toHaveBeenCalledWith({
       where: { email: 'joao@example.pt' },
-      create: { email: 'joao@example.pt', wantsNews: false, wantsActivities: true },
-      update: { wantsNews: false, wantsActivities: true },
+      create: { email: 'joao@example.pt', wantsNews: true, wantsActivities: true },
+      update: { wantsNews: true, wantsActivities: true },
     });
     expect(sendNewsletterSubscriptionConfirmation).toHaveBeenCalledWith('joao@example.pt');
     expect(sendNewsletterInternalNotification).toHaveBeenCalledWith('joao@example.pt', {
-      wantsNews: false,
+      wantsNews: true,
       wantsActivities: true,
     });
   });
