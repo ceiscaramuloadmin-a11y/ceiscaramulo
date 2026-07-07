@@ -17,6 +17,7 @@ import {
 export const AUTH0_ADMIN_LOGIN_PATH = '/auth/login?returnTo=%2Fbackoffice';
 export const AUTH0_ADMIN_LOGOUT_PATH = '/auth/logout?returnTo=%2Fbackoffice%2Flogin';
 export const ADMIN_FORCE_AUTH0_LOGIN_KEY = 'ceiscaramulo.admin.forceAuth0Login';
+export const ADMIN_ACTIVE_AUTH0_SESSION_KEY = 'ceiscaramulo.admin.activeAuth0TabSession';
 
 type Auth0LoginLocation = Pick<Location, 'hostname' | 'port' | 'protocol'>;
 type Auth0LoginOptions = {
@@ -108,6 +109,34 @@ export function clearForceAuth0Login() {
 
 export function shouldForceAuth0Login() {
   return readForceAuth0LoginMarker();
+}
+
+export function markActiveAuth0TabSession() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(ADMIN_ACTIVE_AUTH0_SESSION_KEY, '1');
+}
+
+export function clearActiveAuth0TabSession() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.removeItem(ADMIN_ACTIVE_AUTH0_SESSION_KEY);
+}
+
+export function hasActiveAuth0TabSession() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.sessionStorage.getItem(ADMIN_ACTIVE_AUTH0_SESSION_KEY) === '1';
+}
+
+export function shouldRequireFreshAuth0Login() {
+  return shouldForceAuth0Login() || !hasActiveAuth0TabSession();
 }
 
 export function getFirebaseAuthErrorMessage(error: unknown) {
@@ -322,7 +351,7 @@ export const adminAuthClient = {
   adapter: {
     async getSession(): Promise<SessionResult> {
       const mode: AdminAuthMode = getPublicAdminAuthMode();
-      if (mode === 'runtime' && shouldForceAuth0Login()) {
+      if (mode === 'runtime' && shouldRequireFreshAuth0Login()) {
         return { data: null };
       }
 
@@ -332,6 +361,7 @@ export const adminAuthClient = {
     async signOut() {
       if (getPublicAdminAuthMode() === 'runtime') {
         markForceAuth0Login();
+        clearActiveAuth0TabSession();
         await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
       }
       persistSession(null);

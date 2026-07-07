@@ -54,18 +54,55 @@ describe('admin auth runtime mode', () => {
     );
   });
 
+  it('requires an active tab session before restoring an Auth0 runtime session', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        token: null,
+        session: {
+          email: 'admin@ceis.pt',
+          role: 'owner',
+          permissions: ['news'],
+          expiresAt: '2099-01-01T00:00:00.000Z',
+        },
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { ADMIN_ACTIVE_AUTH0_SESSION_KEY, adminAuthClient, markActiveAuth0TabSession } = await import('@/lib/admin-auth');
+
+    await expect(adminAuthClient.adapter.getSession()).resolves.toEqual({ data: null });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    markActiveAuth0TabSession();
+    await expect(adminAuthClient.adapter.getSession()).resolves.toEqual({
+      data: {
+        session: expect.objectContaining({
+          email: 'admin@ceis.pt',
+          mode: 'runtime',
+        }),
+      },
+    });
+    expect(window.sessionStorage.getItem(ADMIN_ACTIVE_AUTH0_SESSION_KEY)).toBe('1');
+    expect(fetchMock).toHaveBeenCalledWith('/api/admin/session', {
+      method: 'GET',
+      credentials: 'include',
+    });
+  });
+
   it('marks Auth0 runtime sign out so sessions are not restored automatically on reload', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const { ADMIN_FORCE_AUTH0_LOGIN_KEY, adminAuthClient } = await import('@/lib/admin-auth');
+    const { ADMIN_ACTIVE_AUTH0_SESSION_KEY, ADMIN_FORCE_AUTH0_LOGIN_KEY, adminAuthClient, markActiveAuth0TabSession } = await import('@/lib/admin-auth');
 
+    markActiveAuth0TabSession();
     await adminAuthClient.adapter.signOut();
     const sessionResult = await adminAuthClient.adapter.getSession();
 
     expect(fetchMock).toHaveBeenCalledWith('/api/admin/session', { method: 'DELETE' });
     expect(window.sessionStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY)).toBe('1');
     expect(window.localStorage.getItem(ADMIN_FORCE_AUTH0_LOGIN_KEY)).toBe('1');
+    expect(window.sessionStorage.getItem(ADMIN_ACTIVE_AUTH0_SESSION_KEY)).toBeNull();
     expect(sessionResult).toEqual({ data: null });
   });
 });

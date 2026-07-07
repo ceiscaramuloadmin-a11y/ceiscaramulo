@@ -2,13 +2,14 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BackofficeLoginPage from '@/app/backoffice/login/page';
 
-const { replace, clearForceAuth0Login, getSession, getAuth0AdminLoginHref, isExportAdminAuthMode, shouldForceAuth0Login } = vi.hoisted(() => ({
+const { replace, clearForceAuth0Login, getSession, getAuth0AdminLoginHref, isExportAdminAuthMode, markActiveAuth0TabSession, shouldRequireFreshAuth0Login } = vi.hoisted(() => ({
   replace: vi.fn(),
   clearForceAuth0Login: vi.fn(),
   getSession: vi.fn(),
   getAuth0AdminLoginHref: vi.fn(),
   isExportAdminAuthMode: vi.fn(),
-  shouldForceAuth0Login: vi.fn(),
+  markActiveAuth0TabSession: vi.fn(),
+  shouldRequireFreshAuth0Login: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -22,7 +23,8 @@ vi.mock('@/lib/admin-auth', () => ({
   clearForceAuth0Login,
   getAuth0AdminLoginHref,
   isExportAdminAuthMode,
-  shouldForceAuth0Login,
+  markActiveAuth0TabSession,
+  shouldRequireFreshAuth0Login,
   adminAuthClient: {
     adapter: {
       getSession,
@@ -36,7 +38,7 @@ describe('BackofficeLoginPage', () => {
     getSession.mockResolvedValue({ data: null });
     getAuth0AdminLoginHref.mockReturnValue('/auth/login?returnTo=%2Fbackoffice');
     isExportAdminAuthMode.mockReturnValue(false);
-    shouldForceAuth0Login.mockReturnValue(false);
+    shouldRequireFreshAuth0Login.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -76,7 +78,7 @@ describe('BackofficeLoginPage', () => {
   });
 
   it('does not restore an Auth0 session automatically immediately after sign out', async () => {
-    shouldForceAuth0Login.mockReturnValue(true);
+    shouldRequireFreshAuth0Login.mockReturnValue(true);
     getAuth0AdminLoginHref.mockReturnValue('/api/admin/auth0-login');
     render(<BackofficeLoginPage />);
 
@@ -88,6 +90,19 @@ describe('BackofficeLoginPage', () => {
     });
     expect(getAuth0AdminLoginHref).toHaveBeenCalledWith(null, { promptLogin: true });
     expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it('marks the current tab as active before sending the user to Auth0', async () => {
+    shouldRequireFreshAuth0Login.mockReturnValue(true);
+    getAuth0AdminLoginHref.mockReturnValue('/api/admin/auth0-login');
+    render(<BackofficeLoginPage />);
+
+    const loginLink = screen.getByRole('link', { name: 'Entrar com Auth0' });
+    loginLink.addEventListener('click', (event) => event.preventDefault());
+    loginLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(markActiveAuth0TabSession).toHaveBeenCalledTimes(1);
+    expect(clearForceAuth0Login).toHaveBeenCalledTimes(1);
   });
 
   it('does not expose public account creation controls', () => {

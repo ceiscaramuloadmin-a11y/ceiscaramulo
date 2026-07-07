@@ -8,7 +8,8 @@ import {
   clearForceAuth0Login,
   getAuth0AdminLoginHref,
   isExportAdminAuthMode,
-  shouldForceAuth0Login,
+  markActiveAuth0TabSession,
+  shouldRequireFreshAuth0Login,
 } from '@/lib/admin-auth';
 
 export default function BackofficeLoginPage() {
@@ -21,10 +22,10 @@ export default function BackofficeLoginPage() {
   const [auth0LoginHref, setAuth0LoginHref] = useState(AUTH0_ADMIN_LOGIN_PATH);
 
   useEffect(() => {
-    const forceAuth0Login = shouldForceAuth0Login();
-    setAuth0LoginHref(getAuth0AdminLoginHref(null, { promptLogin: forceAuth0Login }));
+    const requireFreshAuth0Login = shouldRequireFreshAuth0Login();
+    setAuth0LoginHref(getAuth0AdminLoginHref(null, { promptLogin: requireFreshAuth0Login }));
 
-    if (forceAuth0Login) {
+    if (requireFreshAuth0Login) {
       return;
     }
 
@@ -114,7 +115,10 @@ export default function BackofficeLoginPage() {
           </p>
           <a
             href={auth0LoginHref}
-            onClick={() => clearForceAuth0Login()}
+            onClick={() => {
+              markActiveAuth0TabSession();
+              clearForceAuth0Login();
+            }}
             className="inline-flex w-full justify-center rounded-lg bg-[#0f4c36] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b3d2b]"
           >
             Entrar com Auth0
