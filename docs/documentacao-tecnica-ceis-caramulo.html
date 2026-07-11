@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <title>DocumentaÃ§Ã£o TÃ©cnica - Website CEISCaramulo</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+
+    :root {
+      --green-900: #17391f;
+      --green-800: #22552d;
+      --green-700: #2f6b39;
+      --green-100: #eef7ef;
+      --green-050: #f7fbf7;
+      --stone-900: #1f231f;
+      --stone-700: #4b514b;
+      --stone-500: #71776f;
+      --stone-200: #dfe5dc;
+      --stone-100: #f3f5f1;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--white);
+      color: var(--stone-900);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.55;
+    }
+
+    .cover {
+      min-height: 245mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18mm 0 8mm;
+      page-break-after: always;
+    }
+
+    .cover-mark {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--green-100);
+      color: var(--green-800);
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 22mm 0 6mm;
+      max-width: 150mm;
+      color: var(--green-900);
+      font-size: 33pt;
+      line-height: 1.04;
+      letter-spacing: -.01em;
+    }
+
+    .subtitle {
+      max-width: 145mm;
+      color: var(--stone-700);
+      font-size: 13pt;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 18mm;
+    }
+
+    .cover-card {
+      border: 1px solid var(--stone-200);
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: var(--green-050);
+    }
+
+    .label {
+      display: block;
+      color: var(--stone-500);
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .value {
+      display: block;
+      margin-top: 3px;
+      color: var(--stone-900);
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    h2 {
+      margin: 13mm 0 4mm;
+      padding-top: 2mm;
+      color: var(--green-900);
+      font-size: 18pt;
+      line-height: 1.2;
+      page-break-after: avoid;
+    }
+
+    h3 {
+      margin: 8mm 0 3mm;
+      color: var(--green-800);
+      font-size: 12.5pt;
+      page-break-after: avoid;
+    }
+
+    h4 {
+      margin: 6mm 0 2mm;
+      color: var(--stone-900);
+      font-size: 10.5pt;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin: 0 0 3.5mm;
+    }
+
+    ul, ol {
+      margin: 0 0 4mm 5mm;
+      padding: 0;
+    }
+
+    li {
+      margin: 0 0 1.5mm;
+      padding-left: 1mm;
+    }
+
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--stone-100);
+      color: #18391f;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9pt;
+    }
+
+    pre {
+      margin: 3mm 0 5mm;
+      padding: 10px 12px;
+      border: 1px solid var(--stone-200);
+      border-radius: 8px;
+      background: #f8faf7;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8.7pt;
+      line-height: 1.45;
+      page-break-inside: avoid;
+    }
+
+    table {
+      width: 100%;
+      margin: 3mm 0 6mm;
+      border-collapse: collapse;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid var(--stone-200);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--green-100);
+      color: var(--green-900);
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .note {
+      margin: 4mm 0;
+      padding: 10px 12px;
+      border-left: 4px solid var(--green-700);
+      border-radius: 6px;
+      background: var(--green-050);
+      page-break-inside: avoid;
+    }
+
+    .warning {
+      margin: 4mm 0;
+      padding: 10px 12px;
+      border-left: 4px solid #b36b00;
+      border-radius: 6px;
+      background: #fff7e6;
+      page-break-inside: avoid;
+    }
+
+    .toc {
+      page-break-after: always;
+    }
+
+    .toc ol {
+      margin-left: 0;
+      list-style-position: inside;
+      columns: 2;
+      column-gap: 12mm;
+    }
+
+    .toc li {
+      margin-bottom: 2.5mm;
+      break-inside: avoid;
+    }
+
+    .section-break {
+      page-break-before: always;
+    }
+
+    .muted {
+      color: var(--stone-500);
+    }
+
+    .status-ok {
+      color: var(--green-800);
+      font-weight: 700;
+    }
+
+    .footer-note {
+      margin-top: 10mm;
+      padding-top: 4mm;
+      border-top: 1px solid var(--stone-200);
+      color: var(--stone-500);
+      font-size: 8.5pt;
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div>
+      <span class="cover-mark">Documento tÃ©cnico de entrega</span>
+      <h1>Website CEISCaramulo</h1>
+      <p class="subtitle">
+        DocumentaÃ§Ã£o tÃ©cnica organizada para manutenÃ§Ã£o, operaÃ§Ã£o e continuidade do website institucional e do backoffice.
+      </p>
+
+      <div class="cover-grid">
+        <div class="cover-card">
+          <span class="label">Projeto</span>
+          <span class="value">CEISCaramulo</span>
+        </div>
+        <div class="cover-card">
+          <span class="label">Stack principal</span>
+          <span class="value">Next.js, React, Prisma, PostgreSQL, Auth0, Vercel</span>
+        </div>
+        <div class="cover-card">
+          <span class="label">DomÃ­nios de produÃ§Ã£o</span>
+          <span class="value">ceiscaramulo.pt / www.ceiscaramulo.pt</span>
+        </div>
+        <div class="cover-card">
+          <span class="label">Ãšltima validaÃ§Ã£o tÃ©cnica</span>
+          <span class="value">02/07/2026</span>
+        </div>
+        <div class="cover-card">
+          <span class="label">Commit validado</span>
+          <span class="value">4fbf669 - Remove local CMS file fallback</span>
+        </div>
+        <div class="cover-card">
+          <span class="label">Estado do deploy</span>
+          <span class="value status-ok">Vercel Production READY</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="footer-note">
+      Este documento nÃ£o inclui segredos, passwords, tokens ou valores reais de variÃ¡veis de ambiente. Esses dados devem permanecer apenas na Vercel/Auth0/Firebase/gestor seguro da empresa.
+    </p>
+  </section>
+
+  <section class="toc">
+    <h2>Ãndice</h2>
+    <ol>
+      <li>Resumo executivo</li>
+      <li>Arquitetura geral</li>
+      <li>Tecnologias e dependÃªncias</li>
+      <li>Estrutura do projeto</li>
+      <li>Backoffice</li>
+      <li>ConteÃºdos pÃºblicos</li>
+      <li>Base de dados</li>
+      <li>AutenticaÃ§Ã£o e permissÃµes</li>
+      <li>Ficheiros, imagens e galerias</li>
+      <li>VariÃ¡veis de ambiente</li>
+      <li>Deploy e domÃ­nios</li>
+      <li>Comandos de desenvolvimento</li>
+      <li>Testes e validaÃ§Ã£o</li>
+      <li>ManutenÃ§Ã£o recomendada</li>
+      <li>ResoluÃ§Ã£o de problemas</li>
+      <li>Checklist de entrega</li>
+    </ol>
+  </section>
+
+  <h2>1. Resumo executivo</h2>
+  <p>
+    O website CEISCaramulo Ã© uma aplicaÃ§Ã£o web institucional com pÃ¡ginas pÃºblicas, sistema de conteÃºdos e backoffice administrativo. A aplicaÃ§Ã£o permite gerir notÃ­cias, atividades, recursos/publicaÃ§Ãµes, mensagens recebidas, aparÃªncia do site, pÃ¡gina Sobre NÃ³s, utilizadores administrativos e galerias associadas a pÃ¡ginas especÃ­ficas.
+  </p>
+  <p>
+    A soluÃ§Ã£o foi preparada para produÃ§Ã£o em Vercel, com base de dados PostgreSQL gerida por Prisma, autenticaÃ§Ã£o Auth0 e armazenamento de ficheiros atravÃ©s de Vercel Blob e rotas internas de assets. O foco tÃ©cnico atual Ã© manter o site leve, evitar transferÃªncias excessivas de origem e impedir que ficheiros grandes sejam guardados diretamente na base de dados.
+  </p>
+
+  <div class="note">
+    <strong>Estado no momento da entrega:</strong> testes automatizados, TypeScript, build de produÃ§Ã£o e verificaÃ§Ã£o HTTP local foram executados com sucesso. O deploy de produÃ§Ã£o na Vercel ficou no estado <strong>READY</strong>.
+  </div>
+
+  <h2>2. Arquitetura geral</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Camada</th>
+        <th>Responsabilidade</th>
+        <th>LocalizaÃ§Ã£o principal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Frontend pÃºblico</td>
+        <td>PÃ¡ginas institucionais, notÃ­cias, atividades, recursos, galerias e contactos.</td>
+        <td><code>app/</code>, <code>components/</code></td>
+      </tr>
+      <tr>
+        <td>Backoffice</td>
+        <td>GestÃ£o administrativa de conteÃºdos, aparÃªncia, mensagens, utilizadores e galerias.</td>
+        <td><code>app/backoffice/page.tsx</code></td>
+      </tr>
+      <tr>
+        <td>API interna</td>
+        <td>Rotas para CRUD de conteÃºdos, sessÃ£o admin, layout, uploads, galeria, newsletter e mensagens.</td>
+        <td><code>app/api/</code></td>
+      </tr>
+      <tr>
+        <td>Dados</td>
+        <td>PersistÃªncia em PostgreSQL via Prisma, com modelos para conteÃºdos, utilizadores, layout e mensagens.</td>
+        <td><code>prisma/schema.prisma</code>, <code>app/api/_lib/cms.ts</code></td>
+      </tr>
+      <tr>
+        <td>Uploads</td>
+        <td>Armazenamento otimizado de imagens, documentos e media, com Vercel Blob e rotas locais de leitura.</td>
+        <td><code>lib/upload-storage.ts</code>, <code>app/uploads/backoffice/</code>, <code>app/api/gallery/</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Tecnologias e dependÃªncias</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tecnologia</th>
+        <th>Uso no projeto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Next.js 15</td>
+        <td>AplicaÃ§Ã£o principal com App Router, pÃ¡ginas pÃºblicas, rotas API e build de produÃ§Ã£o.</td>
+      </tr>
+      <tr>
+        <td>React 18</td>
+        <td>Componentes de interface e backoffice.</td>
+      </tr>
+      <tr>
+        <td>TypeScript</td>
+        <td>Tipagem estÃ¡tica do projeto.</td>
+      </tr>
+      <tr>
+        <td>Prisma 7</td>
+        <td>Acesso Ã  base de dados PostgreSQL e geraÃ§Ã£o de cliente Prisma.</td>
+      </tr>
+      <tr>
+        <td>PostgreSQL</td>
+        <td>Base de dados principal em produÃ§Ã£o.</td>
+      </tr>
+      <tr>
+        <td>Auth0</td>
+        <td>AutenticaÃ§Ã£o administrativa do backoffice.</td>
+      </tr>
+      <tr>
+        <td>Firebase Admin</td>
+        <td>Suporte a credenciais/admin em fluxos existentes.</td>
+      </tr>
+      <tr>
+        <td>Vercel Blob</td>
+        <td>Armazenamento de ficheiros/media para reduzir peso na base de dados e evitar limites de origem.</td>
+      </tr>
+      <tr>
+        <td>Vitest</td>
+        <td>Testes automatizados de pÃ¡ginas, APIs, helpers e regressÃµes.</td>
+      </tr>
+      <tr>
+        <td>Tailwind CSS / Radix UI / Lucide</td>
+        <td>Interface, componentes, estilos e Ã­cones.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Estrutura do projeto</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Pasta/Ficheiro</th>
+        <th>DescriÃ§Ã£o</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>app/</code></td>
+        <td>Rotas pÃºblicas, backoffice e API routes do Next.js.</td>
+      </tr>
+      <tr>
+        <td><code>components/</code></td>
+        <td>Componentes reutilizÃ¡veis do frontend e backoffice.</td>
+      </tr>
+      <tr>
+        <td><code>lib/</code></td>
+        <td>FunÃ§Ãµes utilitÃ¡rias, autenticaÃ§Ã£o, storage, layout e lÃ³gica partilhada.</td>
+      </tr>
+      <tr>
+        <td><code>data/</code></td>
+        <td>ConteÃºdos estÃ¡ticos/fallbacks usados quando necessÃ¡rio.</td>
+      </tr>
+      <tr>
+        <td><code>prisma/</code></td>
+        <td>Schema e migraÃ§Ãµes da base de dados.</td>
+      </tr>
+      <tr>
+        <td><code>src/generated/prisma/</code></td>
+        <td>Cliente Prisma gerado automaticamente.</td>
+      </tr>
+      <tr>
+        <td><code>tests/</code></td>
+        <td>Testes automatizados do projeto.</td>
+      </tr>
+      <tr>
+        <td><code>public/</code></td>
+        <td>Assets estÃ¡ticos servidos diretamente pelo Next.js.</td>
+      </tr>
+      <tr>
+        <td><code>.env</code> / <code>.env.local</code></td>
+        <td>ConfiguraÃ§Ã£o local. Os valores reais nÃ£o devem ser partilhados publicamente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="section-break">5. Backoffice</h2>
+  <p>
+    O backoffice estÃ¡ disponÃ­vel em <code>/backoffice</code> e a pÃ¡gina de entrada em <code>/backoffice/login</code>. O acesso Ã© protegido por autenticaÃ§Ã£o e permissÃµes. Sem sessÃ£o vÃ¡lida, as rotas administrativas respondem com <code>401 NÃ£o autorizado</code>, que Ã© o comportamento esperado.
+  </p>
+
+  <h3>5.1 Ãreas disponÃ­veis</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Ãrea</th>
+        <th>Finalidade</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VisÃ£o geral</td>
+        <td>Resumo do estado do backoffice, contagens e acessos Ã s Ã¡reas principais.</td>
+      </tr>
+      <tr>
+        <td>Perfil</td>
+        <td>Dados do utilizador autenticado e alteraÃ§Ã£o de palavra-passe.</td>
+      </tr>
+      <tr>
+        <td>NotÃ­cias</td>
+        <td>CriaÃ§Ã£o, ediÃ§Ã£o, publicaÃ§Ã£o e imagem de capa de notÃ­cias.</td>
+      </tr>
+      <tr>
+        <td>Atividades</td>
+        <td>GestÃ£o de atividades/eventos, datas, categorias, locais e imagem.</td>
+      </tr>
+      <tr>
+        <td>Recursos</td>
+        <td>Biblioteca/recursos/publicaÃ§Ãµes, documentos PDF, capas e metadados.</td>
+      </tr>
+      <tr>
+        <td>Mensagens</td>
+        <td>Consulta e marcaÃ§Ã£o de mensagens enviadas pelo formulÃ¡rio de contacto.</td>
+      </tr>
+      <tr>
+        <td>Galerias por pÃ¡gina</td>
+        <td>Media associados a pÃ¡ginas como Oficina do Burel, Artigos para venda, Biblioteca JRS, PON do Jueus, Escola dos Nossos AvÃ³s, Oficinas de FormaÃ§Ã£o, PublicaÃ§Ãµes e Recursos.</td>
+      </tr>
+      <tr>
+        <td>Administradores</td>
+        <td>GestÃ£o de utilizadores administrativos, estado ativo e permissÃµes.</td>
+      </tr>
+      <tr>
+        <td>HistÃ³rico</td>
+        <td>Registo de alteraÃ§Ãµes administrativas e retenÃ§Ã£o dos eventos recentes.</td>
+      </tr>
+      <tr>
+        <td>Sobre NÃ³s</td>
+        <td>EdiÃ§Ã£o do conteÃºdo da pÃ¡gina Sobre NÃ³s e dados visÃ­veis na barra de contacto.</td>
+      </tr>
+      <tr>
+        <td>AparÃªncia</td>
+        <td>ConfiguraÃ§Ã£o de textos, pÃ¡ginas institucionais, rodapÃ©, contactos e blocos editÃ¡veis do site.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 ExperiÃªncia de utilizaÃ§Ã£o</h3>
+  <ul>
+    <li>Os formulÃ¡rios usam mensagens de erro/sucesso para orientar o utilizador.</li>
+    <li>Uploads em lote mostram progresso, reduzindo a sensaÃ§Ã£o de bloqueio em ficheiros maiores.</li>
+    <li>As listagens administrativas sÃ£o limitadas para evitar carregar demasiados registos de uma vez.</li>
+    <li>O backoffice carrega secÃ§Ãµes conforme necessÃ¡rio, em vez de puxar todos os dados logo na entrada.</li>
+    <li>Ãreas sensÃ­veis sÃ³ aparecem quando o administrador tem permissÃµes adequadas.</li>
+  </ul>
+
+  <h2>6. ConteÃºdos pÃºblicos</h2>
+  <p>
+    O site pÃºblico Ã© composto por pÃ¡ginas institucionais, conteÃºdos editoriais e pÃ¡ginas alimentadas pelo backoffice. As principais rotas pÃºblicas incluem:
+  </p>
+  <ul>
+    <li><code>/</code> - pÃ¡gina inicial.</li>
+    <li><code>/sobre-nos</code> - apresentaÃ§Ã£o institucional.</li>
+    <li><code>/contactos</code> - contactos e formulÃ¡rio.</li>
+    <li><code>/noticias</code> e <code>/noticias/[slug]</code> - notÃ­cias.</li>
+    <li><code>/atividades</code> e <code>/atividades/[id]</code> - atividades.</li>
+    <li><code>/biblioteca</code> e <code>/biblioteca/[id]</code> - recursos/biblioteca.</li>
+    <li><code>/oficina-do-burel</code>, <code>/artigos-para-venda</code>, <code>/biblioteca-jrs</code>, <code>/pon-do-jueus</code>, <code>/escola-dos-nossos-avos</code>, <code>/oficinas-de-formacao</code> e <code>/publicacoes</code> - pÃ¡ginas programÃ¡ticas com galerias/conteÃºdos associados.</li>
+  </ul>
+
+  <div class="note">
+    O conteÃºdo pÃºblico deve continuar a ser editado preferencialmente atravÃ©s das Ã¡reas prÃ³prias do backoffice. AlteraÃ§Ãµes manuais diretamente no cÃ³digo sÃ³ devem ser feitas quando se tratar de estrutura, comportamento ou design nÃ£o editÃ¡vel.
+  </div>
+
+  <h2>7. Base de dados</h2>
+  <p>
+    A base de dados usa PostgreSQL com Prisma. O schema principal encontra-se em <code>prisma/schema.prisma</code>. Os modelos mais relevantes sÃ£o:
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Modelo</th>
+        <th>DescriÃ§Ã£o</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>News</code></td><td>NotÃ­cias, slugs, conteÃºdo rico, categoria, autor e estado publicado.</td></tr>
+      <tr><td><code>Activity</code></td><td>Atividades com datas, local, categoria e imagem.</td></tr>
+      <tr><td><code>Publication</code></td><td>Recursos/publicaÃ§Ãµes, documentos PDF e capas.</td></tr>
+      <tr><td><code>ContactMessage</code></td><td>Mensagens do formulÃ¡rio de contacto.</td></tr>
+      <tr><td><code>SiteSetting</code></td><td>Chave/valor para dados de compatibilidade e armazenamento auxiliar.</td></tr>
+      <tr><td><code>SiteLayout</code></td><td>ConfiguraÃ§Ãµes globais de aparÃªncia/layout do site.</td></tr>
+      <tr><td><code>AdminUser</code></td><td>Utilizadores administrativos e respetivo estado.</td></tr>
+      <tr><td><code>AdminAuditLog</code></td><td>HistÃ³rico de aÃ§Ãµes administrativas.</td></tr>
+      <tr><td><code>NewsletterSubscriber</code></td><td>Subscritores da newsletter.</td></tr>
+      <tr><td><code>GalleryMedia</code></td><td>Media de galeria global antigo. As galerias por pÃ¡gina usam tambÃ©m armazenamento otimizado em settings/blob.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.1 Cuidados com a base de dados</h3>
+  <ul>
+    <li>NÃ£o guardar ficheiros grandes diretamente na base de dados.</li>
+    <li>Manter documentos/imagens/media em Vercel Blob ou rotas de upload jÃ¡ existentes.</li>
+    <li>Executar migraÃ§Ãµes apenas quando houver alteraÃ§Ãµes reais ao schema.</li>
+    <li>Validar sempre com <code>pnpm test:run</code> e <code>pnpm build</code> antes de produÃ§Ã£o.</li>
+  </ul>
+
+  <h2 class="section-break">8. AutenticaÃ§Ã£o e permissÃµes</h2>
+  <p>
+    A autenticaÃ§Ã£o administrativa usa Auth0. O backoffice depende de sessÃ£o vÃ¡lida e valida permissÃµes antes de permitir operaÃ§Ãµes sensÃ­veis.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Elemento</th>
+        <th>DescriÃ§Ã£o</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>/auth/[auth0]</code></td>
+        <td>Rotas de autenticaÃ§Ã£o Auth0.</td>
+      </tr>
+      <tr>
+        <td><code>/api/admin/session</code></td>
+        <td>Valida a sessÃ£o administrativa atual.</td>
+      </tr>
+      <tr>
+        <td><code>/api/admin/users</code></td>
+        <td>GestÃ£o de utilizadores administrativos.</td>
+      </tr>
+      <tr>
+        <td><code>/api/admin/password</code></td>
+        <td>AlteraÃ§Ã£o de palavra-passe do utilizador autenticado.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>8.1 PermissÃµes administrativas</h3>
+  <p>As permissÃµes principais usadas pelo backoffice incluem:</p>
+  <ul>
+    <li><code>news</code> - notÃ­cias.</li>
+    <li><code>activities</code> - atividades.</li>
+    <li><code>publications</code> - recursos/publicaÃ§Ãµes.</li>
+    <li><code>contacts</code> - mensagens de contacto.</li>
+    <li><code>gallery</code> - galerias/media.</li>
+    <li><code>layout</code> - aparÃªncia/layout e pÃ¡ginas institucionais.</li>
+    <li><code>admins</code> - gestÃ£o de administradores.</li>
+    <li><code>audit</code> - histÃ³rico de alteraÃ§Ãµes.</li>
+  </ul>
+
+  <div class="warning">
+    Ao alterar domÃ­nios em produÃ§Ã£o, confirmar sempre no Auth0 os campos <strong>Allowed Callback URLs</strong>, <strong>Allowed Logout URLs</strong> e <strong>Allowed Web Origins</strong>. Incompatibilidades nestes campos podem causar erros de autenticaÃ§Ã£o ou estado invÃ¡lido.
+  </div>
+
+  <h2>9. Ficheiros, imagens e galerias</h2>
+  <p>
+    O projeto foi otimizado para evitar saturar a base de dados e para reduzir problemas de transferÃªncia de origem na Vercel. O princÃ­pio geral Ã©: a base de dados guarda metadados e URLs; os ficheiros ficam em storage apropriado.
+  </p>
+
+  <h3>9.1 Uploads de conteÃºdos</h3>
+  <ul>
+    <li>Imagens de notÃ­cias, atividades, publicaÃ§Ãµes e layout usam <code>storeUploadedFile</code>.</li>
+    <li>O armazenamento preferencial Ã© Vercel Blob via <code>storePublicUpload</code>.</li>
+    <li>Rotas como <code>/uploads/backoffice/[...path]</code> servem ficheiros antigos/compatibilidade.</li>
+    <li>Imagens HEIC/HEIF sÃ£o bloqueadas para evitar incompatibilidade nos browsers.</li>
+  </ul>
+
+  <h3>9.2 Galerias do backoffice</h3>
+  <p>
+    As galerias por pÃ¡gina suportam ficheiros conforme o contexto. O fluxo recente foi otimizado para detetar automaticamente o tipo do ficheiro e processar uploads de forma estÃ¡vel.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Contexto</th>
+        <th>Uso</th>
+        <th>Tipos esperados</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>oficina-do-burel</code></td><td>Media da Oficina do Burel.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+      <tr><td><code>artigos-para-venda</code></td><td>Media dos Artigos para venda.</td><td>Fotos e documentos. VÃ­deo/Ã¡udio foram removidos desta Ã¡rea.</td></tr>
+      <tr><td><code>biblioteca-jrs</code></td><td>Media da Biblioteca JosÃ© Ribeiro dos Santos.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+      <tr><td><code>pon-do-jueus</code></td><td>Media da pÃ¡gina PON do Jueus.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+      <tr><td><code>escola-dos-nossos-avos</code></td><td>Media da Escola dos Nossos AvÃ³s.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+      <tr><td><code>oficinas-de-formacao</code></td><td>Media das Oficinas de FormaÃ§Ã£o.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+      <tr><td><code>publicacoes</code></td><td>Media da pÃ¡gina PublicaÃ§Ãµes.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+      <tr><td><code>biblioteca</code></td><td>Recursos/biblioteca.</td><td>Fotos, vÃ­deos, Ã¡udios e documentos.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.3 Boas prÃ¡ticas para ficheiros</h3>
+  <ul>
+    <li>Preferir imagens em <code>.jpg</code>, <code>.png</code> ou <code>.webp</code>.</li>
+    <li>Comprimir imagens grandes antes de carregar.</li>
+    <li>Usar PDFs otimizados para documentos.</li>
+    <li>Evitar carregar vÃ­deos muito pesados quando nÃ£o forem essenciais.</li>
+    <li>Verificar se os ficheiros aparecem no frontend depois de guardar no backoffice.</li>
+  </ul>
+
+  <h2>10. VariÃ¡veis de ambiente</h2>
+  <p>
+    As variÃ¡veis existem em ambiente local e na Vercel. Os valores reais devem ser tratados como confidenciais.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>VariÃ¡vel</th>
+        <th>FunÃ§Ã£o</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>DATABASE_URL</code>, <code>POSTGRES_URL</code>, <code>PRISMA_DATABASE_URL</code></td><td>LigaÃ§Ã£o Ã  base de dados PostgreSQL/Prisma.</td></tr>
+      <tr><td><code>APP_BASE_URL</code>, <code>NEXT_PUBLIC_SITE_URL</code></td><td>URL base usada pela aplicaÃ§Ã£o e serviÃ§os externos.</td></tr>
+      <tr><td><code>AUTH0_DOMAIN</code>, <code>AUTH0_CLIENT_ID</code>, <code>AUTH0_CLIENT_SECRET</code>, <code>AUTH0_SECRET</code></td><td>ConfiguraÃ§Ã£o Auth0.</td></tr>
+      <tr><td><code>AUTH0_MANAGEMENT_CONNECTION</code></td><td>LigaÃ§Ã£o usada para gestÃ£o de utilizadores Auth0.</td></tr>
+      <tr><td><code>FIREBASE_AUTH_API_KEY</code>, <code>FIREBASE_PROJECT_ID</code>, <code>FIREBASE_CLIENT_EMAIL</code>, <code>FIREBASE_PRIVATE_KEY</code></td><td>Credenciais Firebase/Admin.</td></tr>
+      <tr><td><code>BLOB_STORE_ID</code>, <code>BLOB_READ_WRITE_TOKEN</code>, <code>VERCEL_OIDC_TOKEN</code></td><td>Armazenamento Vercel Blob e acesso seguro a storage.</td></tr>
+      <tr><td><code>RESEND_API_KEY</code>, <code>MAIL_FROM</code>, <code>RESEND_MAIL_FROM</code></td><td>Envio de emails/newsletter via Resend.</td></tr>
+      <tr><td><code>ALLOW_ADMIN_SELF_REGISTRATION</code></td><td>Controlo de auto-registo administrativo, se ativo.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warning">
+    Nunca colocar tokens ou chaves reais em documentaÃ§Ã£o, emails ou mensagens. Em caso de exposiÃ§Ã£o acidental, revogar e gerar novas credenciais.
+  </div>
+
+  <h2 class="section-break">11. Deploy e domÃ­nios</h2>
+  <p>
+    O deploy de produÃ§Ã£o Ã© feito atravÃ©s da Vercel a partir do branch <code>main</code> do GitHub.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Valor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Projeto Vercel</td><td><code>ceiscaramulo</code></td></tr>
+      <tr><td>Branch de produÃ§Ã£o</td><td><code>main</code></td></tr>
+      <tr><td>DomÃ­nio principal</td><td><code>ceiscaramulo.pt</code></td></tr>
+      <tr><td>DomÃ­nio com www</td><td><code>www.ceiscaramulo.pt</code></td></tr>
+      <tr><td>DomÃ­nio Vercel</td><td><code>ceiscaramulo-ten.vercel.app</code></td></tr>
+      <tr><td>Ãšltimo commit validado</td><td><code>4fbf66923023ac51c23f9eb778dce870823b83a4</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.1 Fluxo recomendado de publicaÃ§Ã£o</h3>
+  <ol>
+    <li>Fazer alteraÃ§Ãµes no cÃ³digo.</li>
+    <li>Executar testes e build localmente.</li>
+    <li>Fazer commit com mensagem clara.</li>
+    <li>Fazer push para <code>main</code>.</li>
+    <li>Aguardar o deployment automÃ¡tico na Vercel.</li>
+    <li>Confirmar estado <code>READY</code>.</li>
+    <li>Validar as pÃ¡ginas principais no browser.</li>
+  </ol>
+
+  <h2>12. Comandos de desenvolvimento</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Comando</th>
+        <th>DescriÃ§Ã£o</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>pnpm install</code></td><td>Instala dependÃªncias e gera Prisma Client via postinstall.</td></tr>
+      <tr><td><code>pnpm dev</code></td><td>Arranca o servidor de desenvolvimento.</td></tr>
+      <tr><td><code>pnpm build</code></td><td>Cria build de produÃ§Ã£o e valida tipos/lint do Next.</td></tr>
+      <tr><td><code>pnpm start</code></td><td>Arranca a aplicaÃ§Ã£o compilada em modo produÃ§Ã£o.</td></tr>
+      <tr><td><code>pnpm test:run</code></td><td>Executa todos os testes automatizados.</td></tr>
+      <tr><td><code>pnpm exec tsc --noEmit --pretty false</code></td><td>Valida TypeScript sem gerar ficheiros.</td></tr>
+      <tr><td><code>pnpm prisma:generate</code></td><td>Gera o Prisma Client.</td></tr>
+      <tr><td><code>pnpm prisma:migrate</code></td><td>Cria/aplica migraÃ§Ãµes em desenvolvimento.</td></tr>
+      <tr><td><code>pnpm prisma:push</code></td><td>Sincroniza schema com base de dados quando aplicÃ¡vel.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>12.1 Arranque local recomendado</h3>
+  <pre>pnpm install
+pnpm prisma:generate
+pnpm dev</pre>
+
+  <h3>12.2 VerificaÃ§Ã£o antes de entrega</h3>
+  <pre>pnpm test:run
+pnpm exec tsc --noEmit --pretty false
+pnpm build</pre>
+
+  <h2>13. Testes e validaÃ§Ã£o</h2>
+  <p>
+    A suÃ­te de testes cobre rotas API, backoffice, autenticaÃ§Ã£o, uploads, rich text, pÃ¡ginas pÃºblicas, layout, galeria, newsletter e regressÃµes de performance/origin transfer.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>ValidaÃ§Ã£o executada</th>
+        <th>Resultado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>pnpm test:run</code></td><td><span class="status-ok">71 ficheiros de teste, 328 testes passaram.</span></td></tr>
+      <tr><td><code>pnpm exec tsc --noEmit --pretty false</code></td><td><span class="status-ok">Sem erros TypeScript.</span></td></tr>
+      <tr><td><code>pnpm build</code></td><td><span class="status-ok">Build de produÃ§Ã£o concluÃ­do com sucesso.</span></td></tr>
+      <tr><td>VerificaÃ§Ã£o local HTTP</td><td><span class="status-ok"><code>/backoffice/login</code>, <code>/backoffice</code>, <code>/api/health</code> e <code>/api/layout</code> responderam 200.</span></td></tr>
+      <tr><td>Rotas admin sem sessÃ£o</td><td><span class="status-ok">Responderam 401, comportamento esperado.</span></td></tr>
+      <tr><td>Vercel production</td><td><span class="status-ok">Deployment READY.</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section-break">14. ManutenÃ§Ã£o recomendada</h2>
+  <h3>14.1 Rotina semanal</h3>
+  <ul>
+    <li>Entrar no backoffice e confirmar que as Ã¡reas principais carregam.</li>
+    <li>Verificar se as galerias e imagens pÃºblicas renderizam corretamente.</li>
+    <li>Consultar mensagens de contacto novas.</li>
+    <li>Confirmar se nÃ£o hÃ¡ deploys falhados na Vercel.</li>
+    <li>Verificar uso de Vercel Blob, base de dados e origin transfer.</li>
+  </ul>
+
+  <h3>14.2 Rotina antes de alteraÃ§Ãµes importantes</h3>
+  <ul>
+    <li>Fazer backup/export da base de dados, se a alteraÃ§Ã£o envolver schema ou dados em massa.</li>
+    <li>Confirmar que as variÃ¡veis da Vercel estÃ£o completas.</li>
+    <li>Executar testes e build local.</li>
+    <li>Guardar screenshots das pÃ¡ginas crÃ­ticas antes/depois, quando a alteraÃ§Ã£o for visual.</li>
+  </ul>
+
+  <h3>14.3 Boas prÃ¡ticas de conteÃºdo</h3>
+  <ul>
+    <li>Usar tÃ­tulos claros e curtos.</li>
+    <li>Evitar imagens demasiado pesadas.</li>
+    <li>Preencher descriÃ§Ãµes e textos alternativos sempre que possÃ­vel.</li>
+    <li>Publicar apenas conteÃºdo revisto.</li>
+    <li>Testar o frontend depois de guardar alteraÃ§Ãµes no backoffice.</li>
+  </ul>
+
+  <h2>15. ResoluÃ§Ã£o de problemas</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Sintoma</th>
+        <th>Causa provÃ¡vel</th>
+        <th>AÃ§Ã£o recomendada</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Backoffice nÃ£o abre ou volta ao login.</td>
+        <td>ConfiguraÃ§Ã£o Auth0/domÃ­nio/callback incorreta ou sessÃ£o expirada.</td>
+        <td>Confirmar <code>AUTH0_*</code>, domÃ­nio atual, callbacks no Auth0 e cookies/sessÃ£o.</td>
+      </tr>
+      <tr>
+        <td>Erro "state parameter is invalid".</td>
+        <td>URL/callback Auth0 desalinhado, cookies antigos ou domÃ­nio errado.</td>
+        <td>Limpar cookies, confirmar <code>APP_BASE_URL</code> e callbacks Auth0 para o domÃ­nio usado.</td>
+      </tr>
+      <tr>
+        <td>Upload em lote demora muito.</td>
+        <td>Ficheiros grandes ou ligaÃ§Ã£o lenta.</td>
+        <td>Comprimir ficheiros e usar o progresso de upload para acompanhar. Confirmar Vercel Blob ativo.</td>
+      </tr>
+      <tr>
+        <td>Imagem aparece como quebrada no frontend.</td>
+        <td>Asset antigo, URL invÃ¡lida ou storage indisponÃ­vel.</td>
+        <td>Testar a URL direta, verificar <code>/uploads/backoffice/...</code> ou <code>/api/gallery/assets/...</code> e voltar a carregar a imagem se necessÃ¡rio.</td>
+      </tr>
+      <tr>
+        <td>Vercel mostra uso elevado de transferÃªncia de origem.</td>
+        <td>Imagens/media pesados ou assets dinÃ¢micos servidos repetidamente.</td>
+        <td>Otimizar imagens, evitar vÃ­deos pesados e manter Blob/storage em vez de base de dados.</td>
+      </tr>
+      <tr>
+        <td>Base de dados lenta ou indisponÃ­vel.</td>
+        <td>Limite/quota, conexÃ£o ou manutenÃ§Ã£o do fornecedor.</td>
+        <td>Verificar painel da base de dados, logs da Vercel e variÃ¡veis <code>DATABASE_URL</code>/<code>PRISMA_DATABASE_URL</code>.</td>
+      </tr>
+      <tr>
+        <td>Newsletter nÃ£o envia emails.</td>
+        <td>Chave Resend ou remetente/domÃ­nio nÃ£o verificado.</td>
+        <td>Confirmar <code>RESEND_API_KEY</code>, <code>MAIL_FROM</code> e domÃ­nio verificado no Resend.</td>
+      </tr>
+      <tr>
+        <td>Deploy falha na Vercel.</td>
+        <td>Erro de build, env em falta ou problema de dependÃªncia.</td>
+        <td>Ver logs do deployment, correr <code>pnpm build</code> localmente e comparar variÃ¡veis de ambiente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>16. Checklist de entrega</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Projeto em GitHub com branch <code>main</code> atualizado.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>Deploy de produÃ§Ã£o Vercel no estado READY.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>DomÃ­nios principais associados ao deployment.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>Backoffice com autenticaÃ§Ã£o e permissÃµes.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>Galerias e uploads otimizados para nÃ£o pesar a base de dados.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>Testes automatizados executados.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>Build de produÃ§Ã£o executado.</td><td class="status-ok">ConcluÃ­do</td></tr>
+      <tr><td>DocumentaÃ§Ã£o tÃ©cnica em PDF.</td><td class="status-ok">ConcluÃ­do</td></tr>
+    </tbody>
+  </table>
+
+  <h2>17. RecomendaÃ§Ãµes finais</h2>
+  <ul>
+    <li>Manter sempre os uploads de media fora da base de dados sempre que possÃ­vel.</li>
+    <li>Antes de instalar novas bibliotecas, avaliar impacto no bundle e no build.</li>
+    <li>NÃ£o alterar variÃ¡veis Auth0/Vercel sem validar login e callbacks.</li>
+    <li>Em alteraÃ§Ãµes ao backoffice, atualizar testes no mesmo commit.</li>
+    <li>Para alteraÃ§Ãµes visuais importantes, validar desktop e mobile.</li>
+    <li>Guardar acessos administrativos em gestor de passwords da empresa.</li>
+  </ul>
+
+  <p class="footer-note">
+    Documento gerado para entrega tÃ©cnica do website CEISCaramulo. VersÃ£o baseada no estado do repositÃ³rio em 02/07/2026.
+  </p>
+</body>
+</html>
+

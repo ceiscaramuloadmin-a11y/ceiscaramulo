@@ -531,18 +531,17 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('galleryAcceptForTypes(ALL_GALLERY_MEDIA_TYPES)');
     expect(backofficePageSource).toContain('galleryAllowedTypes.map((type) => (');
     expect(backofficePageSource).toContain('function inferGalleryBatchType');
-    expect(backofficePageSource).toContain("import { upload } from '@vercel/blob/client'");
-    expect(backofficePageSource).toContain('const uploadGalleryFileToBlob = useCallback');
-    expect(backofficePageSource).toContain("handleUploadUrl: '/api/gallery/client-upload'");
-    expect(backofficePageSource).toContain("access: 'private'");
-    expect(backofficePageSource).toContain('multipart: shouldUseClientMultipartUpload(file)');
-    expect(backofficePageSource).toContain('return `/uploads/backoffice/${relativePath}`');
+    expect(backofficePageSource).not.toContain("import { upload } from '@vercel/blob/client'");
+    expect(backofficePageSource).toContain('const uploadGalleryFileToCloudinary = useCallback');
+    expect(backofficePageSource).toContain("'/api/gallery/cloudinary-upload-signature'");
+    expect(backofficePageSource).toContain('https://api.cloudinary.com/v1_1/');
+    expect(backofficePageSource).toContain('return response.secure_url');
     expect(backofficePageSource).toContain('O tipo é detetado automaticamente.');
     expect(backofficePageSource).toContain("if (type === 'video') return 'video/*'");
     expect(backofficePageSource).toContain("application/pdf,.pdf");
     expect(backofficePageSource).toContain("fd.append('context', activeGalleryConfig?.context || 'global')");
     expect(saveGalleryBatchBlock).toContain("fd.append('type', item.type)");
-    expect(saveGalleryBatchBlock).toContain('const sourceUrl = await uploadGalleryFileToBlob(item.file, galleryContext');
+    expect(saveGalleryBatchBlock).toContain('const sourceUrl = await uploadGalleryFileToCloudinary(item.file, galleryContext');
     expect(saveGalleryBatchBlock).toContain("fd.append('sourceUrl', sourceUrl)");
     expect(saveGalleryBatchBlock).toContain("fd.append('mimeType', item.file.type || '')");
     expect(saveGalleryBatchBlock).not.toContain("fd.append('sourceFile', item.file)");
@@ -652,7 +651,7 @@ describe('backoffice page guards', () => {
   it('uploads rich text media before saving news content so audio is not persisted inline', () => {
     const richTextUploadBlock = backofficePageSource.slice(
       backofficePageSource.indexOf('const uploadRichTextMedia = useCallback'),
-      backofficePageSource.indexOf('const uploadGalleryFileToBlob = useCallback')
+      backofficePageSource.indexOf('const uploadGalleryFileToCloudinary = useCallback')
     );
 
     expect(backofficePageSource).toContain('uploadRichTextMedia');

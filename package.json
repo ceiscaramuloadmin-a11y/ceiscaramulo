@@ -16,7 +16,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "storage:migrate-cloudinary": "node --experimental-strip-types scripts/migrate-blob-to-cloudinary.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -63,6 +64,7 @@
     "@tanstack/react-query": "^5.83.0",
     "@vercel/blob": "^2.4.1",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
@@ -76,6 +78,7 @@
     "lucide-react": "^0.462.0",
     "next": "^15.5.15",
     "next-themes": "^0.3.0",
+    "pg": "^8.22.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",

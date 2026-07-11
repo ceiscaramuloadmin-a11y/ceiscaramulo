@@ -6,7 +6,7 @@ import { withPublicGalleryAssets } from '@/lib/gallery-public-assets';
 import { isPublicDbQuotaExceededError, markPublicDbQuotaExceeded, shouldSkipPublicDb } from '@/lib/public-db-guard';
 import { galleryItems as staticGalleryItems } from '@/data/content';
 import { defaultSiteLayoutSettings, deepMergeSettings, normalizeSiteLayoutSettings, SITE_LAYOUT_SETTINGS_KEY } from '@/lib/site-layout';
-import { storePublicUpload } from '@/lib/upload-storage';
+import { deleteStoredUpload, storePublicUpload } from '@/lib/upload-storage';
 import { getAdminAuthSession } from '@/lib/admin-auth-server';
 import type { AdminPermission, GalleryMediaItem, GalleryMediaType, PublicationType, SiteLayoutSettings } from '@/types';
 
@@ -1258,6 +1258,12 @@ async function createGalleryMediaInStorage(input: {
   return created;
 }
 
+export async function deleteGalleryMediaUploads(item: Pick<GalleryMediaRecord, 'source' | 'thumbnail'>) {
+  const values = Array.from(new Set([item.source, item.thumbnail].filter(Boolean) as string[]));
+
+  await Promise.all(values.map((value) => deleteStoredUpload(value)));
+}
+
 function getStaticGalleryFallback(): GalleryMediaRecord[] {
   return staticGalleryItems.map((item) => {
     const fallbackDate = item.date ? new Date(item.date) : new Date();
@@ -1719,7 +1725,11 @@ export async function deleteGalleryMedia(id: string) {
   const storageFiltered = storageItems.filter((item) => item.id !== id);
 
   if (storageFiltered.length !== storageItems.length) {
+    const deletedItem = storageItems.find((item) => item.id === id);
     await saveGalleryToStorage(storageFiltered);
+    if (deletedItem) {
+      await deleteGalleryMediaUploads(deletedItem);
+    }
     return true;
   }
 
@@ -1741,6 +1751,7 @@ export async function deleteGalleryMedia(id: string) {
     return true;
   }
 
-  await prismaAny.galleryMedia.delete({ where: { id } });
+  const deleted = await prismaAny.galleryMedia.delete({ where: { id } });
+  await deleteGalleryMediaUploads(deleted as GalleryMediaRecord);
   return true;
 }

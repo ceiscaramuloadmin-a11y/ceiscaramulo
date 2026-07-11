@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   appendAuditLog,
+  deleteGalleryMediaUploads,
   deleteGalleryMedia,
   getGalleryMediaById,
   jsonError,
@@ -109,6 +110,13 @@ export async function PUT(
 
     if (!updated) {
       return jsonError('Registo não encontrado.', 404);
+    }
+
+    if (updated.source !== current.source || updated.thumbnail !== current.thumbnail) {
+      await deleteGalleryMediaUploads({
+        source: updated.source !== current.source ? current.source : '',
+        thumbnail: updated.thumbnail !== current.thumbnail ? current.thumbnail : null,
+      });
     }
 
     if (context) {

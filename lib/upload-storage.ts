@@ -1,4 +1,5 @@
-import { get, put } from '@vercel/blob';
+import { del, get, put } from '@vercel/blob';
+import { deleteCloudinaryUpload, isCloudinaryStorageEnabled, uploadBufferToCloudinary } from '@/lib/cloudinary-storage';
 
 type PublicUploadInput = {
   relativePath: string;
@@ -40,6 +41,41 @@ function getBlobUploadOptions() {
   };
 }
 
+export function getBackofficeBlobPathFromUploadValue(value: string | null | undefined) {
+  const trimmed = String(value || '').trim();
+
+  if (!trimmed || trimmed.startsWith('data:')) {
+    return null;
+  }
+
+  let relativePath = '';
+
+  if (trimmed.startsWith('blob-private:')) {
+    relativePath = trimmed.slice('blob-private:'.length);
+  } else if (trimmed.startsWith('/uploads/backoffice/')) {
+    relativePath = trimmed.slice('/uploads/backoffice/'.length);
+  } else if (trimmed.startsWith('backoffice/')) {
+    relativePath = trimmed.slice('backoffice/'.length);
+  } else {
+    try {
+      const pathname = decodeURIComponent(new URL(trimmed).pathname).replace(/^\/+/, '');
+      const backofficeIndex = pathname.indexOf('backoffice/');
+
+      if (backofficeIndex >= 0) {
+        relativePath = pathname.slice(backofficeIndex + 'backoffice/'.length);
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  if (!relativePath || relativePath.includes('..') || !/^[a-z0-9-]+\/[a-z0-9._-]+$/i.test(relativePath)) {
+    return null;
+  }
+
+  return `backoffice/${relativePath}`;
+}
+
 function isHostedRuntime() {
   return Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 }
@@ -73,6 +109,10 @@ function databaseImageBackup(input: PublicUploadInput): PublicUploadResult | nul
 }
 
 export async function storePublicUpload(input: PublicUploadInput): Promise<PublicUploadResult | null> {
+  if (isCloudinaryStorageEnabled()) {
+    return uploadBufferToCloudinary(input);
+  }
+
   if (isBlobUploadStorageEnabled() || isHostedRuntime()) {
     try {
       const blob = await put(`backoffice/${input.relativePath}`, input.buffer, {
@@ -138,4 +178,29 @@ export async function getPrivateBlobUpload(relativePath: string) {
     access: 'public',
     ...options,
   });
+}
+
+export async function deleteBackofficeBlobUpload(value: string | null | undefined) {
+  const pathname = getBackofficeBlobPathFromUploadValue(value);
+
+  if (!pathname || !isBlobUploadStorageEnabled()) {
+    return false;
+  }
+
+  try {
+    await del(pathname, getBlobUploadOptions());
+    return true;
+  } catch (error) {
+    console.warn(`Could not delete Blob upload "${pathname}".`, error);
+    return false;
+  }
+}
+
+export async function deleteStoredUpload(value: string | null | undefined) {
+  const [deletedCloudinary, deletedBlob] = await Promise.all([
+    deleteCloudinaryUpload(value),
+    deleteBackofficeBlobUpload(value),
+  ]);
+
+  return deletedCloudinary || deletedBlob;
 }

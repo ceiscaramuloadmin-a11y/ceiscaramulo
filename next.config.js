@@ -15,6 +15,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.neon.tech',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 604800,

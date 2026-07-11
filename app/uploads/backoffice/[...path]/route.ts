@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getStoredUploadedFile } from '@/app/api/_lib/cms';
 import { PUBLIC_MEDIA_CACHE_HEADERS } from '@/lib/cache-headers';
+import { cloudinaryUrlFromStorageValue } from '@/lib/cloudinary-storage';
 import { parseDataUrl } from '@/lib/data-url';
 import { getPrivateBlobUpload } from '@/lib/upload-storage';
 
@@ -58,6 +59,15 @@ export async function GET(
 
     if (stored?.startsWith('blob-private:')) {
       return respondWithPrivateBlob(stored.slice('blob-private:'.length));
+    }
+
+    const cloudinaryUrl = cloudinaryUrlFromStorageValue(stored);
+
+    if (cloudinaryUrl) {
+      return NextResponse.redirect(cloudinaryUrl, {
+        status: 307,
+        headers: PUBLIC_MEDIA_CACHE_HEADERS,
+      });
     }
 
     if (stored) {

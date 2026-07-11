@@ -9,6 +9,8 @@ const jsonError = vi.fn((message: string, status = 400) => Response.json({ messa
 const storeUploadedFile = vi.fn();
 const fileToDataUrl = vi.fn();
 const createGalleryMedia = vi.fn();
+const deleteGalleryMedia = vi.fn();
+const deleteGalleryMediaUploads = vi.fn();
 const getGalleryMediaById = vi.fn();
 const listGalleryMedia = vi.fn();
 const updateGalleryMedia = vi.fn();
@@ -17,6 +19,8 @@ const cmsSource = readFileSync(resolve(process.cwd(), 'app/api/_lib/cms.ts'), 'u
 vi.mock('@/app/api/_lib/cms', () => ({
   appendAuditLog: vi.fn(),
   createGalleryMedia,
+  deleteGalleryMedia,
+  deleteGalleryMediaUploads,
   fileToDataUrl,
   getGalleryMediaById,
   jsonError,
@@ -299,8 +303,37 @@ describe('gallery route', () => {
       context: 'pon-do-jueus',
       source: '/uploads/backoffice/gallery-pon-do-jueus/foto-nova.png',
     }));
+    expect(deleteGalleryMediaUploads).toHaveBeenCalledWith({
+      source: 'data:image/png;base64,old',
+      thumbnail: null,
+    });
     expect(storeUploadedFile).toHaveBeenCalledWith(expect.any(File), 'gallery-pon-do-jueus');
     expect(fileToDataUrl).not.toHaveBeenCalled();
+  });
+
+  it('deletes stored gallery upload files when a gallery item is deleted', async () => {
+    getGalleryMediaById.mockResolvedValueOnce({
+      id: 'pon-1',
+      title: 'Foto antiga',
+      description: null,
+      type: 'photo',
+      context: 'pon-do-jueus',
+      source: '/uploads/backoffice/gallery-pon-do-jueus/foto-antiga.png',
+      thumbnail: '/uploads/backoffice/gallery-thumbnails-pon-do-jueus/foto-antiga.png',
+      mimeType: 'image/png',
+      published: true,
+    });
+    deleteGalleryMedia.mockResolvedValueOnce(true);
+
+    const { DELETE } = await import('@/app/api/gallery/[id]/route');
+    const request = new Request('http://localhost/api/gallery/pon-1', {
+      method: 'DELETE',
+    });
+
+    const response = await DELETE(request as never, { params: Promise.resolve({ id: 'pon-1' }) });
+
+    expect(response.status).toBe(204);
+    expect(deleteGalleryMedia).toHaveBeenCalledWith('pon-1');
   });
 
   it('allows creating gallery media without a source URL or uploaded file', async () => {
@@ -341,6 +374,11 @@ describe('gallery route', () => {
 
   it('keeps new gallery records in site settings storage instead of adding database weight', () => {
     expect(cmsSource).toContain('return createGalleryMediaInStorage({ ...input, context: galleryContext });');
+  });
+
+  it('cleans stored upload files when gallery records are removed', () => {
+    expect(cmsSource).toContain('await deleteGalleryMediaUploads(deletedItem)');
+    expect(cmsSource).toContain('await deleteGalleryMediaUploads(deleted as GalleryMediaRecord)');
   });
 
   it('uses an in-memory site-settings fallback when the database is slow or unavailable', () => {

@@ -13,7 +13,7 @@ describe('content image storage', () => {
     expect(cmsSource).toContain('export async function storeUploadedFile');
     expect(cmsSource).toContain("const UPLOAD_PUBLIC_ROOT = '/uploads/backoffice'");
     expect(cmsSource).toContain("const UPLOAD_STORAGE_KEY_PREFIX = 'upload:backoffice:'");
-    expect(cmsSource).toContain("import { storePublicUpload } from '@/lib/upload-storage';");
+    expect(cmsSource).toContain("storePublicUpload } from '@/lib/upload-storage';");
     expect(cmsSource).toContain('const publicUpload = await storePublicUpload({ relativePath, buffer, contentType: mimeType });');
     expect(cmsSource).toContain('if (publicUpload.storageValue)');
     expect(cmsSource).toContain('return publicUpload.publicUrl;');

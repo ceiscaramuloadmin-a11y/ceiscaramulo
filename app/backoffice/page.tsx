@@ -1,6 +1,5 @@
 'use client';
 
-import { upload } from '@vercel/blob/client';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -139,8 +138,6 @@ const ADMIN_AUDIT_LIMIT = 100;
 const ADMIN_GALLERY_LIST_LIMIT = 120;
 const ADMIN_COMMENTS_LIMIT = 120;
 const ADMIN_NEWSLETTER_LIMIT = 300;
-const CLIENT_MULTIPART_UPLOAD_MIN_BYTES = 8 * 1024 * 1024;
-
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
   { id: 'biblioteca', label: 'Recursos', hasEmptyMessage: true },
@@ -307,10 +304,6 @@ type UploadProgress = {
 
 function clampProgress(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function shouldUseClientMultipartUpload(file: File) {
-  return file.size >= CLIENT_MULTIPART_UPLOAD_MIN_BYTES || file.type.startsWith('video/') || file.type.startsWith('audio/');
 }
 
 function requestJsonWithUploadProgress<T>(
@@ -685,29 +678,72 @@ export default function BackofficePage() {
     [authHeaders]
   );
 
-  const uploadGalleryFileToBlob = useCallback(
+  const uploadGalleryFileToCloudinary = useCallback(
     async (file: File, galleryContext: string, onProgress?: (percent: number) => void) => {
       const safeContext = galleryContext.replace(/[^a-z0-9-]/g, '-') || 'global';
       const safeName = sanitizeUploadFileName(file.name || 'ficheiro');
       const relativePath = `gallery-${safeContext}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
-      const pathname = `backoffice/${relativePath}`;
-
-      await upload(pathname, file, {
-        access: 'private',
-        handleUploadUrl: '/api/gallery/client-upload',
-        contentType: file.type || undefined,
-        multipart: shouldUseClientMultipartUpload(file),
-        onUploadProgress: (event) => {
-          if (event.total) {
-            onProgress?.(clampProgress((event.loaded / event.total) * 100));
-          }
+      const signatureResponse = await fetch('/api/gallery/cloudinary-upload-signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await authHeaders()),
         },
+        body: JSON.stringify({ relativePath }),
       });
 
+      if (!signatureResponse.ok) {
+        const payload = await signatureResponse.json().catch(() => null);
+        throw new Error(payload?.message || 'Nao foi possivel preparar o upload para Cloudinary.');
+      }
+
+      const signature = (await signatureResponse.json()) as {
+        cloudName: string;
+        apiKey: string;
+        timestamp: number;
+        publicId: string;
+        overwrite: string;
+        signature: string;
+      };
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', signature.apiKey);
+      formData.append('timestamp', String(signature.timestamp));
+      formData.append('signature', signature.signature);
+      formData.append('public_id', signature.publicId);
+      formData.append('overwrite', signature.overwrite);
+
+      const response = await new Promise<{ secure_url?: string; public_id?: string }>((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open('POST', `https://api.cloudinary.com/v1_1/${encodeURIComponent(signature.cloudName)}/auto/upload`);
+        request.upload.onprogress = (event) => {
+          if (event.lengthComputable && event.total) {
+            onProgress?.(clampProgress((event.loaded / event.total) * 100));
+          }
+        };
+        request.onload = () => {
+          const payload = JSON.parse(request.responseText || '{}');
+
+          if (request.status >= 200 && request.status < 300) {
+            resolve(payload);
+            return;
+          }
+
+          reject(new Error(payload?.error?.message || 'Falha ao carregar ficheiro para Cloudinary.'));
+        };
+        request.onerror = () => reject(new Error('Falha de rede ao carregar ficheiro para Cloudinary.'));
+        request.send(formData);
+      });
+
+      if (!response.secure_url) {
+        throw new Error('Cloudinary nao devolveu URL segura.');
+      }
+
       onProgress?.(100);
-      return `/uploads/backoffice/${relativePath}`;
+      return response.secure_url;
     },
-    []
+    [authHeaders]
   );
 
   const refreshDashboardStats = useCallback(async () => {
@@ -1412,7 +1448,7 @@ export default function BackofficePage() {
       const fd = new FormData();
       const galleryContext = activeGalleryConfig?.context || 'global';
       const sourceUrl = galleryForm.sourceFile
-        ? await uploadGalleryFileToBlob(galleryForm.sourceFile, galleryContext, (percent) =>
+        ? await uploadGalleryFileToCloudinary(galleryForm.sourceFile, galleryContext, (percent) =>
             setOperationProgress({
               label: 'A enviar ficheiro de media',
               percent,
@@ -1421,7 +1457,7 @@ export default function BackofficePage() {
           )
         : galleryForm.sourceUrl;
       const thumbnailUrl = galleryForm.thumbnailFile
-        ? await uploadGalleryFileToBlob(galleryForm.thumbnailFile, `${galleryContext}-thumbnails`, (percent) =>
+        ? await uploadGalleryFileToCloudinary(galleryForm.thumbnailFile, `${galleryContext}-thumbnails`, (percent) =>
             setOperationProgress({
               label: 'A enviar thumbnail',
               percent,
@@ -1558,7 +1594,7 @@ export default function BackofficePage() {
       });
 
       const uploadOne = async (item: (typeof galleryBatchItems)[number]) => {
-        const sourceUrl = await uploadGalleryFileToBlob(item.file, galleryContext, (filePercent) => {
+        const sourceUrl = await uploadGalleryFileToCloudinary(item.file, galleryContext, (filePercent) => {
           const overallPercent = ((completedItems + filePercent / 100) / totalItems) * 100;
           setOperationProgress({
             label: 'A carregar lote da galeria',

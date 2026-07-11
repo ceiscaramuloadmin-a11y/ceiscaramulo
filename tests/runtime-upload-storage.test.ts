@@ -11,6 +11,11 @@ const { blobPut } = vi.hoisted(() => ({
   blobPut: vi.fn(),
 }));
 
+const { cloudinaryEnabled, uploadBufferToCloudinary } = vi.hoisted(() => ({
+  cloudinaryEnabled: vi.fn(),
+  uploadBufferToCloudinary: vi.fn(),
+}));
+
 vi.mock('@/lib/auth0', () => ({
   auth0: {
     getSession: vi.fn().mockResolvedValue(null),
@@ -30,6 +35,11 @@ vi.mock('@vercel/blob', () => ({
   put: blobPut,
 }));
 
+vi.mock('@/lib/cloudinary-storage', () => ({
+  isCloudinaryStorageEnabled: cloudinaryEnabled,
+  uploadBufferToCloudinary,
+}));
+
 describe('runtime upload storage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,6 +50,8 @@ describe('runtime upload storage', () => {
     delete process.env.VERCEL_ENV;
     siteSettingUpsert.mockResolvedValue({});
     blobPut.mockResolvedValue({ url: 'https://blob.vercel-storage.com/backoffice/news-fotos/foto.png' });
+    cloudinaryEnabled.mockReturnValue(false);
+    uploadBufferToCloudinary.mockResolvedValue(null);
   });
 
   it('stores uploads in site settings instead of writing to public at runtime', async () => {
@@ -81,6 +93,35 @@ describe('runtime upload storage', () => {
       }
     );
     expect(siteSettingUpsert).not.toHaveBeenCalled();
+  });
+
+  it('prefers Cloudinary for new uploads when Cloudinary credentials are configured', async () => {
+    cloudinaryEnabled.mockReturnValue(true);
+    uploadBufferToCloudinary.mockResolvedValueOnce({
+      publicUrl: 'https://res.cloudinary.com/demo/image/upload/backoffice/news/foto.png',
+      storageValue: 'cloudinary:https://res.cloudinary.com/demo/image/upload/backoffice/news/foto.png',
+    });
+
+    const { storeUploadedFile } = await import('@/app/api/_lib/cms');
+    const file = new File(['cover'], 'capa.png', { type: 'image/png' });
+
+    const url = await storeUploadedFile(file, 'news');
+
+    expect(url).toBe('https://res.cloudinary.com/demo/image/upload/backoffice/news/foto.png');
+    expect(uploadBufferToCloudinary).toHaveBeenCalledWith(expect.objectContaining({
+      relativePath: expect.stringMatching(/^news\/.+\.png$/),
+      buffer: Buffer.from('cover'),
+      contentType: 'image/png',
+    }));
+    expect(blobPut).not.toHaveBeenCalled();
+    expect(siteSettingUpsert).toHaveBeenCalledWith({
+      where: { key: expect.stringMatching(/^upload:backoffice:news\/.+\.png$/) },
+      create: {
+        key: expect.stringMatching(/^upload:backoffice:news\/.+\.png$/),
+        value: 'cloudinary:https://res.cloudinary.com/demo/image/upload/backoffice/news/foto.png',
+      },
+      update: { value: 'cloudinary:https://res.cloudinary.com/demo/image/upload/backoffice/news/foto.png' },
+    });
   });
 
   it('stores uploads in Vercel Blob when the production token is configured', async () => {

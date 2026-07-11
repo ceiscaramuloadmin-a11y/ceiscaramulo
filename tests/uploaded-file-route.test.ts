@@ -108,6 +108,19 @@ describe('backoffice uploaded file route', () => {
     expect(getPrivateBlobUpload).toHaveBeenCalledWith('news/file.png');
   });
 
+  it('redirects migrated upload metadata to Cloudinary', async () => {
+    getStoredUploadedFile.mockResolvedValueOnce('cloudinary:https://res.cloudinary.com/demo/image/upload/news/file.png');
+
+    const { GET } = await import('@/app/uploads/backoffice/[...path]/route');
+    const response = await GET(new Request('http://localhost/uploads/backoffice/news/file.png'), {
+      params: Promise.resolve({ path: ['news', 'file.png'] }),
+    });
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Location')).toBe('https://res.cloudinary.com/demo/image/upload/news/file.png');
+    expect(getPrivateBlobUpload).not.toHaveBeenCalled();
+  });
+
   it('returns 404 for unsafe upload paths before checking storage', async () => {
     const { GET } = await import('@/app/uploads/backoffice/[...path]/route');
     const response = await GET(new Request('http://localhost/uploads/backoffice/../secret.jpg'), {

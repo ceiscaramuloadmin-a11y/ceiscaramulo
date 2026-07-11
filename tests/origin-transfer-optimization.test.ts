@@ -25,6 +25,7 @@ describe('origin transfer optimization', () => {
     expect(nextConfigSource).toContain('minimumCacheTTL: 604800');
     expect(nextConfigSource).toContain('unoptimized: isExportBuild');
     expect(nextConfigSource).toContain('max-age=31536000, immutable');
+    expect(nextConfigSource).toContain("hostname: 'res.cloudinary.com'");
   });
 
   it('uses resized webp hero slides through next/image instead of full-size jpg img tags', () => {
