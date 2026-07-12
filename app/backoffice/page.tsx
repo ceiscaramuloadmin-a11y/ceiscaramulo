@@ -140,11 +140,9 @@ const ADMIN_COMMENTS_LIMIT = 120;
 const ADMIN_NEWSLETTER_LIMIT = 300;
 const APPEARANCE_PAGE_FIELDS: Array<{ id: AppearancePageKey; label: string; hasEmptyMessage?: boolean }> = [
   { id: 'atividades', label: 'Atividades', hasEmptyMessage: true },
-  { id: 'biblioteca', label: 'Recursos', hasEmptyMessage: true },
   { id: 'bibliotecaJrs', label: 'Biblioteca JRS' },
   { id: 'contactos', label: 'Contactos' },
   { id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' },
-  { id: 'galeria', label: 'Galeria' },
   { id: 'noticias', label: 'Notícias', hasEmptyMessage: true },
   { id: 'oficinaDoBurel', label: 'Oficina do Burel' },
   { id: 'artigosParaVenda', label: 'Artigos para venda' },
@@ -2102,7 +2100,7 @@ export default function BackofficePage() {
       {(activeSection === 'publications' || activeSection === 'gallery-biblioteca') ? (
         <SectionLayout
           title="Recursos"
-          description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio) ou link quando existir."
+          description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio)."
           newButtonLabel="Novo recurso"
           list={publications}
           loading={isLoadingContent}
@@ -2124,7 +2122,6 @@ export default function BackofficePage() {
                   </select>
                 </label>
                 <RichTextEditor label="Resumo simples" value={publicationForm.description} onChange={(v) => setPublicationForm((c) => ({ ...c, description: v }))} onUploadMedia={(file, kind) => uploadRichTextMedia('publications', file, kind)} fullscreenEnabled />
-                <Input label="Link externo do recurso (opcional)" value={publicationForm.downloadUrl} onChange={(v) => setPublicationForm((c) => ({ ...c, downloadUrl: v }))} />
                 <FileInput key={`publication-document-${publicationFormResetKey}`} label="Ficheiro do recurso (PDF, foto, vídeo ou áudio)" accept={RESOURCE_ATTACHMENT_ACCEPT} onFile={(file) => setPublicationForm((c) => ({ ...c, documentFile: file }))} />
                 <FileInput key={`publication-cover-${publicationFormResetKey}`} label="Capa (opcional)" onFile={(file) => setPublicationForm((c) => ({ ...c, coverImageFile: file }))} />
                 <Check label="Remover capa atual" checked={publicationForm.removeImage} onChange={(checked) => setPublicationForm((c) => ({ ...c, removeImage: checked }))} />
@@ -3165,13 +3162,12 @@ export default function BackofficePage() {
 
             {appearanceTab === 'seo' ? (
             <>
-            <AppearanceSectionTitle title="SEO e Metadados" description="Campos centrais para título, descrição, palavras-chave e imagem social." />
+            <AppearanceSectionTitle title="SEO e Metadados" description="Campos centrais para título, descrição e palavras-chave." />
             <div className={APPEARANCE_PANEL_CLASS}>
               <div className="grid gap-3">
                 <Input label="SEO · Título" value={layoutSettings.seo.title} onChange={(v) => updateSeo({ title: v })} />
                 <TextArea label="SEO · Descrição" value={layoutSettings.seo.description} onChange={(v) => updateSeo({ description: v })} />
                 <TextArea label="SEO · Palavras-chave" value={layoutSettings.seo.keywords} onChange={(v) => updateSeo({ keywords: v })} />
-                <Input label="SEO · Imagem Open Graph" value={layoutSettings.seo.ogImage} onChange={(v) => updateSeo({ ogImage: v })} />
               </div>
             </div>
             </>

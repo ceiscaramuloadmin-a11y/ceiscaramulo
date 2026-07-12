@@ -217,12 +217,12 @@ describe('backoffice page guards', () => {
       backofficePageSource.indexOf("activeSection === 'contacts' ? (")
     );
 
-    expect(resourcesBlock).toContain('description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio) ou link quando existir."');
+    expect(resourcesBlock).toContain('description="Biblioteca simples: adiciona título, autor, ano, tipo e ficheiro otimizado (PDF, foto, vídeo ou áudio)."');
     expect(resourcesBlock).toContain('newButtonLabel="Novo recurso"');
     expect(resourcesBlock).toContain('label="Autor ou entidade"');
     expect(resourcesBlock).toContain('Tipo de recurso');
     expect(resourcesBlock).toContain('label="Resumo simples"');
-    expect(resourcesBlock).toContain('label="Link externo do recurso (opcional)"');
+    expect(resourcesBlock).not.toContain('Link externo do recurso');
     expect(resourcesBlock).toContain('label="Capa (opcional)"');
   });
 
@@ -436,6 +436,11 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain('updateSeo');
   });
 
+  it('does not expose the Open Graph image field in appearance management', () => {
+    expect(backofficePageSource).not.toContain('SEO · Imagem Open Graph');
+    expect(backofficePageSource).not.toContain('updateSeo({ ogImage: v })');
+  });
+
   it('uses a light green highlight on large appearance panels for readability', () => {
     const appearanceEditorBlock = backofficePageSource.slice(
       backofficePageSource.indexOf("activeSection === 'layout'"),
@@ -459,13 +464,13 @@ describe('backoffice page guards', () => {
     expect(backofficePageSource).toContain("'bibliotecaJrs'");
     expect(backofficePageSource).toContain("'contactos'");
     expect(backofficePageSource).toContain("'escolaDosNossosAvos'");
-    expect(backofficePageSource).toContain("'galeria'");
+    expect(backofficePageSource).not.toContain("{ id: 'galeria', label:");
     expect(backofficePageSource).toContain("'oficinaDoBurel'");
     expect(backofficePageSource).toContain("'artigosParaVenda'");
     expect(backofficePageSource).toContain("'oficinasDeFormacao'");
     expect(backofficePageSource).toContain("'ponDoJueus'");
     expect(backofficePageSource).toContain("'publicacoes'");
-    expect(backofficePageSource).toContain("{ id: 'biblioteca', label: 'Recursos'");
+    expect(backofficePageSource).not.toContain("{ id: 'biblioteca', label:");
     expect(backofficePageSource).toContain("{ id: 'bibliotecaJrs', label: 'Biblioteca JRS' }");
     expect(backofficePageSource).toContain("{ id: 'escolaDosNossosAvos', label: 'Escola dos Nossos Avós' }");
     expect(backofficePageSource).toContain("{ id: 'oficinaDoBurel', label: 'Oficina do Burel' }");

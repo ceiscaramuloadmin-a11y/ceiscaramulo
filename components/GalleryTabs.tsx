@@ -24,6 +24,10 @@ function firstAvailableGalleryTab(items: GalleryMediaItem[]): TabId {
   return 'photo';
 }
 
+function isGallerySwipeControl(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('audio, video, button, a, input, select, textarea'));
+}
+
 function GalleryPhotoPreview({ item }: { item: GalleryMediaItem }) {
   const previewSource = item.thumbnail || item.source;
 
@@ -161,6 +165,10 @@ export default function GalleryTabs({ items }: Props) {
       <div
         className="rounded-xl border border-stone-200 bg-white p-2"
         onTouchStart={(event) => {
+          if (isGallerySwipeControl(event.target)) {
+            setTabSwipeStart(null);
+            return;
+          }
           const touch = event.touches[0];
           setTabSwipeStart({ x: touch.clientX, y: touch.clientY });
         }}
@@ -211,6 +219,10 @@ export default function GalleryTabs({ items }: Props) {
 
       <div
         onTouchStart={(event) => {
+          if (isGallerySwipeControl(event.target)) {
+            setTabSwipeStart(null);
+            return;
+          }
           const touch = event.touches[0];
           setTabSwipeStart({ x: touch.clientX, y: touch.clientY });
         }}
@@ -235,6 +247,7 @@ export default function GalleryTabs({ items }: Props) {
                   <GalleryPhotoPreview item={item} />
                   <div className="p-3">
                     <p className="truncate text-sm font-medium text-stone-800">{item.title}</p>
+                    {item.description ? <p className="mt-1 line-clamp-2 text-sm text-stone-600">{item.description}</p> : null}
                   </div>
                 </button>
               ))}
@@ -395,6 +408,11 @@ export default function GalleryTabs({ items }: Props) {
             <button type="button" className="rounded bg-white/10 p-2 text-white" onClick={closeViewer}>
               <X className="h-5 w-5" />
             </button>
+          </div>
+
+          <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 rounded-lg bg-black/60 px-4 py-3 text-white">
+            <p className="font-medium">{activePhoto.title}</p>
+            {activePhoto.description ? <p className="mt-1 text-sm text-white/85">{activePhoto.description}</p> : null}
           </div>
 
           <div

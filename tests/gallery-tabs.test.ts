@@ -46,6 +46,13 @@ describe('GalleryTabs', () => {
     expect(galleryTabsSource).toContain("event.key === 'ArrowRight'");
     expect(galleryTabsSource).toContain("event.key === 'ArrowLeft'");
     expect(galleryTabsSource).toContain('selectAdjacentTab(deltaX < 0 ? 1 : -1)');
+    expect(galleryTabsSource).toContain('isGallerySwipeControl(event.target)');
+    expect(galleryTabsSource).toContain("target.closest('audio, video, button, a, input, select, textarea')");
+  });
+
+  it('shows photo descriptions in the grid and in the expanded viewer', () => {
+    expect(galleryTabsSource).toContain('line-clamp-2 text-sm text-stone-600');
+    expect(galleryTabsSource).toContain('activePhoto.description');
   });
 
   it('keeps static local gallery photo previews eligible for next/image with responsive thumbnail sizes', () => {
